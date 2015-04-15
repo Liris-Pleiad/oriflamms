@@ -1,0 +1,514 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Copyright 
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: oriflamms \n"
+"Report-Msgid-Bugs-To: yann@leydier.info\n"
+"POT-Creation-Date: 2014-04-14 10:54+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../oriflamms/OriGUI.cpp:39
+msgid "_New project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:39 ../oriflamms/OriGUI.cpp:229
+msgid "New project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:40
+msgid "_Open project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:40
+msgid "Open project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:41
+msgid "_Import project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:41
+msgid "Import project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:42
+msgid "_Save project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:42
+msgid "Save project"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:43
+msgid "Reload _TEI"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:43
+msgid "Reload TEI"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:45
+msgid "Add _line"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:45
+msgid "Add line"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:48
+msgid "_Alignment"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:48
+msgid "Alignment"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:49
+msgid "Align _all"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:49
+msgid "Align all"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:50
+msgid "Align _selection"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:50
+msgid "Align selection"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:51
+msgid "_Validate alignment"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:51
+msgid "Validate alignment"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:52
+msgid "_Propagate validation"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:52
+msgid "Propagate validation"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:53
+msgid "_Export validated characters"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:53
+msgid "Export validated characters"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:54
+msgid "_Clear signatures"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:54
+msgid "Clear signatures"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:55
+msgid "_Statistics"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:55
+msgid "Statistics"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:57
+msgid "_Options"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:57
+msgid "Options"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:59
+msgid "_Unit validation"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:60
+msgid "_Batch validation"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:61
+msgid "Change _font"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:61
+msgid "Change font"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:127 ../oriflamms/OriGUI.cpp:823
+msgid "View"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:128
+msgid "TEI"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:129
+msgid "Images"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:213
+msgid "Text alignment between TEI xml and images"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:230
+msgid "Please select a TEI XML file"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:231
+msgid "Please select the folder containing the images"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:236
+msgid "Project name"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:238
+msgid "TEI XML file"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:240
+msgid "Image folder"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:266
+msgid "All files"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:302
+msgid "Analyzing images…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:303 ../oriflamms/OriValidation.cpp:747
+#: ../oriflamms/OriProject.cpp:672
+msgid "Image"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:312 ../oriflamms/OriGUI.cpp:336
+#: ../oriflamms/OriGUI.cpp:770
+msgid "Loading…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:313 ../oriflamms/OriGUI.cpp:337
+#: ../oriflamms/OriGUI.cpp:771
+msgid "Page"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:348
+msgid "Please select a project file to import"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:460 ../oriflamms/OriGUI.cpp:464
+msgid "column(s)"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:470 ../oriflamms/OriGUI.cpp:785
+#: ../oriflamms/OriGUI.cpp:825 ../oriflamms/OriValidation.cpp:755
+msgid "Column"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:481 ../oriflamms/OriGUI.cpp:516
+msgid "line(s)"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:487 ../oriflamms/OriGUI.cpp:787
+#: ../oriflamms/OriGUI.cpp:798 ../oriflamms/OriGUI.cpp:827
+#: ../oriflamms/OriValidation.cpp:759
+msgid "Line"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:494
+msgid "word(s)"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:687 ../oriflamms/OriGUI.cpp:780
+#: ../oriflamms/OriGUI.cpp:822
+msgid "Aligning…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:853
+msgid "Saving…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:872
+msgid "The quick bꝛown fox jumpſ over the lazy dog."
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:889
+msgid "Export statistics to…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:898
+msgid "ODS files"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:916
+msgid "Are you sure you wish to flush the images' signatures?"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:920
+msgid "Flushing signatures…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:929
+msgid "Please select a folder where the characters will be saved"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:940
+msgid "Exporting characters…"
+msgstr ""
+
+#: ../oriflamms/OriGUI.cpp:948
+msgid "Propagating validation…"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:27
+msgid "Accepted"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:28 ../oriflamms/OriProject.cpp:677
+#: ../oriflamms/OriProject.cpp:681 ../oriflamms/OriProject.cpp:707
+#: ../oriflamms/OriProject.cpp:711 ../oriflamms/OriProject.cpp:736
+#: ../oriflamms/OriProject.cpp:740 ../oriflamms/OriProject.cpp:765
+#: ../oriflamms/OriProject.cpp:769 ../oriflamms/OriProject.cpp:798
+#: ../oriflamms/OriProject.cpp:802 ../oriflamms/OriProject.cpp:831
+#: ../oriflamms/OriProject.cpp:835 ../oriflamms/OriProject.cpp:860
+#: ../oriflamms/OriProject.cpp:864 ../oriflamms/OriProject.cpp:889
+#: ../oriflamms/OriProject.cpp:893 ../oriflamms/OriProject.cpp:922
+#: ../oriflamms/OriProject.cpp:926
+msgid "Rejected"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:36
+msgid "Validation"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:50 ../oriflamms/OriValidation.cpp:763
+#: ../oriflamms/OriProject.cpp:702
+msgid "Word"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:51
+msgid "Count"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:52 ../oriflamms/OriProject.cpp:731
+#: ../oriflamms/OriProject.cpp:734
+msgid "Length"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:97
+msgid "Gathering the words"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:165
+msgid "Loading words"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:370
+msgid ""
+"You visited some words without performing any modification.\n"
+"Do you wish to validate them?"
+msgstr ""
+
+#: ../oriflamms/OriValidation.cpp:423
+msgid ""
+"No modification was performed on this word.\n"
+"Do you wish to validate current state?"
+msgstr ""
+
+#: ../oriflamms/OriStruct.cpp:19
+msgid "Malformed word path."
+msgstr ""
+
+#: ../oriflamms/OriStruct.cpp:344 ../oriflamms/OriProject.cpp:1158
+#: ../oriflamms/OriProject.cpp:1192
+msgid "Empty word."
+msgstr ""
+
+#: ../oriflamms/OriStruct.cpp:352 ../oriflamms/OriProject.cpp:1170
+msgid "Word has no signature: <"
+msgstr ""
+
+#: ../oriflamms/OriStruct.cpp:480 ../oriflamms/OriStruct.cpp:487
+#: ../oriflamms/OriStruct.cpp:496
+msgid "No view."
+msgstr ""
+
+#: ../oriflamms/OriStruct.cpp:653
+msgid "Not a TEI document."
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:44
+msgid "Cannot find image: "
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:225
+msgid "The last word is locate before the first."
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:227
+msgid "The range must be within a single line."
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:281
+msgid "Range align misfit."
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:618
+msgid "Global"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:620
+msgid "Document name"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:623
+msgid "Number of pages"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:629
+msgid "Validated words"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:633
+msgid "Rejected words"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:637
+msgid "Unchecked words"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:641 ../oriflamms/OriProject.cpp:679
+#: ../oriflamms/OriProject.cpp:709 ../oriflamms/OriProject.cpp:738
+#: ../oriflamms/OriProject.cpp:767 ../oriflamms/OriProject.cpp:800
+#: ../oriflamms/OriProject.cpp:833 ../oriflamms/OriProject.cpp:862
+#: ../oriflamms/OriProject.cpp:891 ../oriflamms/OriProject.cpp:924
+msgid "Total"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:644 ../oriflamms/OriProject.cpp:683
+#: ../oriflamms/OriProject.cpp:713 ../oriflamms/OriProject.cpp:742
+#: ../oriflamms/OriProject.cpp:771 ../oriflamms/OriProject.cpp:804
+#: ../oriflamms/OriProject.cpp:837 ../oriflamms/OriProject.cpp:866
+#: ../oriflamms/OriProject.cpp:895 ../oriflamms/OriProject.cpp:928
+msgid "Accuracy on checked words"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:649
+msgid "Number of lines"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:652
+msgid "Lines containing errors"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:656
+msgid "Number of manually corrected lines"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:660
+msgid "Number of manually corrected words"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:664
+msgid "Mean word correction length"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:667
+msgid "Mean word correction absolute length"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:674
+msgid "Page id"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:675
+msgid "Image name"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:676 ../oriflamms/OriProject.cpp:680
+#: ../oriflamms/OriProject.cpp:706 ../oriflamms/OriProject.cpp:710
+#: ../oriflamms/OriProject.cpp:735 ../oriflamms/OriProject.cpp:739
+#: ../oriflamms/OriProject.cpp:764 ../oriflamms/OriProject.cpp:768
+#: ../oriflamms/OriProject.cpp:797 ../oriflamms/OriProject.cpp:801
+#: ../oriflamms/OriProject.cpp:830 ../oriflamms/OriProject.cpp:834
+#: ../oriflamms/OriProject.cpp:859 ../oriflamms/OriProject.cpp:863
+#: ../oriflamms/OriProject.cpp:888 ../oriflamms/OriProject.cpp:892
+#: ../oriflamms/OriProject.cpp:921 ../oriflamms/OriProject.cpp:925
+msgid "Validated"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:678 ../oriflamms/OriProject.cpp:682
+#: ../oriflamms/OriProject.cpp:708 ../oriflamms/OriProject.cpp:712
+#: ../oriflamms/OriProject.cpp:737 ../oriflamms/OriProject.cpp:741
+#: ../oriflamms/OriProject.cpp:766 ../oriflamms/OriProject.cpp:770
+#: ../oriflamms/OriProject.cpp:799 ../oriflamms/OriProject.cpp:803
+#: ../oriflamms/OriProject.cpp:832 ../oriflamms/OriProject.cpp:836
+#: ../oriflamms/OriProject.cpp:861 ../oriflamms/OriProject.cpp:865
+#: ../oriflamms/OriProject.cpp:890 ../oriflamms/OriProject.cpp:894
+#: ../oriflamms/OriProject.cpp:923 ../oriflamms/OriProject.cpp:927
+msgid "Unchecked"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:705
+msgid "Transcription"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:760 ../oriflamms/OriProject.cpp:763
+msgid "Initial letter"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:772 ../oriflamms/OriProject.cpp:805
+msgid "Mean manual correction"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:773 ../oriflamms/OriProject.cpp:806
+msgid "Mean absolute manual correction"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:793 ../oriflamms/OriProject.cpp:796
+msgid "Final letter"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:826 ../oriflamms/OriProject.cpp:829
+msgid "Preceding final letter"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:855 ../oriflamms/OriProject.cpp:858
+msgid "Next initial letter"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:884
+msgid "Preceding final + initial"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:887 ../oriflamms/OriProject.cpp:920
+msgid "Digram"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:917
+msgid "Final + next initial"
+msgstr ""
+
+#: ../oriflamms/OriProject.cpp:1202
+msgid "Character has no signature: <"
+msgstr ""
