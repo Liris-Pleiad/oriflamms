@@ -16,7 +16,6 @@
 #include <OriConfig.h>
 #include <CRNAI/CRNPathFinding.h>
 #include <CRNImage/CRNDifferential.h>
-#include <CRNImage/CRNImageRGB.h>
 
 using namespace ori;
 
@@ -28,7 +27,7 @@ struct stepcost
 	const int ref;
 	inline double operator()(const crn::Point2DInt &p1, const crn::Point2DInt &p2) const
 	{
-		return img.At(p2.X, p2.Y) + 4 * crn::Abs(ref - p2.X);
+		return img.GetPixel(p2.X, p2.Y) + 4 * crn::Abs(ref - p2.X);
 	}
 };
 
@@ -442,20 +441,21 @@ void Project::ComputeWordFrontiers(const ori::WordPath &wp)
 	const int MARGIN = 10;
 	rec.SetLeft(crn::Max(0, rec.GetLeft() - MARGIN));
 	rec.SetRight(crn::Min(int(view.image->GetRGB()->GetWidth()) - 1, rec.GetRight() + MARGIN));
-	crn::ImageRGB irgb(*view.image->GetRGB(), rec);
+	crn::ImageRGB irgb;
+	irgb.InitFromImage(*view.image->GetRGB(), rec);
 
 	crn::Differential diff(crn::Differential::NewGaussian(irgb, crn::Differential::RGBProjection::ABSMAX, 0));
 	diff.Diffuse(5);
-	crn::ImageDoubleGray roadmap(diff.MakeKappa1()); // TODO do better
-	crn::ImageGray rmg(crn::Downgrade<crn::ImageGray>(roadmap));
+	crn::UImageDoubleGray roadmap(diff.MakeKappa1()); // TODO do better
+	crn::UImageGray rmg(roadmap->MakeImageGray());
 
 	crn::Rect lrec(rec);
 	lrec.Translate(-rec.GetLeft(), -rec.GetTop());
-	lrec &= rmg.GetBBox(); // crop just in case
+	lrec &= rmg->GetBBox(); // crop just in case
 	std::vector<crn::Point2DInt> frontpath(crn::AStar(
 				crn::Point2DInt(MARGIN, 0),
 				crn::Point2DInt(MARGIN, lrec.GetBottom()),
-				stepcost(rmg, MARGIN),
+				stepcost(*rmg, MARGIN),
 				heuristic(),
 				get_neighbors(lrec)));
 	std::for_each(frontpath.begin(), frontpath.end(), [&rec](crn::Point2DInt &p){ p.X += rec.GetLeft(); p.Y += rec.GetTop(); });
@@ -464,7 +464,7 @@ void Project::ComputeWordFrontiers(const ori::WordPath &wp)
 	std::vector<crn::Point2DInt> backpath(crn::AStar(
 				crn::Point2DInt(word.GetBBox().GetWidth() + MARGIN, 0),
 				crn::Point2DInt(word.GetBBox().GetWidth() + MARGIN, lrec.GetBottom()),
-				stepcost(rmg, word.GetBBox().GetWidth() + MARGIN),
+				stepcost(*rmg, word.GetBBox().GetWidth() + MARGIN),
 				heuristic(),
 				get_neighbors(lrec)));
 	std::for_each(backpath.begin(), backpath.end(), [&rec](crn::Point2DInt &p){ p.X += rec.GetLeft(); p.Y += rec.GetTop(); });
@@ -1186,27 +1186,28 @@ void Project::AlignWordCharacters(const ori::WordPath & wp)
 		return; // XXX
 
 	// compute frontiers
-	crn::ImageRGB irgb(*view.image->GetRGB(), word.GetBBox());
+	crn::ImageRGB irgb;
+	irgb.InitFromImage(*view.image->GetRGB(), word.GetBBox());
 	crn::Differential diff(crn::Differential::NewGaussian(irgb, crn::Differential::RGBProjection::ABSMAX, 0));
 	diff.Diffuse(5);
-	crn::ImageDoubleGray roadmap(diff.MakeKappa1()); // TODO do better
-	crn::ImageGray rmg(crn::Downgrade<crn::ImageGray>(roadmap));
-	crn::ImageGray ig(crn::MakeImageGray(irgb));
-	for (auto tmp : Range(rmg))
+	crn::UImageDoubleGray roadmap(diff.MakeKappa1()); // TODO do better
+	crn::UImageGray rmg(roadmap->MakeImageGray());
+	crn::UImageGray ig(irgb.MakeImageGray());
+	FOREACHPIXEL(tmp, *rmg)
 	{
-		rmg.At(tmp) = uint8_t(rmg.At(tmp) / 2 + 127 - ig.At(tmp) / 2);
+		rmg->GetPixels()[tmp] = uint8_t(rmg->GetPixels()[tmp] / 2 + 127 - ig->GetPixel(tmp) / 2);
 	}
 	for (size_t tmp = 0; tmp < align.size() - 1; ++tmp)
 	{
 		crn::Rect r(align[tmp].first);
 		r.Translate(-word.GetBBox().GetLeft(), -word.GetBBox().GetTop());
-		r &= rmg.GetBBox(); // crop just in case
+		r &= rmg->GetBBox(); // crop just in case
 
 		std::vector<crn::Point2DInt> pathfron(ori::SimplifyCurve(
 					crn::AStar(
 						crn::Point2DInt(r.GetRight(), r.GetTop()),
 						crn::Point2DInt(r.GetRight(), r.GetBottom()),
-						stepcost(rmg, r.GetRight()),
+						stepcost(*rmg, r.GetRight()),
 						heuristic(),
 						get_neighbors(r)),
 					3.5, 0.3));

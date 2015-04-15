@@ -7,12 +7,12 @@
 #include <OriLines.h>
 #include <CRNMath/CRNLinearInterpolation.h>
 #include <CRNImage/CRNColorModel.h>
+#include <CRNImage/CRNPixelHSV.h>
 #include <CRNMath/CRNMatrixComplex.h>
 #include <CRNAI/CRN2Means.h>
 #include <CRNUtils/CRNXml.h>
 #include <CRNMath/CRNPolynomialRegression.h>
 #include <CRNImage/CRNDifferential.h>
-#include <CRNImage/CRNImageBW.h>
 #include <OriStruct.h>
 #include <CRNMath/CRNMatrixComplex.h>
 #include <numeric>
@@ -21,17 +21,16 @@
 
 #include <iostream>
 
-using namespace crn;
-using namespace literals;
+using namespace crn::literals;
 
-static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
+static std::vector<crn::Rect> detectColumns(const crn::ImageIntGray &ydiff, size_t ncols)
 {
-	auto ig2 = ydiff;
-	Abs(ig2);
-	ig2.Negative();
+	auto ig2 = ydiff.CloneAs<crn::ImageIntGray>();
+	ig2->Abs();
+	ig2->Negative();
 	// projection of line gradients
-	auto vp = VerticalProjection(Fisher(ig2));
-	ig2 = ImageIntGray{}; // free memory
+	auto vp = ig2->MakeImageBWFisher()->MakeVerticalProjection();
+	ig2.reset(); // free memory
 
 	// check number of modes for each Y in the histogram
 	const size_t max = vp.Max();
@@ -52,14 +51,14 @@ static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
 				t2 += 1; // leaving the data
 			}
 		}
-		int nmodes = Max(t1, t2);
+		int nmodes = crn::Max(t1, t2);
 		if (nmodes == ncols)
 			modesh.push_back(y);
 	}
 
 	if (modesh.empty())
 	{ // white page
-		auto thumbzones = std::vector<Rect>{};
+		auto thumbzones = std::vector<crn::Rect>{};
 		int bx = 0;
 		const int w = int(ydiff.GetWidth()) / int(ncols);
 		const int h = int(ydiff.GetHeight()) - 1;
@@ -77,7 +76,7 @@ static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
 	auto th = modesh[modesh.size() / 2]; // median Y for the correct number of modes/columns
 	//std::cout << th << std::endl;
 	int bx = 0;
-	auto thumbzones = std::vector<Rect>{};
+	auto thumbzones = std::vector<crn::Rect>{};
 	for (size_t x = 0; x < vp.Size(); ++x)
 	{
 		if (in)
@@ -104,7 +103,7 @@ static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
 	return thumbzones;
 }
 
-static int lumdiff(const ImageGray &ig, int cx, int cy, int dx, int dy, const ImageGray &mask)
+static int lumdiff(const crn::ImageGray &ig, int cx, int cy, int dx, int dy, const crn::ImageGray &mask)
 {
 	int minv = std::numeric_limits<int>::max(), maxv = 0;
 	for (int y = cy - dy; y <= cy + dy; ++y)
@@ -113,9 +112,9 @@ static int lumdiff(const ImageGray &ig, int cx, int cy, int dx, int dy, const Im
 			continue;
 		for (int x = cx - dx; x <= cx + dx; ++x)
 		{
-			if ((x < 0) || (x >= ig.GetWidth()) || mask.At(x, y))
+			if ((x < 0) || (x >= ig.GetWidth()) || mask.GetPixel(x, y))
 				continue;
-			auto val = ig.At(x, y);
+			auto val = ig.GetPixel(x, y);
 			if (val > maxv) maxv = val;
 			if (val < minv) minv = val;
 		}
@@ -126,7 +125,7 @@ static int lumdiff(const ImageGray &ig, int cx, int cy, int dx, int dy, const Im
 		return maxv - minv;
 }
 
-static int mingrad(const ImageGradient &ig, int cx, int cy, int dx, int dy, const ImageBW &mask)
+static int mingrad(const crn::ImageGradient &ig, int cx, int cy, int dx, int dy, const crn::ImageBW &mask)
 {
 	int minv = std::numeric_limits<int>::max();
 	for (int y = cy - dy; y <= cy + dy; ++y)
@@ -135,16 +134,16 @@ static int mingrad(const ImageGradient &ig, int cx, int cy, int dx, int dy, cons
 			continue;
 		for (int x = cx - dx; x <= cx + dx; ++x)
 		{
-			if ((x < 0) || (x >= ig.GetWidth()) || mask.At(x, y))
+			if ((x < 0) || (x >= ig.GetWidth()) || mask.GetPixel(x, y))
 				continue;
-			auto val = ig.At(x, y).rho;
+			auto val = ig.GetRhoPixels()[x + y * ig.GetWidth()];
 			if (val < minv) minv = val;
 		}
 	}
 	return minv;
 }
 
-static int maxgrad(const ImageGradient &ig, int cx, int cy, int dx, int dy, const ImageBW &mask)
+static int maxgrad(const crn::ImageGradient &ig, int cx, int cy, int dx, int dy, const crn::ImageBW &mask)
 {
 	int maxv = 0;
 	for (int y = cy - dy; y <= cy + dy; ++y)
@@ -153,19 +152,19 @@ static int maxgrad(const ImageGradient &ig, int cx, int cy, int dx, int dy, cons
 			continue;
 		for (int x = cx - dx; x <= cx + dx; ++x)
 		{
-			if ((x < 0) || (x >= ig.GetWidth()) || mask.At(x, y))
+			if ((x < 0) || (x >= ig.GetWidth()) || mask.GetPixel(x, y))
 				continue;
-			auto val = ig.At(x, y).rho;
+			auto val = ig.GetRhoPixels()[x + y * ig.GetWidth()];
 			if (val > maxv) maxv = val;
 		}
 	}
 	return maxv;
 }
 
-static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw, int th, const ImageBW &enmask, const Rect &clip)
+static crn::SLinearInterpolation cut_line(crn::LinearInterpolation &l, crn::Block &b, size_t sw, int th, const crn::ImageBW &enmask, const crn::Rect &clip)
 {
 	if (l.GetData().size() <= 2)
-		return SLinearInterpolation{};
+		return crn::SLinearInterpolation{};
 
 	int bx = int(l.GetData().front().X);
 	int ex = int(l.GetData().back().X);
@@ -175,14 +174,14 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 	// cut at enlightened marks
 	int cx = (bx + ex) / 2;
 	for (int x = cx; x > bx; --x)
-		if (enmask.At(x, l[x]) != 0)
+		if (enmask.GetPixel(x, l[x]) != 0)
 		{
 			bx = x;
 			can_enlarge_b = false;
 			break;
 		}
 	for (int x = cx + 1; x < ex; ++x)
-		if (enmask.At(x, l[x]) != 0)
+		if (enmask.GetPixel(x, l[x]) != 0)
 		{
 			ex = x;
 			can_enlarge_e = false;
@@ -198,7 +197,7 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 			int x = bx - 1;
 			for (; x >= clip.GetLeft() + sw; --x)
 				//if (lumdiff(*b.GetGray(), x + 2*sw, l[x], 2*sw, 3*sw, enmask) < th)
-				if ((maxgrad(*b.GetGradient(), x + 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) < th) || enmask.At(x, l[x]))
+				if ((maxgrad(*b.GetGradient(), x + 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) < th) || enmask.GetPixel(x, l[x]))
 					break;
 			bx = x + 2*int(sw);
 		}
@@ -209,7 +208,7 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 		int x = bx + 1;
 		for (; x < clip.GetRight() - sw; ++x)
 			//if (lumdiff(*b.GetGray(), x + 2*sw, l[x], 2*sw, 3*sw, enmask) > th)
-			if ((maxgrad(*b.GetGradient(), x + 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) > th) || enmask.At(x, l[x]))
+			if ((maxgrad(*b.GetGradient(), x + 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) > th) || enmask.GetPixel(x, l[x]))
 				break;
 		bx = x;
 	}
@@ -223,7 +222,7 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 			int x = ex + 1;
 			for (; x < clip.GetRight() - sw; ++x)
 				//if (lumdiff(*b.GetGray(), x - 2*sw, l[x], 2*sw, 3*sw, enmask) < th)
-				if ((maxgrad(*b.GetGradient(), x - 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) < th) || enmask.At(x, l[x]))
+				if ((maxgrad(*b.GetGradient(), x - 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) < th) || enmask.GetPixel(x, l[x]))
 					break;
 			ex = x - 2*int(sw);
 		}
@@ -234,41 +233,41 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 		int x = ex - 1;
 		for (; x >= clip.GetLeft() +	sw; --x)
 			//if (lumdiff(*b.GetGray(), x - 2*sw, l[x], 2*sw, 3*sw, enmask) > th)
-			if ((maxgrad(*b.GetGradient(), x - 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) > th) || enmask.At(x, l[x]))
+			if ((maxgrad(*b.GetGradient(), x - 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) > th) || enmask.GetPixel(x, l[x]))
 				break;
 		ex = x;
 	}
 
 	if (ex <= bx)
-		return SLinearInterpolation{};
+		return crn::SLinearInterpolation{};
 	// XXX display
-	b.GetRGB()->DrawLine(bx, l[bx] - 3*sw, bx, l[bx] + 3*sw, pixel::RGB8(0, 200, 0));
-	b.GetRGB()->DrawLine(ex, l[ex] - 3*sw, ex, l[ex] + 3*sw, pixel::RGB8(255, 0, 0));
+	b.GetRGB()->DrawLine(bx, l[bx] - 3*sw, bx, l[bx] + 3*sw, crn::PixelRGB(uint8_t(0), 200, 0));
+	b.GetRGB()->DrawLine(ex, l[ex] - 3*sw, ex, l[ex] + 3*sw, crn::PixelRGB(uint8_t(255), 0, 0));
 	// XXX
 
 	// create new line
-	auto newline = std::vector<Point2DDouble>{};
+	auto newline = std::vector<crn::Point2DDouble>{};
 	if (bx < l.GetData().front().X) // first point out of the line
 		newline.emplace_back(bx, l.GetData().front().Y);
 	else // first point in the line
 		newline.emplace_back(bx, l[bx]);
-	for (const Point2DDouble &p : l.GetData()) // middle points
+	for (const crn::Point2DDouble &p : l.GetData()) // middle points
 		if ((p.X > bx) && (p.X < ex))
 			newline.push_back(p);
 	if (newline.empty())
-		return SLinearInterpolation{};
+		return crn::SLinearInterpolation{};
 	if (ex > newline.back().X) // end point out of the line
 		newline.emplace_back(ex, newline.back().Y);
 	else // end point in the line
 		newline.emplace_back(ex, l[ex]);
 	if (newline.size() < 2)
-		return SLinearInterpolation{};
-	return std::make_shared<LinearInterpolation>(newline.begin(), newline.end());
+		return crn::SLinearInterpolation{};
+	return std::make_shared<crn::LinearInterpolation>(newline.begin(), newline.end());
 }
 
-struct LineSorter: public std::binary_function<const SLinearInterpolation&, const SLinearInterpolation&, bool>
+struct LineSorter: public std::binary_function<const crn::SLinearInterpolation&, const crn::SLinearInterpolation&, bool>
 {
-	inline bool operator()(const SLinearInterpolation &l1, const SLinearInterpolation &l2) const
+	inline bool operator()(const crn::SLinearInterpolation &l1, const crn::SLinearInterpolation &l2) const
 	{
 		return l1->GetData().front().Y < l2->GetData().front().Y;
 	}
@@ -281,25 +280,25 @@ struct LineSorter: public std::binary_function<const SLinearInterpolation&, cons
  * \param[in]	b	the block to analyze
  * \return	a vector of columns, columns being vectors of lines, a line being a LinearInterperlation
  */
-SVector ori::DetectLines(Block &b, const View &view)
+crn::SVector ori::DetectLines(crn::Block &b, const View &view)
 {
-	const size_t sw = StrokesWidth(*b.GetGray());
+	const size_t sw = b.GetGray()->GetStrokesWidth();
 	const size_t w = b.GetGray()->GetWidth();
 	const size_t h = b.GetGray()->GetHeight();
-	const size_t lspace1 = EstimateLeading(*b.GetGray());
+	const size_t lspace1 = b.GetGray()->EstimateLeading();
 	auto igr = b.GetGradient(true, double(sw)); // precompute with a huge sigma
 
 	//////////////////////////////////////////////////////////////
 	// Borders of the page
 	//////////////////////////////////////////////////////////////
 	// project horizontal gradients
-	auto cropbw = std::make_shared<ImageBW>(w, h, pixel::BWWhite);
-	for (auto tmp : Range(*igr))
-		if (igr->IsSignificant(tmp) && ((AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::LEFT) < 32) ||
-				(AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::RIGHT) < 32)))
-			cropbw->At(tmp) = pixel::BWBlack;
+	auto cropbw = std::make_shared<crn::ImageBW>(w, h, crn::PixelBW::WHITE);
+	FOREACHPIXEL(tmp, *igr)
+		if (igr->IsSignificant(tmp) && ((crn::AngularDistance(crn::Angle<crn::ByteAngle>{igr->GetThetaPixels()[tmp]}, crn::Angle<crn::ByteAngle>::LEFT) < 32) ||
+				(crn::AngularDistance(crn::Angle<crn::ByteAngle>{igr->GetThetaPixels()[tmp]}, crn::Angle<crn::ByteAngle>::RIGHT) < 32)))
+			cropbw->SetPixel(tmp, crn::PixelBW::BLACK);
 
-	auto vproj = VerticalProjection(*cropbw);
+	auto vproj = cropbw->MakeVerticalProjection();
 	// look for big mods
 	vproj.AverageSmoothing(sw / 2);
 	auto vmodes = vproj.Modes();
@@ -309,22 +308,22 @@ SVector ori::DetectLines(Block &b, const View &view)
 			okmodes.push_back(m);
 
 	// copy horizontal gradients crossing the big mods to the mask
-	auto cropb = Block::New(cropbw);
+	auto cropb = crn::Block::New(cropbw);
 	auto cropmap = cropb->ExtractCC(U"cc");
 	auto ccs = cropb->GetTree(U"cc");
-	auto enmask = ImageBW(w, h, pixel::BWBlack);
+	auto enmask(std::make_unique<crn::ImageBW>(w, h, crn::PixelBW::BLACK));
 	if (ccs)
 		for (const auto &o : *ccs)
 		{
-			auto cc = std::static_pointer_cast<Block>(o);
+			auto cc = std::static_pointer_cast<crn::Block>(o);
 			auto num = cc->GetName().ToInt();
 			for (auto x : okmodes)
 				if (cc->GetAbsoluteBBox().Contains(int(x), cc->GetAbsoluteBBox().GetCenterY()))
 				{
 					for (const auto &p : cc->GetAbsoluteBBox())
-						if (cropmap->At(p.X, p.Y) == num)
+						if (cropmap->GetPixel(p.X, p.Y) == num)
 						{
-							enmask.At(p.X, p.Y) = pixel::BWWhite;
+							enmask->SetPixel(p.X, p.Y, crn::PixelBW::WHITE);
 						}
 					break;
 				}
@@ -338,18 +337,19 @@ SVector ori::DetectLines(Block &b, const View &view)
 	const size_t nw = w / xdiv;
 	const size_t nh = h / ydiv;
 	const size_t lspace = lspace1 / ydiv;
-	ImageIntGray ig(nw, nh);
-	std::vector<Angle<ByteAngle>> hues; // used to compute mean hue
+	crn::ImageIntGray ig(nw, nh);
+	std::vector<crn::Angle<crn::ByteAngle>> hues; // used to compute mean hue
+	crn::UPixelRGB rgbpix(static_cast<crn::PixelRGB*>(b.GetRGB()->MakePixel(0).release()));
 	for (size_t y = 0; y < nh; ++y)
 		for (size_t x = 0; x < nw; ++x)
 		{
 			int mval = 255;
 			//int mval = 0;
 			size_t okx = x * xdiv, oky = y * ydiv;
-			for (size_t ty = y * ydiv; ty < Min(h, (y + 1) * ydiv); ++ty)
-				for (size_t tx = x * xdiv; tx < Min(w, (x + 1) * xdiv); ++tx)
+			for (size_t ty = y * ydiv; ty < crn::Min(h, (y + 1) * ydiv); ++ty)
+				for (size_t tx = x * xdiv; tx < crn::Min(w, (x + 1) * xdiv); ++tx)
 				{
-					int v = b.GetGray()->At(tx, ty);
+					int v = b.GetGray()->GetPixel(tx, ty);
 					//int v = igr->GetRhoPixels()[tx + ty * w];
 					if (v < mval)
 					//if (v > mval)
@@ -360,46 +360,51 @@ SVector ori::DetectLines(Block &b, const View &view)
 					}
 				}
 			// thumbnail
-			ig.At(x, y) = mval;
+			ig.SetPixel(x, y, mval);
 			// hue
-			pixel::HSV hsvpix = b.GetRGB()->At(okx, oky);
-			hues.emplace_back(hsvpix.h);
+			b.GetRGB()->MovePixel(*rgbpix, okx, oky);
+			crn::PixelHSV hsvpix;
+			hsvpix.Set(*rgbpix);
+			hues.emplace_back(hsvpix.GetHue());
 		}
 	//ig.Negative();
 	// x smoothing
-	ig.Convolve(MatrixDouble::NewGaussianLine(10.0));
+	ig.Convolve(crn::MatrixDouble::NewGaussianLine(10.0));
 
 	//////////////////////////////////////////////////////////////
 	// compute enlightened marks' mask
 	//////////////////////////////////////////////////////////////
-	Angle<ByteAngle> meanhue = AngularMean(hues.begin(), hues.end());
-	int stdhue = 4 * int(sqrt(AngularVariance(hues.begin(), hues.end(), meanhue)));
+	crn::Angle<crn::ByteAngle> meanhue = crn::AngularMean(hues.begin(), hues.end());
+	int stdhue = 4 * int(sqrt(crn::AngularVariance(hues.begin(), hues.end(), meanhue)));
 	// create a mask of colored parts
-	SImageBW colormask(std::make_shared<ImageBW>(w, h, pixel::BWWhite));
-	for (auto tmp : Range(*b.GetRGB()))
+	crn::SImageBW colormask(std::make_shared<crn::ImageBW>(w, h, crn::PixelBW::WHITE));
+	rgbpix.reset(static_cast<crn::PixelRGB*>(b.GetRGB()->MakePixel(0).release()));
+	FOREACHPIXEL(tmp, *b.GetRGB())
 	{
-		pixel::HSV hsvpix(b.GetRGB()->At(tmp));
-		if (((hsvpix.s > 127) && (hsvpix.v > 127)) || // colorful
-				(AngularDistance(Angle<ByteAngle>(hsvpix.h), meanhue) > stdhue)) // not the main color
+		b.GetRGB()->MovePixel(*rgbpix, tmp);
+		crn::PixelHSV hsvpix;
+		hsvpix.Set(*rgbpix);
+		if (((hsvpix.GetSaturation() > 127) && (hsvpix.GetValue() > 127)) || // colorful
+				(crn::AngularDistance(crn::Angle<crn::ByteAngle>(hsvpix.GetHue()), meanhue) > stdhue)) // not the main color
 		{
-			colormask->At(tmp) = pixel::BWBlack;
+			colormask->SetPixel(tmp, crn::PixelBW::BLACK);
 		}
 	}
 	// filter the color mask
-	SBlock colorb(Block::New(colormask));
-	auto colormap = colorb->ExtractCC(U"cc");
+	crn::SBlock colorb(crn::Block::New(colormask));
+	crn::UImageIntGray colormap = colorb->ExtractCC(U"cc");
 	if (colorb->HasTree(U"cc"))
 	{
-		for (Block::block_iterator it = colorb->BlockBegin(U"cc"); it != colorb->BlockEnd(U"cc"); ++it)
+		for (crn::Block::block_iterator it = colorb->BlockBegin(U"cc"); it != colorb->BlockEnd(U"cc"); ++it)
 		{
 			int num = it.AsBlock()->GetName().ToInt();
 			if (/*(it->GetAbsoluteBBox().GetWidth() < 2 * sw) || */(it.AsBlock()->GetAbsoluteBBox().GetHeight() > 2 * lspace1))
 			{
-				for (Block::pixel_iterator pit = colorb->PixelBegin(it.AsBlock()); pit != colorb->PixelEnd(it.AsBlock()); ++pit)
+				for (crn::Block::pixel_iterator pit = colorb->PixelBegin(it.AsBlock()); pit != colorb->PixelEnd(it.AsBlock()); ++pit)
 				{
-					if (colormap->At(pit->X, pit->Y) == num)
+					if (colormap->GetPixel(pit->X, pit->Y) == num)
 					{
-						enmask.At(pit->X, pit->Y) = pixel::BWWhite;
+						enmask->SetPixel(pit->X, pit->Y, crn::PixelBW::WHITE);
 					}
 				}
 			}
@@ -414,101 +419,101 @@ SVector ori::DetectLines(Block &b, const View &view)
 		size_t bx = 0;
 		for (size_t x = 0; x < w; ++x)
 		{
-			if (enmask.At(x, y))
+			if (enmask->GetPixel(x, y))
 			{
-				b.GetRGB()->At(x, y) = {255, 255, 0};
+				b.GetRGB()->SetPixel(x, y, 255, 255, 0);
 				int diff = int(x) - int(bx);
 				if ((diff > 1) && (diff < lspace1/2))
 					for (size_t tx = bx + 1; tx < x; ++tx)
 					{
-						enmask.At(tx, y) = pixel::BWBlack;
-						b.GetRGB()->At(tx, y) = {255, 255, 0};
+						enmask->SetPixel(tx, y, 255);
+						b.GetRGB()->SetPixel(tx, y, 255, 255, 0);
 					}
 				bx = x;
 			}
 		}
 	}
-	//enmask.SavePNG("enmask.png"); // XXX display
+	//enmask->SavePNG("enmask.png"); // XXX display
 
 	//////////////////////////////////////////////////////////////
 	// vertical differential
 	//////////////////////////////////////////////////////////////
-	MatrixDouble ydiff(MatrixDouble::NewGaussianLineDerivative(double(lspace) / 6.0));
+	crn::MatrixDouble ydiff(crn::MatrixDouble::NewGaussianLineDerivative(double(lspace) / 6.0));
 	ydiff.Transpose();
 	ydiff.NormalizeForConvolution();
 	ig.Convolve(ydiff);
 
 	// Columns
-	std::vector<Rect> thumbzones(detectColumns(ig, view.GetColumns().size()));
-	for (const Rect &r : thumbzones)
+	std::vector<crn::Rect> thumbzones(detectColumns(ig, view.GetColumns().size()));
+	for (const crn::Rect &r : thumbzones)
 	{
 		for (size_t x = r.GetLeft() * xdiv; x < r.GetRight() * xdiv; ++x)
 			for (size_t y = 0; y < h; ++y)
-				b.GetRGB()->At(x, y).b = 0;
+				b.GetRGB()->GetBluePixels()[x + y * w] = 0;
 	}
 
 	//////////////////////////////////////////////////////////////
 	// find lines
 	//////////////////////////////////////////////////////////////
 	// create mask of line guides
-	auto mask = ImageBW{nw, nh, pixel::BWBlack};
+	auto mask = crn::ImageBW{nw, nh, crn::PixelBW::BLACK};
 	size_t maxig = 0;
-	for (auto tmp : Range(ig))
-		if (Abs(ig.At(tmp)) > maxig) maxig = Abs(ig.At(tmp));
-	auto linehist = Histogram{maxig + 1}; // histogram of absolute values of the vertical derivative
-	for (auto tmp : Range(ig))
-		linehist.IncBin(Abs(ig.At(tmp)));
+	FOREACHPIXEL(tmp, ig)
+		if (crn::Abs(ig.GetPixel(tmp)) > maxig) maxig = crn::Abs(ig.GetPixel(tmp));
+	auto linehist = crn::Histogram{maxig + 1}; // histogram of absolute values of the vertical derivative
+	FOREACHPIXEL(tmp, ig)
+		linehist.IncBin(crn::Abs(ig.GetPixel(tmp)));
 	auto linethresh = linehist.Fisher(); // derivative threshold
-	for (const Rect &tz : thumbzones)
+	for (const crn::Rect &tz : thumbzones)
 	{
 		for (size_t y = tz.GetTop(); y < tz.GetBottom() - 1; ++y)
 			for (size_t x = tz.GetLeft(); x < tz.GetRight(); ++x)
 			{ // inside each column
-				if ((ig.At(x, y) >= 0) && (ig.At(x, y + 1) < 0))
+				if ((ig.GetPixel(x, y) >= 0) && (ig.GetPixel(x, y + 1) < 0))
 				{ // found a point on a median line
 					bool ok = false;
-					for (size_t ty = Max((size_t)tz.GetTop(), y - lspace/4); ty < Min((size_t)tz.GetBottom(), y + lspace/4); ++ty)
-						if (Abs(ig.At(x, ty)) > linethresh)
+					for (size_t ty = crn::Max((size_t)tz.GetTop(), y - lspace/4); ty < crn::Min((size_t)tz.GetBottom(), y + lspace/4); ++ty)
+						if (crn::Abs(ig.GetPixel(x, ty)) > linethresh)
 						{ // found a significant gradient around the point
 							ok = true;
 							break;
 						}
 					if (ok)
-						mask.At(x, y) = pixel::BWWhite;
+						mask.SetPixel(x, y, crn::PixelBW::WHITE);
 				}
 			}
 	}
 
 	// extract lines
-	auto cols = std::make_shared<Vector>(Protocol::Serializable);
+	auto cols = std::make_shared<crn::Vector>(crn::Protocol::Serializable);
 	const int line_x_search = 20;
 	const int line_y_search = 10;
 	for (size_t tmpz = 0; tmpz < thumbzones.size(); ++tmpz)
 	{ // for each column
-		const Rect &tz(thumbzones[tmpz]);
-		auto protolines = std::vector<std::vector<Point2DInt>>{};
+		const crn::Rect &tz(thumbzones[tmpz]);
+		auto protolines = std::vector<std::vector<crn::Point2DInt>>{};
 		for (size_t x = tz.GetLeft(); x < tz.GetRight(); ++x)
 			for (size_t y = tz.GetTop(); y < tz.GetBottom(); ++y)
-				if (mask.At(x, y))
+				if (mask.GetPixel(x, y))
 				{
 					// found a line guide
-					mask.At(x, y) = pixel::BWBlack; // erase from mask
+					mask.SetPixel(x, y, 0); // erase from mask
 					size_t x1 = x;
 					size_t y1 = y;
 					bool found = true;
-					auto points = std::vector<Point2DInt>{};
+					auto points = std::vector<crn::Point2DInt>{};
 					points.emplace_back(int(x1 * xdiv), int(y1 * ydiv));
 					while (found)
 					{
 						found = false;
-						size_t by = Max(0, int(y1) - line_y_search);
-						size_t ey = Min(nh, y1 + line_y_search);
-						for (size_t x2 = x1; x2 < Min(size_t(tz.GetRight()), x1 + line_x_search); ++x2)
+						size_t by = crn::Max(0, int(y1) - line_y_search);
+						size_t ey = crn::Min(nh, y1 + line_y_search);
+						for (size_t x2 = x1; x2 < crn::Min(size_t(tz.GetRight()), x1 + line_x_search); ++x2)
 							for (size_t y2 = by; (y2 < ey) && !found; ++y2)
-								if (mask.At(x2, y2))
+								if (mask.GetPixel(x2, y2))
 								{
 									// found a line guide
-									mask.At(x2, y2) = pixel::BWBlack; // erase from mask
+									mask.SetPixel(x2, y2, 0); // erase from mask
 									y1 = y2;
 									x1 = x2;
 									points.emplace_back(int(x1 * xdiv), int(y1 * ydiv));
@@ -524,11 +529,11 @@ SVector ori::DetectLines(Block &b, const View &view)
 						{
 							if (protolines[tmp].back().X < points.front().X)
 							{
-								int ly1 = Min(protolines[tmp].front().Y, protolines[tmp].back().Y);
-								int ly2 = Max(protolines[tmp].front().Y, protolines[tmp].back().Y);
-								int py1 = Min(points.front().Y, points.back().Y);
-								int py2 = Max(points.front().Y, points.back().Y);
-								int dist = Min(ly2, py2) - Max(ly1, py1);
+								int ly1 = crn::Min(protolines[tmp].front().Y, protolines[tmp].back().Y);
+								int ly2 = crn::Max(protolines[tmp].front().Y, protolines[tmp].back().Y);
+								int py1 = crn::Min(points.front().Y, points.back().Y);
+								int py2 = crn::Max(points.front().Y, points.back().Y);
+								int dist = crn::Min(ly2, py2) - crn::Max(ly1, py1);
 								if (dist > -int(lspace1)) // TODO maybe /2
 									candidates.emplace(dist, tmp);
 							}
@@ -540,30 +545,30 @@ SVector ori::DetectLines(Block &b, const View &view)
 					}
 				}
 
-		auto lines = std::vector<SLinearInterpolation>{};
+		auto lines = std::vector<crn::SLinearInterpolation>{};
 		for (const auto &l : protolines)
-			lines.push_back(std::make_shared<LinearInterpolation>(l.begin(), l.end()));
+			lines.push_back(std::make_shared<crn::LinearInterpolation>(l.begin(), l.end()));
 
 		// compute thresholds
 		auto thresholds = std::vector<int>{};
-		for (const SLinearInterpolation &l : lines)
+		for (const crn::SLinearInterpolation &l : lines)
 		{
 			auto diff = std::vector<int>{};
 			for (int x = int(l->GetData().front().X); x <= int(l->GetData().back().X); ++x)
 			{
 				int ty = (*l)[x];
-				//diff.push_back(lumdiff(*b.GetGray(), x, ty, 0, int(3*sw), enmask));
-				diff.push_back(maxgrad(*igr, x, ty, 0, int(3*sw), enmask));
-				diff.push_back(mingrad(*igr, x, ty, 0, int(3*sw), enmask));
+				//diff.push_back(lumdiff(*b.GetGray(), x, ty, 0, int(3*sw), *enmask));
+				diff.push_back(maxgrad(*igr, x, ty, 0, int(3*sw), *enmask));
+				diff.push_back(mingrad(*igr, x, ty, 0, int(3*sw), *enmask));
 			}
-			//auto mM = TwoMeans(diff.begin(), diff.end());
+			//auto mM = crn::TwoMeans(diff.begin(), diff.end());
 			//thresholds.push_back((mM.first + mM.second) / 4); // XXX whhhhhhhhhhhhhhhhhhy /4 ???
 			thresholds.push_back(std::accumulate(diff.begin(), diff.end(), 0) / int(diff.size()));
 		}
-		//auto thr = TwoMeans(thresholds.begin(), thresholds.end()).second;
+		//auto thr = crn::TwoMeans(thresholds.begin(), thresholds.end()).second;
 
 		// cut lines
-		auto filteredlines = std::vector<SLinearInterpolation>{};
+		auto filteredlines = std::vector<crn::SLinearInterpolation>{};
 		for (size_t tmp = 0; tmp < lines.size(); ++tmp)
 		{
 			int left = int(tz.GetLeft() * xdiv);
@@ -573,17 +578,17 @@ SVector ori::DetectLines(Block &b, const View &view)
 			if (tmpz == thumbzones.size() - 1) right = b.GetAbsoluteBBox().GetRight(); // grow last zone to end
 			else right = int(right + thumbzones[tmpz + 1].GetLeft() * xdiv) / 2; // grow to half the distance to next zone
 
-			//auto fl = cut_line(*lines[tmp], b, sw, thr, enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
-			auto fl = cut_line(*lines[tmp], b, sw, thresholds[tmp], enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
+			//auto fl = cut_line(*lines[tmp], b, sw, thr, *enmask, crn::Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
+			auto fl = cut_line(*lines[tmp], b, sw, thresholds[tmp], *enmask, crn::Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
 			if (fl)
 				filteredlines.push_back(fl);
 
 			// XXX DISPLAY
 			for (int x = int(lines[tmp]->GetData().front().X); x < int(lines[tmp]->GetData().back().X); ++x)
-				b.GetRGB()->At(x, (*lines[tmp])[x]) = {0, 0, 255};
+				b.GetRGB()->SetPixel(x, (*lines[tmp])[x], 0, 0, 255);
 			if (fl)
 				for (int x = int(fl->GetData().front().X); x < int(fl->GetData().back().X); ++x)
-					b.GetRGB()->At(x, (*fl)[x]) = {0, 200, 0};
+					b.GetRGB()->SetPixel(x, (*fl)[x], 0, 200, 0);
 		}
 		lines.swap(filteredlines);
 
@@ -599,20 +604,20 @@ SVector ori::DetectLines(Block &b, const View &view)
 			auto distmat = std::vector<std::vector<double>>(lines.size(), std::vector<double>(lines.size(), 0.0));
 			for (size_t l1 = 0; l1 < lines.size(); ++l1)
 			{ // for each line
-				auto bx = Max(tz.GetLeft(), int(lines[l1]->GetData().front().X));
-				auto ex = Min(tz.GetRight(), int(lines[l1]->GetData().back().X));
+				auto bx = crn::Max(tz.GetLeft(), int(lines[l1]->GetData().front().X));
+				auto ex = crn::Min(tz.GetRight(), int(lines[l1]->GetData().back().X));
 				auto sig = std::vector<std::complex<double>>(fw, std::complex<double>{0.0, 0.0});
 				for (int x = bx; x <= ex; ++x)
-					sig[x - bx].real(b.GetGray()->At(x, (*lines[l1])[x]));
-				FFT(sig, true);
+					sig[x - bx].real(b.GetGray()->GetPixel(x, (*lines[l1])[x]));
+				crn::FFT(sig, true);
 				for (size_t l2 = l1 + 1; l2 < lines.size(); ++l2)
 				{
-					bx = Max(tz.GetLeft(), int(lines[l2]->GetData().front().X));
-					ex = Min(tz.GetRight(), int(lines[l2]->GetData().back().X));
+					bx = crn::Max(tz.GetLeft(), int(lines[l2]->GetData().front().X));
+					ex = crn::Min(tz.GetRight(), int(lines[l2]->GetData().back().X));
 					auto sig2 = std::vector<std::complex<double>>(fw, std::complex<double>{0.0, 0.0});
 					for (int x = bx; x <= ex; ++x)
-						sig2[x - bx].real(b.GetGray()->At(x, (*lines[l2])[x]));
-					FFT(sig2, true); // TODO optimize: compute only once
+						sig2[x - bx].real(b.GetGray()->GetPixel(x, (*lines[l2])[x]));
+					crn::FFT(sig2, true); // TODO optimize: compute only once
 
 					double d = 0.0;
 					for (size_t tmp = 0; tmp < fw; ++tmp)
@@ -626,7 +631,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 			std::transform(distmat.begin(), distmat.end(), lsum.begin(), 
 					[](const std::vector<double> &l){ return std::accumulate(l.begin(), l.end(), 0.0); });
 			
-			auto outmap = std::multimap<double, SLinearInterpolation>{};
+			auto outmap = std::multimap<double, crn::SLinearInterpolation>{};
 			for (size_t l1 = 0; l1 < lines.size(); ++l1)
 			{
 				//outmap.emplace(std::accumulate(distmat[l1].begin(), distmat[l1].end(), 0.0), lines[l1]);
@@ -642,11 +647,11 @@ SVector ori::DetectLines(Block &b, const View &view)
 				for (auto iit = it; iit != outmap.end(); ++iit)
 				{
 					for (int x = int(iit->second->GetData().front().X); x < int(iit->second->GetData().back().X); ++x)
-						b.GetRGB()->At(x, (*iit->second)[x]) = {255, 0, 0};
+						b.GetRGB()->SetPixel(x, (*iit->second)[x], 255, 0, 0);
 				}
 			}
 			outmap.erase(it, outmap.end());
-			auto newlines = std::vector<SLinearInterpolation>{};
+			auto newlines = std::vector<crn::SLinearInterpolation>{};
 			for (const auto &p : outmap)
 				newlines.push_back(p.second);
 			lines.swap(newlines);
@@ -654,7 +659,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 
 		if (!lines.empty())
 		{
-			auto linestart = std::vector<Point2DDouble>{};
+			auto linestart = std::vector<crn::Point2DDouble>{};
 			for (const auto l : lines)
 				linestart.emplace_back(l->GetData().front().Y, l->GetData().front().X);
 			if (linestart.size() > 3)
@@ -665,36 +670,36 @@ SVector ori::DetectLines(Block &b, const View &view)
 
 				// median line start
 				std::vector<double> posx;
-				for (const Point2DDouble &p : linestart)
+				for (const crn::Point2DDouble &p : linestart)
 				{
 					posx.push_back(p.Y);
 				}
 				std::sort(posx.begin(), posx.end());
 				double meanx = posx[posx.size() / 2];
-				b.GetRGB()->DrawLine(int(meanx), 0, int(meanx), b.GetAbsoluteBBox().GetBottom(), pixel::RGB8(0, 0, 255)); // XXX DISPLAY
+				b.GetRGB()->DrawLine(int(meanx), 0, int(meanx), b.GetAbsoluteBBox().GetBottom(), crn::PixelRGB(uint8_t(0), 0, 255)); // XXX DISPLAY
 				// keep only nearest lines starts
-				std::vector<Point2DDouble> linestart2;
-				for (const Point2DDouble &p : linestart)
+				std::vector<crn::Point2DDouble> linestart2;
+				for (const crn::Point2DDouble &p : linestart)
 				{
-					double d = Abs(p.Y - meanx);
+					double d = crn::Abs(p.Y - meanx);
 					if (d < lspace1 / 2) // heuristic :o(
 						linestart2.push_back(p);
 				}
 				if (linestart2.size() > 3)
 				{
-					PolynomialRegression reg(linestart2.begin(), linestart2.end(), 1);
-					b.GetRGB()->DrawLine(reg[0], 0, reg[b.GetAbsoluteBBox().GetBottom()], b.GetAbsoluteBBox().GetBottom(), pixel::RGB8(255, 0, 0)); // XXX DISPLAY
+					crn::PolynomialRegression reg(linestart2.begin(), linestart2.end(), 1);
+					b.GetRGB()->DrawLine(reg[0], 0, reg[b.GetAbsoluteBBox().GetBottom()], b.GetAbsoluteBBox().GetBottom(), crn::PixelRGB(uint8_t(255), 0, 0)); // XXX DISPLAY
 					// cut lines
-					for (SLinearInterpolation &l : lines)
+					for (crn::SLinearInterpolation &l : lines)
 					{
 						double margin = reg[l->GetData().front().Y];
 						double d = margin - l->GetData().front().X; // distance to regression of the margin
 						if (d > 2 * sw) // heuristic :o(
 						{
 							// the line goes too far, we're cutting it at the margin
-							std::vector<Point2DDouble> newline;
-							newline.emplace_back(Point2DDouble(margin, (*l)[margin]));
-							for (const Point2DDouble &p : l->GetData())
+							std::vector<crn::Point2DDouble> newline;
+							newline.emplace_back(crn::Point2DDouble(margin, (*l)[margin]));
+							for (const crn::Point2DDouble &p : l->GetData())
 							{
 								if (p.X > margin)
 									newline.push_back(p);
@@ -704,16 +709,16 @@ SVector ori::DetectLines(Block &b, const View &view)
 								newline = SimplifyCurve(newline, 0.005, 0.01);
 							else
 								newline = SimplifyCurve(l->GetData(), 0.005, 0.01);
-							l = std::make_shared<LinearInterpolation>(newline.begin(), newline.end());
+							l = std::make_shared<crn::LinearInterpolation>(newline.begin(), newline.end());
 							// TODO XXX ELSE WHAT ???
 							//filteredthresh[l] = thresh;
 
 							// XXX DISPLAY
-							Rect r(int(l->GetData().front().X) - 20, int(l->GetData().front().Y) - 20, int(l->GetData().front().X) + 20, int(l->GetData().front().Y) + 20);
-							for (const Point2DInt &p : r)
+							crn::Rect r(int(l->GetData().front().X) - 20, int(l->GetData().front().Y) - 20, int(l->GetData().front().X) + 20, int(l->GetData().front().Y) + 20);
+							for (const crn::Point2DInt &p : r)
 							{
-								b.GetRGB()->At(p.X, p.Y).g = 0;
-								b.GetRGB()->At(p.X, p.Y).b = 0;
+								b.GetRGB()->GetGreenPixels()[p.X + p.Y * w] = 0;
+								b.GetRGB()->GetBluePixels()[p.X + p.Y * w] = 0;
 							}
 						}
 					}
@@ -725,8 +730,8 @@ SVector ori::DetectLines(Block &b, const View &view)
 			//////////////
 			LineSorter sorter;
 			std::sort(lines.begin(), lines.end(), sorter);
-			SVector col(std::make_shared<Vector>(Protocol::Serializable));
-			for (const SLinearInterpolation &l : lines)
+			crn::SVector col(std::make_shared<crn::Vector>(crn::Protocol::Serializable));
+			for (const crn::SLinearInterpolation &l : lines)
 				col->PushBack(std::make_shared<ori::GraphicalLine>(l, lspace1/*, filteredthresh[l]*/));
 			cols->PushBack(col);
 		}
@@ -747,17 +752,17 @@ template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, doubl
 		{
 			size_t jump = 6;
 			size_t id_end = simplified_line.size() - 1;
-			Angle<Radian> angle1 = Angle<Radian>::Atan(simplified_line[id_end].Y-simplified_line[id_end - 1].Y, simplified_line[id_end].X-simplified_line[id_end - 1].X);
+			crn::Angle<crn::Radian> angle1 = crn::Angle<crn::Radian>::Atan(simplified_line[id_end].Y-simplified_line[id_end - 1].Y, simplified_line[id_end].X-simplified_line[id_end - 1].X);
 			for (size_t n = 0; n < 4; ++n)
 			{
-				Angle<Radian> angle2 = Angle<Radian>::Atan(line[id + n + 1].Y-simplified_line[id_end].Y, line[id + n + 1].X-simplified_line[id_end].X);
-				Angle<Radian> disangle = AngularDistance(angle1, angle2);
-				double di = sqrt(Sqr(line[id + n + 1].Y-simplified_line[id_end].Y) + Sqr(line[id + n + 1].X-simplified_line[id_end].X))*sin(disangle.value);
+				crn::Angle<crn::Radian> angle2 = crn::Angle<crn::Radian>::Atan(line[id + n + 1].Y-simplified_line[id_end].Y, line[id + n + 1].X-simplified_line[id_end].X);
+				crn::Angle<crn::Radian> disangle = crn::AngularDistance(angle1, angle2);
+				double di = sqrt(crn::Sqr(line[id + n + 1].Y-simplified_line[id_end].Y) + crn::Sqr(line[id + n + 1].X-simplified_line[id_end].X))*sin(disangle.value);
 
 				size_t last = simplified_line.size() - 1;
-				Angle<Radian> angleA = Angle<Radian>::Atan(simplified_line[last].Y-simplified_line[last - 1].Y, simplified_line[last].X-simplified_line[last - 1].X);
-				Angle<Radian> angleB = Angle<Radian>::Atan(line[id + n + 1].Y-simplified_line[last].Y, line[id + n + 1].X-simplified_line[last].X);
-				Angle<Radian> disan = AngularDistance(angleA, angleB);
+				crn::Angle<crn::Radian> angleA = crn::Angle<crn::Radian>::Atan(simplified_line[last].Y-simplified_line[last - 1].Y, simplified_line[last].X-simplified_line[last - 1].X);
+				crn::Angle<crn::Radian> angleB = crn::Angle<crn::Radian>::Atan(line[id + n + 1].Y-simplified_line[last].Y, line[id + n + 1].X-simplified_line[last].X);
+				crn::Angle<crn::Radian> disan = crn::AngularDistance(angleA, angleB);
 				if (disan.value < d)
 				{
 					simplified_line.back() = line[id+ n +1];
@@ -786,32 +791,32 @@ template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, doubl
 	return simplified_line;
 }
 
-std::vector<Point2DInt> ori::SimplifyCurve(const std::vector<Point2DInt> &line, double dist, double d)
+std::vector<crn::Point2DInt> ori::SimplifyCurve(const std::vector<crn::Point2DInt> &line, double dist, double d)
 {
 	return doSimplify(line, dist, d);
 }
 
-std::vector<Point2DDouble> ori::SimplifyCurve(const std::vector<Point2DDouble> &line, double dist, double d)
+std::vector<crn::Point2DDouble> ori::SimplifyCurve(const std::vector<crn::Point2DDouble> &line, double dist, double d)
 {
 	return doSimplify(line, dist, d);
 }
 
 using namespace ori;
-GraphicalLine::GraphicalLine(const SLinearInterpolation &lin, size_t lineheight):
+GraphicalLine::GraphicalLine(const crn::SLinearInterpolation &lin, size_t lineheight):
 	midline(lin),
 	lh(lineheight)
 {
 	if (!lin)
-		throw ExceptionInvalidArgument {};
+		throw crn::ExceptionInvalidArgument {};
 	if (lin->GetData().empty())
-		throw ExceptionInvalidArgument {};
+		throw crn::ExceptionInvalidArgument {};
 }
 
 /*! Gets the signature string of the line
  * \param[in]	b	the image of the whole view
  * \return	a list of signature elements
  */
-std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
+std::vector<ImageSignature> GraphicalLine::ExtractFeatures(crn::Block &b) const
 {
 	if (!features.empty())
 		return features; // do not recompute
@@ -821,15 +826,15 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	int ex = GetBack().X;
 	int by = GetFront().Y - int(lh/2);
 	int ey = GetBack().Y + int(lh/2);
-	SBlock lb = b.AddChildAbsolute(U"lines", Rect(bx, by, ex, ey));
+	crn::SBlock lb = b.AddChildAbsolute(U"lines", crn::Rect(bx, by, ex, ey));
 
-	Differential diff(Differential::NewGaussian(*lb->GetRGB(), Differential::RGBProjection::ABSMAX, 0));
-	size_t sw = StrokesWidth(*b.GetGray());
+	crn::Differential diff(crn::Differential::NewGaussian(*lb->GetRGB(), crn::Differential::RGBProjection::ABSMAX, 0));
+	size_t sw = b.GetGray()->GetStrokesWidth();
 	diff.Diffuse(sw*1);
-	ImageGradient igr(diff.MakeImageGradient());
+	crn::UImageGradient igr(diff.MakeImageGradient());
 
 	// compute horizontal strokes (points between left and right gradients)
-	ImageBW strokes(igr.GetWidth(), igr.GetHeight(), pixel::BWBlack);
+	crn::ImageBW strokes(igr->GetWidth(), igr->GetHeight(), crn::PixelBW::BLACK);
 	const size_t iw = strokes.GetWidth();
 	const size_t ih = strokes.GetHeight();
 	for (int y = 0; y < ih; ++y)
@@ -838,9 +843,9 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 		bool in = false;
 		for (int x = 0; x < iw; ++x)
 		{
-			if (igr.IsSignificant(x, y))
+			if (igr->IsSignificant(x, y))
 			{
-				int a = (igr.At(x, y).theta + Angle<ByteAngle>(32)).value / 64; // 4 angles (add 32 to rotate the frame 45°)
+				int a = (igr->GetTheta(x, y) + crn::Angle<crn::ByteAngle>(32)).value / 64; // 4 angles (add 32 to rotate the frame 45°)
 				if (a == 0) // left
 				{
 					sx = x;
@@ -853,7 +858,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 						// fill
 						for (size_t tx = sx; tx <= x; ++tx)
 						{
-							strokes.At(tx, y) = pixel::BWWhite;
+							strokes.SetPixel(tx, y, crn::PixelBW::WHITE);
 							//lb->GetRGB()->SetPixel(tx, y, 255, 255, 255); // XXX display
 						}
 					}
@@ -870,15 +875,15 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	//strokes.SavePNG("art strokes.png");
 
 	// project pixels between opposing horizontal gradients, above an below the midline
-	Histogram projt(iw);
-	Histogram projb(iw);
+	crn::Histogram projt(iw);
+	crn::Histogram projb(iw);
 	//int precx = 0, precy1 = 0, precy2 = 0; // XXX display
 	for (int x = 0; x < iw; ++x)
 	{
 		int y = At(x + bx) - by;
 		for (int dy = -int(lh/2); dy < int(lh/2); ++dy)
 		{
-			if (strokes.At(x, Cap(y + dy, 0, int(ih) - 1)))
+			if (strokes.GetPixel(x, crn::Cap(y + dy, 0, int(ih) - 1)))
 			{
 				if (dy < 0)
 					projt.IncBin(x);
@@ -889,17 +894,17 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 
 		/*
 		// XXX display
-		lb->GetRGB()->SetPixel(x, Max(0, y - int(projt[x])), 255, 0, 255);
-		lb->GetRGB()->SetPixel(x, Min(int(ih) - 1, y + int(projb[x])), 255, 0, 255);
+		lb->GetRGB()->SetPixel(x, crn::Max(0, y - int(projt[x])), 255, 0, 255);
+		lb->GetRGB()->SetPixel(x, crn::Min(int(ih) - 1, y + int(projb[x])), 255, 0, 255);
 		*/
 
 		/*
 		// XXX display
 		if (precy1 == 0) precy1 = y;
 		if (precy2 == 0) precy2 = y;
-		lb->GetRGB()->DrawLine(precx, precy1, x, Max(0, y - int(projt[x])), PixelRGB(uint8_t(255), 255, 255));
-		lb->GetRGB()->DrawLine(precx, precy2, x, Min(int(ih) - 1, y + int(projb[x])), PixelRGB(uint8_t(255), 255, 255));
-		precx = x; precy1 = Max(0, y - int(projt[x])); precy2 = Min(int(ih) - 1, y + int(projb[x]));
+		lb->GetRGB()->DrawLine(precx, precy1, x, crn::Max(0, y - int(projt[x])), crn::PixelRGB(uint8_t(255), 255, 255));
+		lb->GetRGB()->DrawLine(precx, precy2, x, crn::Min(int(ih) - 1, y + int(projb[x])), crn::PixelRGB(uint8_t(255), 255, 255));
+		precx = x; precy1 = crn::Max(0, y - int(projt[x])); precy2 = crn::Min(int(ih) - 1, y + int(projb[x]));
 		*/
 	}
 	//lb->GetRGB()->SavePNG("art proj.png");
@@ -913,9 +918,9 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	/*
 		 lb->FlushRGB();
 		 CRN_FOREACH(size_t x, modest) // XXX display
-		 lb->GetRGB()->DrawLine(x, 0, x, At(bx + int(x)) - by, PixelRGB(uint8_t(0), 0, 255));
+		 lb->GetRGB()->DrawLine(x, 0, x, At(bx + int(x)) - by, crn::PixelRGB(uint8_t(0), 0, 255));
 		 CRN_FOREACH(size_t x, modesb) // XXX display
-		 lb->GetRGB()->DrawLine(x, At(bx + int(x)) - by, x, ih - 1, PixelRGB(uint8_t(0), 0, 255));
+		 lb->GetRGB()->DrawLine(x, At(bx + int(x)) - by, x, ih - 1, crn::PixelRGB(uint8_t(0), 0, 255));
 		 */
 	/*
 	// XXX display
@@ -928,8 +933,8 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	}
 	for (size_t x = 1; x < projt.Size(); ++x)
 	{
-	b.GetRGB()->DrawLine(bx + x - 1, At(bx + int(x)) - (projt[x - 1] - mint) / 255, bx + x, At(bx + int(x)) - (projt[x] - mint) / 255, PixelRGB(uint8_t(255), 0, 255));
-	b.GetRGB()->DrawLine(bx + x - 1, At(bx + int(x)) + (projb[x - 1] - minb) / 255, bx + x, At(bx + int(x)) + (projb[x] - minb) / 255, PixelRGB(uint8_t(255), 0, 255));
+	b.GetRGB()->DrawLine(bx + x - 1, At(bx + int(x)) - (projt[x - 1] - mint) / 255, bx + x, At(bx + int(x)) - (projt[x] - mint) / 255, crn::PixelRGB(uint8_t(255), 0, 255));
+	b.GetRGB()->DrawLine(bx + x - 1, At(bx + int(x)) + (projb[x - 1] - minb) / 255, bx + x, At(bx + int(x)) + (projb[x] - minb) / 255, crn::PixelRGB(uint8_t(255), 0, 255));
 	}
 	// XXX display
 	*/
@@ -939,7 +944,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	for (size_t x = 0; x < iw; ++x)
 	{
 		int y = At(int(x) + bx) - by;
-		if (strokes.At(x, y))
+		if (strokes.GetPixel(x, y))
 		{
 			centerguide[x] = true;
 			//lb->GetRGB()->SetPixel(x, y, 0, 0, 0); // XXX display
@@ -1028,7 +1033,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 				size_t p = 0;
 				for (size_t xx : s.second)
 				{
-					int d = Abs(int(x) - int(xx));
+					int d = crn::Abs(int(x) - int(xx));
 					if (d < dmin)
 					{
 						dmin = d;
@@ -1045,7 +1050,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 				size_t p = 0;
 				for (size_t xx : s.first)
 				{
-					int d = Abs(int(x) - int(xx));
+					int d = crn::Abs(int(x) - int(xx));
 					if (d < dmin)
 					{
 						dmin = d;
@@ -1091,23 +1096,23 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 
 	static int dnum = 0;
 	// dots
-	ImageDoubleGray lvv(diff.MakeLvv());
-	SImageBW lvvmask(std::make_shared<ImageBW>(iw, ih));
-	SImageBW anglemask(std::make_shared<ImageBW>(iw, ih, 255));
-	SImageBW angle2mask(std::make_shared<ImageBW>(iw, ih, 255));
+	crn::UImageDoubleGray lvv(diff.MakeLvv());
+	crn::SImageBW lvvmask(std::make_shared<crn::ImageBW>(iw, ih));
+	crn::SImageBW anglemask(std::make_shared<crn::ImageBW>(iw, ih, 255));
+	crn::SImageBW angle2mask(std::make_shared<crn::ImageBW>(iw, ih, 255));
 	for (size_t x = 0; x < iw; ++x)
 	{
 		int basey = At(int(x) + bx) - by;
-		for (size_t y = Max(size_t(0), basey - lh / 2); y < Min(ih - 1, basey + lh / 2); ++y)
+		for (size_t y = crn::Max(size_t(0), basey - lh / 2); y < crn::Min(ih - 1, basey + lh / 2); ++y)
 		{
-			lvvmask->At(x, y) = (lvv.At(x, y) > 0) && diff.IsSignificant(x, y) ? pixel::BWBlack : pixel::BWWhite;
+			lvvmask->SetPixel(x, y, (lvv->GetPixel(x, y) > 0) && diff.IsSignificant(x, y) ? crn::PixelBW::BLACK : crn::PixelBW::WHITE);
 			if (diff.IsSignificant(x, y))
 			{
-				int a = (igr.At(x, y).theta + Angle<ByteAngle>(32)).value / 64;
+				int a = (igr->GetTheta(x, y) + crn::Angle<crn::ByteAngle>(32)).value / 64;
 				if (a == 0)
-					anglemask->At(x, y) = pixel::BWBlack;
+					anglemask->SetPixel(x, y, 0);
 				else if (a == 2)
-					angle2mask->At(x, y) = pixel::BWBlack;
+					angle2mask->SetPixel(x, y, 0);
 			}
 		}
 	}
@@ -1117,22 +1122,22 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	//lb->GetBW()->SavePNG("art lvv mask.png");
 	//lb->FlushRGB();
 
-	UImageIntGray lvvmap = lb->ExtractCC(U"lvv");
+	crn::UImageIntGray lvvmap = lb->ExtractCC(U"lvv");
 	if (lb->HasTree(U"lvv"))
 	{
 		lb->FilterMinAnd(U"lvv", sw * 2, sw * 2); // TODO tweak that… if there is no noise, make it lower
-		for (const SObject &o : lb->GetTree(U"lvv"))
+		for (const crn::SObject &o : lb->GetTree(U"lvv"))
 		{
-			SBlock llb(std::static_pointer_cast<Block>(o));
+			crn::SBlock llb(std::static_pointer_cast<crn::Block>(o));
 			int id = llb->GetName().ToInt();
-			Rect bbox(llb->GetRelativeBBox());
+			crn::Rect bbox(llb->GetRelativeBBox());
 			std::vector<size_t> histo(8, 0);
 			size_t tot = 0;
-			for (const Point2DInt &p : bbox)
+			for (const crn::Point2DInt &p : bbox)
 			{
-				if (!lvvmask->At(p.X, p.Y) && diff.IsSignificant(p.X, p.Y))
+				if (!lvvmask->GetPixel(p.X, p.Y) && diff.IsSignificant(p.X, p.Y))
 				{
-					histo[(igr.At(p.X, p.Y).theta + Angle<ByteAngle>(32)).value / 32] += 1;
+					histo[(igr->GetTheta(p.X, p.Y) + crn::Angle<crn::ByteAngle>(32)).value / 32] += 1;
 					tot += 1;
 				}
 			}
@@ -1142,16 +1147,16 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 			{
 				double mse = 0;
 				for (size_t cnt : histo)
-					mse += Sqr(0.125 - double(cnt) / double(tot));
+					mse += crn::Sqr(0.125 - double(cnt) / double(tot));
 				mse /= double(histo.size());
 				if ((sqrt(mse) <= 0.05) && (double(tot) >= bbox.GetArea() / 2)) // a diamond is half the area of its bounding box
 				{
 					for (int x = bbox.GetLeft(); x <= bbox.GetRight(); ++x)
 						presig[x] = '.';
-					//lb->GetRGB()->DrawRect(bbox, PixelRGB(uint8_t(0), 0, 255)); // XXX display
-					//ImageRGB out;
-					//out.InitFromImage(*b.GetRGB(), Rect(bx + bbox.GetLeft() - int(lh)/2, by + bbox.GetTop() - int(lh)/2, bx + bbox.GetRight() + int(lh)/2, by + bbox.GetBottom() + int(lh)/2));
-					//out.SavePNG(Path("dots/") + dnum++ + Path(".png"));
+					//lb->GetRGB()->DrawRect(bbox, crn::PixelRGB(uint8_t(0), 0, 255)); // XXX display
+					//crn::ImageRGB out;
+					//out.InitFromImage(*b.GetRGB(), crn::Rect(bx + bbox.GetLeft() - int(lh)/2, by + bbox.GetTop() - int(lh)/2, bx + bbox.GetRight() + int(lh)/2, by + bbox.GetBottom() + int(lh)/2));
+					//out.SavePNG(crn::Path("dots/") + dnum++ + crn::Path(".png"));
 				}
 			}
 		}
@@ -1167,22 +1172,22 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	//lb->GetBW()->SavePNG("art angle mask.png");
 	//lb->FlushRGB();
 
-	UImageIntGray anglemap = lb->ExtractCC(U"angle");
+	crn::UImageIntGray anglemap = lb->ExtractCC(U"angle");
 	if (lb->HasTree(U"angle"))
 	{
 		lb->FilterMinAnd(U"angle", sw * 2, sw * 2);
 		lb->FilterMinOr(U"angle", sw, sw);
-		for (const SObject &o : lb->GetTree(U"angle"))
+		for (const crn::SObject &o : lb->GetTree(U"angle"))
 		{
-			SBlock llb(std::static_pointer_cast<Block>(o));
+			crn::SBlock llb(std::static_pointer_cast<crn::Block>(o));
 			int id = llb->GetName().ToInt();
-			Rect bbox(llb->GetRelativeBBox());
+			crn::Rect bbox(llb->GetRelativeBBox());
 			size_t cave = 0, vex = 0;
-			for (const Point2DInt &p : bbox)
+			for (const crn::Point2DInt &p : bbox)
 			{
-				if (anglemap->At(p.X, p.Y) == id)
+				if (anglemap->GetPixel(p.X, p.Y) == id)
 				{
-					if (lvv.At(p.X, p.Y) >= 0.0)
+					if (lvv->GetPixel(p.X, p.Y) >= 0.0)
 						vex += 1;
 					else
 						cave += 1;
@@ -1195,18 +1200,18 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 				uint8_t r(255);
 				if (double(vex) / double(tot) > 0.75)
 				{
-					//ImageRGB out;
-					//out.InitFromImage(*b.GetRGB(), Rect(bx + bbox.GetLeft() - int(lh)/2, by + bbox.GetTop() - int(lh)/2, bx + bbox.GetRight() + int(lh)/2, by + bbox.GetBottom() + int(lh)/2));
-					for (const Point2DInt &p : bbox)
+					//crn::ImageRGB out;
+					//out.InitFromImage(*b.GetRGB(), crn::Rect(bx + bbox.GetLeft() - int(lh)/2, by + bbox.GetTop() - int(lh)/2, bx + bbox.GetRight() + int(lh)/2, by + bbox.GetBottom() + int(lh)/2));
+					for (const crn::Point2DInt &p : bbox)
 					{
-						if (anglemap->At(p.X, p.Y) == id)
+						if (anglemap->GetPixel(p.X, p.Y) == id)
 						{
 							presig[p.X] = '(';
 							//lb->GetRGB()->SetPixel(p.X, p.Y, 0, 0, r); // XXX display
 							//out.SetPixel(p.X - bbox.GetLeft() + lh/2, p.Y - bbox.GetTop() + lh/2, 255, 0, 255);
 						}
 					}
-					//out.SavePNG(Path("left/") + lnum++ + Path(".png"));
+					//out.SavePNG(crn::Path("left/") + lnum++ + crn::Path(".png"));
 				}
 			}
 		}
@@ -1220,17 +1225,17 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	{
 		lb->FilterMinAnd(U"angle2", sw * 2, sw * 2);
 		lb->FilterMinOr(U"angle2", sw, sw);
-		for (const SObject &o : lb->GetTree(U"angle2"))
+		for (const crn::SObject &o : lb->GetTree(U"angle2"))
 		{
-			SBlock llb(std::static_pointer_cast<Block>(o));
+			crn::SBlock llb(std::static_pointer_cast<crn::Block>(o));
 			int id = llb->GetName().ToInt();
-			Rect bbox(llb->GetRelativeBBox());
+			crn::Rect bbox(llb->GetRelativeBBox());
 			size_t cave = 0, vex = 0;
-			for (const Point2DInt &p : bbox)
+			for (const crn::Point2DInt &p : bbox)
 			{
-				if (anglemap->At(p.X, p.Y) == id)
+				if (anglemap->GetPixel(p.X, p.Y) == id)
 				{
-					if (lvv.At(p.X, p.Y) >= 0.0)
+					if (lvv->GetPixel(p.X, p.Y) >= 0.0)
 						vex += 1;
 					else
 						cave += 1;
@@ -1243,18 +1248,18 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 				uint8_t r(255);
 				if (double(vex) / double(tot) > 0.75)
 				{
-					//ImageRGB out;
-					//out.InitFromImage(*b.GetRGB(), Rect(bx + bbox.GetLeft() - int(lh)/2, by + bbox.GetTop() - int(lh)/2, bx + bbox.GetRight() + int(lh)/2, by + bbox.GetBottom() + int(lh)/2));
-					for (const Point2DInt &p : bbox)
+					//crn::ImageRGB out;
+					//out.InitFromImage(*b.GetRGB(), crn::Rect(bx + bbox.GetLeft() - int(lh)/2, by + bbox.GetTop() - int(lh)/2, bx + bbox.GetRight() + int(lh)/2, by + bbox.GetBottom() + int(lh)/2));
+					for (const crn::Point2DInt &p : bbox)
 					{
-						if (anglemap->At(p.X, p.Y) == id)
+						if (anglemap->GetPixel(p.X, p.Y) == id)
 						{
 							presig[p.X] = ')';
 							//lb->GetRGB()->SetPixel(p.X, p.Y, 0, 0, r); // XXX display
 							//out.SetPixel(p.X - bbox.GetLeft() + lh/2, p.Y - bbox.GetTop() + lh/2, 0, 255, 255);
 						}
 					}
-					//out.SavePNG(Path("right/") + rnum++ + Path(".png"));
+					//out.SavePNG(crn::Path("right/") + rnum++ + crn::Path(".png"));
 				}
 			}
 		}
@@ -1262,7 +1267,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 
 	// enlarge the remaining small and long vertical strokes
 	auto tmpsig = presig;
-	for (const auto x : Range(presig))
+	for (const auto x : crn::Range(presig))
 	{
 		if ((presig[x] == '\'') || (presig[x] == 'l') || (presig[x] == ','))
 			for (size_t dx = 1; dx <= sw/2; ++dx)
@@ -1296,12 +1301,12 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 			if (prevs != presig[x])
 			{
 				prevs = presig[x];
-				sig.emplace_back(ImageSignature(Rect(orix, oriy - int(lh / 2), orix, oriy + int(lh / 2)), presig[x]));
+				sig.emplace_back(ImageSignature(crn::Rect(orix, oriy - int(lh / 2), orix, oriy + int(lh / 2)), presig[x]));
 			}
 			else
 			{
-				sig.back().bbox |= Rect(orix, oriy - int(lh / 2));
-				sig.back().bbox |= Rect(orix, oriy + int(lh / 2));
+				sig.back().bbox |= crn::Rect(orix, oriy - int(lh / 2));
+				sig.back().bbox |= crn::Rect(orix, oriy + int(lh / 2));
 			}
 		}
 		else
@@ -1323,7 +1328,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 		{
 			int s = 0;
 			for (int y = y1; y <= y2; ++y)
-				s += b.GetGray()->At(x, y);
+				s += b.GetGray()->GetPixel(x, y);
 			if (s > lsum)
 			{
 				lsum = s;
@@ -1365,15 +1370,15 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 				break;
 		}
 		/*
-			 CRN_FOREACH(const Point2DInt &p, is.bbox)
+			 CRN_FOREACH(const crn::Point2DInt &p, is.bbox)
 			 if ((p.X + p.Y) % 2)
-			 lb->GetRGB()->SetPixel(Cap(p.X - bx, 0, iw - 1), Cap(p.Y - by, 0, ih - 1), re, gr, bl);
+			 lb->GetRGB()->SetPixel(crn::Cap(p.X - bx, 0, iw - 1), crn::Cap(p.Y - by, 0, ih - 1), re, gr, bl);
 			 */
-		b.GetRGB()->DrawRect(is.bbox, PixelRGB(re, gr, bl), false);
+		b.GetRGB()->DrawRect(is.bbox, crn::PixelRGB(re, gr, bl), false);
 		/*
-			 Rect tbox(is.bbox);
+			 crn::Rect tbox(is.bbox);
 			 tbox.Translate(-bx, -by);
-			 lb->GetRGB()->DrawRect(tbox, PixelRGB(re, gr, bl), false);
+			 lb->GetRGB()->DrawRect(tbox, crn::PixelRGB(re, gr, bl), false);
 			 */
 	}
 #endif
@@ -1383,7 +1388,7 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	{
 		auto cumul = 0;
 		for (auto y = s.bbox.GetTop(); y <= s.bbox.GetBottom(); ++y)
-			cumul += b.GetGray()->At(s.bbox.GetLeft(), y); // TODO do better
+			cumul += b.GetGray()->GetPixel(s.bbox.GetLeft(), y); // TODO do better
 		s.cutproba = uint8_t(cumul / s.bbox.GetHeight());
 	}
 
@@ -1397,24 +1402,24 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 	return sig;
 }
 
-void GraphicalLine::deserialize(xml::Element &el)
+void GraphicalLine::deserialize(crn::xml::Element &el)
 {
-	xml::Element lel(el.GetFirstChildElement("LinearInterpolation"));
-	SLinearInterpolation lin(std::static_pointer_cast<LinearInterpolation>(SObject(DataFactory::CreateData(lel)))); // might throw
+	crn::xml::Element lel(el.GetFirstChildElement("LinearInterpolation"));
+	crn::SLinearInterpolation lin(std::static_pointer_cast<crn::LinearInterpolation>(crn::SObject(crn::DataFactory::CreateData(lel)))); // might throw
 	int nlh = el.GetAttribute<int>("lh", false); // might throw
 	midline = lin;
 	lh = nlh;
-	xml::Element fel(el.GetFirstChildElement("signature"));
+	crn::xml::Element fel(el.GetFirstChildElement("signature"));
 	if (fel)
 	{
 		try
 		{
 			std::vector<ImageSignature> sig;
-			for (xml::Element sel = fel.BeginElement(); sel != fel.EndElement(); ++sel)
+			for (crn::xml::Element sel = fel.BeginElement(); sel != fel.EndElement(); ++sel)
 			{
-				Rect r;
+				crn::Rect r;
 				r.Deserialize(sel);
-				sig.emplace_back(ImageSignature(r, sel.GetAttribute<StringUTF8>("code")[0], uint8_t(sel.GetAttribute<int>("cutproba", true))));
+				sig.emplace_back(ImageSignature(r, sel.GetAttribute<crn::StringUTF8>("code")[0], uint8_t(sel.GetAttribute<int>("cutproba", true))));
 			}
 			features.swap(sig);
 		}
@@ -1422,26 +1427,26 @@ void GraphicalLine::deserialize(xml::Element &el)
 	}
 }
 
-xml::Element GraphicalLine::serialize(xml::Element &parent) const
+crn::xml::Element GraphicalLine::serialize(crn::xml::Element &parent) const
 {
-	xml::Element el(parent.PushBackElement(GetClassName().CStr()));
+	crn::xml::Element el(parent.PushBackElement(GetClassName().CStr()));
 	midline->Serialize(el);
 	el.SetAttribute("lh", int(lh));
 	if (!features.empty())
 	{
-		xml::Element fel(el.PushBackElement("signature"));
+		crn::xml::Element fel(el.PushBackElement("signature"));
 		for (const ImageSignature &s : features)
 		{
-			xml::Element sel(s.bbox.Serialize(fel));
-			sel.SetAttribute("code", StringUTF8(s.code));
-			sel.SetAttribute("cutproba", StringUTF8(s.cutproba));
+			crn::xml::Element sel(s.bbox.Serialize(fel));
+			sel.SetAttribute("code", crn::StringUTF8(s.code));
+			sel.SetAttribute("cutproba", crn::StringUTF8(s.cutproba));
 		}
 	}
 	return el;
 }
-void GraphicalLine::SetMidline(const std::vector<Point2DInt> & line)
+void GraphicalLine::SetMidline(const std::vector<crn::Point2DInt> & line)
 {
-	midline = std::make_shared<LinearInterpolation> (line.begin(),line.end());
+	midline = std::make_shared<crn::LinearInterpolation> (line.begin(),line.end());
 	features.clear();
 }
 

@@ -62,7 +62,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 # g++ specifics
 ###############################################################################
 
-	read_pkg_config("libgtkcrnmm >= 3.0" LIBGTKCRNMM)
+	read_pkg_config("libgtkcrnmm3 >= 3.0" LIBGTKCRNMM)
 
 	# compiler and linker options
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Winit-self -Wreturn-type -Wconversion -Wno-error=literal-suffix -Wno-literal-suffix")
