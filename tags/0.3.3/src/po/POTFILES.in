@@ -1,0 +1,17 @@
+../utils/signatures.cpp
+../utils/entities.cpp
+../oriflamms/OriLines.h
+../oriflamms/OriValidation.h
+../oriflamms/OriGUI.cpp
+../oriflamms/OriGUI.h
+../oriflamms/OriLines.cpp
+../oriflamms/OriFeatures.cpp
+../oriflamms/OriValidation.cpp
+../oriflamms/OriConfig.cpp
+../oriflamms/OriProject.h
+../oriflamms/OriStruct.cpp
+../oriflamms/OriConfig.h
+../oriflamms/OriStruct.h
+../oriflamms/main.cpp
+../oriflamms/OriFeatures.h
+../oriflamms/OriProject.cpp
