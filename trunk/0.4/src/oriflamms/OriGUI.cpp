@@ -817,7 +817,9 @@ void GUI::tree_selection_changed(bool focus)
 						display_characters(viewid, colid, tmpl);
 
 				}
-				//img.set_selection_type(GtkCRN::Image::Overlay::Line); TODO
+				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
+					img.set_selection_type(GtkCRN::Image::Overlay::Line);
+
 				view_depth = ViewDepth::Column;
 			}
 			break;
@@ -856,6 +858,17 @@ void GUI::edit_overlays()
 	wc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wchar(img.get_overlay_config(charOverlay));
 	//wchar.editable = mod; TODO
+	
+	if (view_depth == ViewDepth::Column)
+	{
+		if (mod)
+			img.set_selection_type(GtkCRN::Image::Overlay::Line);
+		else
+		{
+			img.clear_selection();
+			img.set_selection_type(GtkCRN::Image::Overlay::None);
+		}
+	}
 
 	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
 		tree_selection_changed(false);
