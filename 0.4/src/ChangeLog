@@ -1,3 +1,6 @@
+2015-05-29 Yann LEYDIER <yann@leydier.info>
+	* GUI: Reactivated UI to add lines.
+
 2015-03-17 Yann LEYDIER <yann@leydier.info>
 	* ValidationPanel (add_element): Now takes one extra argument for the position
 		 in the word.
