@@ -17,8 +17,10 @@
 #include <CRNAI/CRNPathFinding.h>
 #include <CRNImage/CRNDifferential.h>
 #include <CRNImage/CRNImageRGB.h>
+#include <CRNImage/CRNImageBW.h>
 
 using namespace ori;
+using namespace crn::literals;
 
 const crn::String Project::LinesKey(U"ori::Lines");
 struct stepcost
@@ -144,37 +146,181 @@ Project::Project(const crn::Path &fname):
 	xdoc.Load(doc->GetBasename() / "structure.xml"); // may throw
 	load_db(); // may throw
 
+#if 0
 	// test espaces
-	/*
 	{
-		for (auto b : *doc)
+		auto outx = crn::xml::Document{};
+		auto root = outx.PushBackElement("oridoc");
+		for (auto bnum : crn::Range(*doc))
 		{
-			std::cout << "view" << std::endl;
+			auto b = doc->GetView(bnum);
+			auto img2 = *b->GetRGB();
+			const auto &v = xdoc.GetViews()[bnum];
+
+			const auto sw = crn::StrokesWidth(*b->GetGray());
+
+			auto vel = root.PushBackElement("View");
+			vel.SetAttribute("imagename", v.GetImageName());
+			vel.SetAttribute("id", v.GetId());
+			
 			auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(LinesKey));
-			for (auto cobj : cols)
+			for (auto cnum : crn::Range(*cols))
 			{
-			std::cout << "col" << std::endl;
-				auto col = std::static_pointer_cast<crn::Vector>(cobj);
-				for (auto lobj : *col)
+				auto col = std::static_pointer_cast<crn::Vector>(cols->At(cnum));
+				const auto &c = v.GetColumns()[cnum];
+
+				auto cel = vel.PushBackElement("Column");
+				cel.SetAttribute("id", c.GetId());
+				cel.SetAttribute("num", c.GetNumber());				
+
+				for (auto lnum : crn::Range(*col))
 				{
-			std::cout << "line" << std::endl;
-					auto line = std::static_pointer_cast<GraphicalLine>(lobj);
+					auto line = std::static_pointer_cast<GraphicalLine>(col->At(lnum));
+					const auto &l = c.GetLines()[lnum];
+
+					auto lel = cel.PushBackElement("Line");
+					lel.SetAttribute("num", l.GetNumber());
+
 					const auto bx = line->GetFront().X;
 					const auto ex = line->GetBack().X;
 					const auto lh = line->GetLineHeight();
-					auto ig = crn::ImageGray(ex - bx + 1, lh);
-					ig.InitFromImage(*b->GetGray(), crn::Rect(bx, line->At(bx) - int(lh / 2), ex, line->At(ex) + int(lh / 2)));
-					auto ibw = ig.MakeImageBWSauvola(lh);
-					auto histo = ibw->MakeVerticalProjection();
+					const auto by = line->At(bx) - int(lh / 2);
+					auto ig = crn::ImageGray(*b->GetGray(), crn::Rect(bx, by, ex, line->At(ex) + int(lh / 2)));
+					auto hist = crn::Histogram{256};
+					for (auto x = bx; x <= ex; ++x)
+					{
+						const auto y = line->At(x);
+						hist.IncBin(ig.At(x - bx, y - by));
+						hist.IncBin(ig.At(x - bx, y - by - 1));
+						hist.IncBin(ig.At(x - bx, y - by + 1));
+					}
+					auto ibw = crn::Threshold(ig, uint8_t(hist.Fisher()));
+					//auto ibw = crn::Fisher(ig);
+					//auto ibw = crn::Sauvola(ig, lh/2);
+					/*
+					auto histo = crn::VerticalProjection(ibw);
 					for (auto x : crn::Range(histo))
 						if (histo[x] <= 2)
-							b->GetRGB()->DrawLine(x + bx, line->At(x + int(bx)) - lh / 2, x + bx, line->At(x + int(bx)) + lh / 2, crn::PixelRGB{255, 255, 255});
+							b->GetRGB()->DrawLine(x + bx, line->At(x + int(bx)) - lh / 2, x + bx, line->At(x + int(bx)) + lh / 2, crn::pixel::RGB8{255, 255, 255});
+							*/
+					//auto smask = std::make_shared<crn::ImageBW>(ibw.GetWidth(), ibw.GetHeight(), crn::pixel::BWWhite);
+					//auto spaces = std::vector<crn::Rect>{};
+					bool in = false;
+					int startx = bx, starty = by, endx = bx, endy = by, area = 0;
+					for (auto x = bx; x <= ex; ++x)
+					{
+						const auto y = line->At(x);
+						if (ibw.At(x - bx, y - by) /*&& ibw.At(x - bx, y - by + 1) && ibw.At(x - bx, y - by - 1)*/)
+						{
+							img2.At(x, y) = {255, 255, 255};
+							if (in)
+							{
+								//spaces.back() |= crn::Rect(x, y, x, y);
+								endx = x;
+								endy = y;
+							}
+							else
+							{
+								in = true;
+								startx = endx = x;
+								starty = endy = y;
+								area = 0;
+								//spaces.emplace_back(x, y, x, y);
+							}
+							auto sby = y;
+							for (; sby > y - 2 * sw; --sby)
+							{
+								const auto i = x - bx;
+								if (i < 0)
+									break;
+								const auto j = sby - by;
+								if (j < 0)
+									break;
+								if (!ibw.At(i, j))
+									break;
+							}
+							auto sey = y;
+							for (; sey < y + 2 * sw; ++sey)
+							{
+								const auto i = x - bx;
+								if (i >= ibw.GetWidth())
+									break;
+								const auto j = sey - by;
+								if (j >= ibw.GetHeight())
+									break;
+								if (!ibw.At(i, j))
+									break;
+							}
+							area += sey - sby + 1;
+							b->GetRGB()->DrawLine(x, sby, x, sey, {255, 255, 255});
+							//smask->DrawLine(x - bx, sby - by, x - bx, sey - by, crn::pixel::BWBlack);
+						}
+						else
+						{
+							if (in)
+							{
+								auto sel = lel.PushBackElement("Space");
+								sel.SetAttribute("x1", startx);
+								sel.SetAttribute("x2", endx);
+								sel.SetAttribute("y1", starty);
+								sel.SetAttribute("y2", endy);
+								sel.SetAttribute("area", area);
+							}
+							in = false;
+						}
+					}
+					/*
+						 auto sblock = crn::Block::New(smask);
+						 auto smap = sblock->ExtractCC(U"cc");
+						 for (auto it = sblock->BlockBegin(U"cc"); it != sblock->BlockEnd(U"cc"); ++it)
+						 {
+						 const auto num = it->GetName().ToInt();
+						 const auto bbox = it->GetAbsoluteBBox();
+						 auto minw = std::numeric_limits<int>::max();
+						 auto maxw = std::numeric_limits<int>::min();
+						 auto minx = bbox.GetLeft();
+						 auto maxx = bbox.GetLeft();
+						 for (int y = bbox.GetTop(); y <= bbox.GetBottom(); ++y)
+						 {
+						 auto w = 0;
+						 auto sx = bbox.GetLeft();
+						 for (int x = bbox.GetLeft(); x <= bbox.GetRight(); ++x)
+						 if (smap->At(x, y) == num)
+						 {
+						 if (w == 0)
+						 sx = x;
+						 w += 1;
+						 }
+						 if (w < minw)
+						 {
+						 minw = w;
+						 minx = sx;
+						 }
+						 if (w > maxw)
+						 {
+						 maxw = w;
+						 maxx = sx;
+						 }
+						 }
+					//b->GetRGB()->DrawLine(minx + bx, line->At(minx + bx), minx + bx + minw, line->At(minx + bx + minw), {255, 255, 255});
+					}
+					for (const auto &r : spaces)
+					{
+					auto sel = lel.PushBackElement("Space");
+					sel.SetAttribute("x1", r.GetLeft());
+					sel.SetAttribute("x2", r.GetRight());
+					sel.SetAttribute("y1", r.GetTop());
+					sel.SetAttribute("y2", r.GetBottom());
+					}
+					*/
 				}
 			}
-			b->GetRGB()->SavePNG("space.png");
+			b->GetRGB()->SavePNG(v.GetId().CStr() + " areas.png"_p);
+			img2.SavePNG(v.GetId().CStr() + " lines.png"_p);
 		}
+		outx.Save("spaces.xml"_p);
 	}
-	*/
+#endif
 
 }
 
