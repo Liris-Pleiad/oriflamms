@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriStruct.h
  * \author Yann LEYDIER
@@ -91,6 +91,8 @@ namespace ori
 			/*! \brief Gets a representation of the characters */
 			std::vector<Character> GetCharacters() const;
 
+			/*! \brief Removes all word and character alignment info */
+			void ClearAlignment();
 			/*! \brief Removes all word and character frontiers */
 			void ClearFrontiers() { frontiers.clear(); frontfrontier.clear(); backfrontier.clear(); }
 

@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriProject.h
  * \author Yann LEYDIER
@@ -77,6 +77,8 @@ namespace ori
 			/*! \brief Gets the name of the project */
 			crn::StringUTF8 GetTitle() const;
 
+			/*! \brief Erases a column's alignment */
+			void ClearAlignment(size_t view_num, size_t col_num);
 			/*! \brief Erases all signatures in the document */
 			void ClearSignatures(crn::Progress *prog = nullptr);
 

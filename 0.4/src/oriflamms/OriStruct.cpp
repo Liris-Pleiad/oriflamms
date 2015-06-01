@@ -1,4 +1,4 @@
-/* Copyright 2013-2014 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2014 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriStruct.cpp
  * \author Yann LEYDIER
@@ -36,6 +36,14 @@ crn::String WordPath::ToString() const
 	s += U' ';
 	s += word;
 	return s;
+}
+
+/*! Removes all word and character alignment info */
+void Word::ClearAlignment()
+{
+	bbox = crn::Rect{};
+	ClearFrontiers();
+	leftcorr = rightcorr = 0;
 }
 
 const std::vector<crn::Point2DInt>& Word::GetCharacterFront(size_t i) const
