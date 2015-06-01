@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriProject.h
  * \author Yann LEYDIER
@@ -1283,6 +1283,16 @@ void Project::ExportStats(const crn::Path &fname) const
 crn::StringUTF8 Project::GetTitle() const
 {
 	return doc->GetBasename().GetFilename();
+}
+
+/*! Erases a column's alignment 
+ * \param[in]	view_num	the index of the view
+ * \param[in]	col_num	the index of the column
+ */
+void Project::ClearAlignment(size_t view_num, size_t col_num)
+{
+	for (auto &l : xdoc.GetViews()[view_num].GetColumns()[col_num].GetLines())
+		std::for_each(l.GetWords().begin(), l.GetWords().end(), [](Word &w){ w.ClearAlignment(); });
 }
 
 /*! Erases all signatures in the document

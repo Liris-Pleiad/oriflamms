@@ -737,6 +737,55 @@ SVector ori::DetectLines(Block &b, const View &view)
 
 template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, double dist, double d)
 {
+	auto sline = std::vector<T>{line.front()};
+	auto sx = double(line.front().X);
+	auto sy = double(line.front().Y);
+	auto sxy = double(line.front().X * line.front().Y);
+	auto s2x = sx * sx;
+	auto prec = size_t(0);
+	for (size_t tmp = 1; tmp < line.size(); ++tmp)
+	{
+		const auto x = double(line[tmp].X);
+		const auto y = double(line[tmp].Y);
+		sx += x;
+		sy += y;
+		sxy += x * y;
+		s2x += x * x;
+		const auto n = double(tmp - prec + 1);
+		const auto varx = s2x / n - crn::Sqr(sx / n);
+		const auto varxy = sxy / n - (sx * sy) / crn::Sqr(n);
+		/*
+		auto varx = 0.0;
+		auto varxy = 0.0;
+		for (auto i = prec; i <= tmp; ++i)
+		{
+			varx += crn::Sqr(double(line[i].X) - sx / n);
+			varxy += (double(line[i].X) - sx / n) * (double(line[i].Y) - sy / n);
+		}
+		*/
+		const auto b1 = varxy / varx;
+		const auto b0 = sy / n - b1 * sx / n;
+		auto ok = true;
+		for (auto i = prec; i <= tmp; ++i)
+			if (crn::Abs(x * b1 + b0 - y) > 1)
+			{
+				ok = false;
+				break;
+			}
+		if (!ok)
+		{
+			prec = tmp;
+			sline.push_back(line[tmp - 1]);
+			sx = x;
+			sy = y;
+			sxy = x * y;
+			s2x = x * x;
+		}
+	}
+	sline.push_back(line.back());
+	return sline;
+
+	/*
 	std::vector<T> simplified_line;
 	if (line.size() > 6)
 	{
@@ -784,6 +833,7 @@ template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, doubl
 		simplified_line = line;
 
 	return simplified_line;
+	*/
 }
 
 std::vector<Point2DInt> ori::SimplifyCurve(const std::vector<Point2DInt> &line, double dist, double d)

@@ -1,3 +1,10 @@
+2015-06-01 Yann LEYDIER <yann@leydier.info>
+	* Word (ClearAlignement): Added.
+	* Project (ClearAlignement): Added.
+	* GUI (add_line): Implemented.
+	* GUI (rem_line): Added.
+	* GUI (on_rmb_click): Now pops a menu up when clicking on a line.
+
 2015-05-29 Yann LEYDIER <yann@leydier.info>
 	* GUI: Reactivated UI to add lines.
 

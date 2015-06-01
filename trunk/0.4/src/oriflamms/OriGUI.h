@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriGUI.h
  * \author Yann LEYDIER
@@ -30,6 +30,7 @@ namespace ori
 			void setup_window();
 			void set_win_title();
 			void add_line();
+			void rem_line(size_t v, size_t c, size_t l);
 			virtual void about() override;
 			Glib::RefPtr<Gtk::TreeStore> fill_tree(crn::Progress *prog);
 			void tree_selection_changed(bool focus);
@@ -75,6 +76,7 @@ namespace ori
 			size_t current_view_id;
 			enum class ViewDepth { None, Page, Column, Line };
 			ViewDepth view_depth;
+			sigc::connection line_rem_connection;
 			std::unique_ptr<Validation> validation_win;
 
 			std::unique_ptr<Project> project;

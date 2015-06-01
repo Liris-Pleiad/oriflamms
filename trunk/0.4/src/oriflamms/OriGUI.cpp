@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriGUI.h
  * \author Yann LEYDIER
@@ -98,6 +98,8 @@ GUI::GUI():
 
 	actions->add(Gtk::Action::create("align-export-tei",_("_Export TEI"),_("Export TEI")),sigc::mem_fun(this,&GUI::export_tei_alignment));
 	
+	// Structure menu
+	actions->add(Gtk::Action::create("structure-menu", _("_Structure"), _("Structure")));
 	actions->add(Gtk::Action::create("add-line", Gtk::Stock::INDENT, _("Add _line"), _("Add line")), sigc::mem_fun(this, &GUI::add_line));
 	actions->get_action("add-line")->set_sensitive(false);
 
@@ -108,6 +110,9 @@ GUI::GUI():
 	actions->add(Gtk::RadioAction::create(g, "validation-batch", _("_Batch validation"), "Batch validation"));
 	actions->add(Gtk::Action::create("change-font", Gtk::Stock::SELECT_FONT, _("Change _font"), _("Change font")), sigc::mem_fun(this, &GUI::change_font));
 	actions->add(Gtk::Action::create("manage-entities", Gtk::Stock::EDIT, _("Manage _entities"), _("Manage entities")), sigc::mem_fun(this,&GUI::manage_entities));
+
+	// Line menu
+	actions->add(Gtk::Action::create("remove-line", Gtk::Stock::REMOVE, _("_Remove line"), _("Remove line")));
 
 	ui_manager->insert_action_group(img.get_actions());
 
@@ -136,9 +141,13 @@ GUI::GUI():
 		"			<menuitem action='show-lines'/>"
 		"			<menuitem action='show-words'/>"
 		"			<menuitem action='show-characters'/>"
-		"			<menuitem action='edit'/>"
 		"			<separator/>"
 		"			<menuitem action='find-string'/>"
+		"		</menu>"
+		"		<menu action='structure-menu'>"
+		"			<menuitem action='edit'/>"
+		"			<separator/>"
+		"			<menuitem action='add-line'/>"
 		"		</menu>"
 		"		<menu action='align-menu'>"
 		"			<menuitem action='align-clear-sig'/>"
@@ -164,8 +173,6 @@ GUI::GUI():
 		"		</menu>"
 		"	</menubar>"
 		"	<toolbar name='ToolBar'>"
-		"		<toolitem action='add-line'/>"
-		"		<separator/>"
 		"		<toolitem action='image-zoom-in'/>"
 		"		<toolitem action='image-zoom-out'/>"
 		"		<toolitem action='image-zoom-100'/>"
@@ -178,6 +185,9 @@ GUI::GUI():
 		"		<menuitem action='show-lines'/>"
 		"		<menuitem action='show-words'/>"
 		"		<menuitem action='show-characters'/>"
+		"	</popup>"
+		"	<popup name='LinePopup'>"
+		"		<menuitem action='remove-line'/>"
 		"	</popup>"
 		"</ui>";
 
@@ -294,7 +304,7 @@ void GUI::about()
 	dial.set_program_name("Oriflamms");
 	dial.set_version(ORIFLAMMS_PACKAGE_VERSION);
 	dial.set_comments(_("Text alignment between TEI xml and images"));
-	dial.set_copyright("© LIRIS / INSA Lyon & IRHT 2013-2015");
+	dial.set_copyright("© LIRIS / INSA Lyon & IRHT & LIPADE / Université Paris Descartes 2013-2015");
 	dial.set_website("http://oriflamms.hypotheses.org/");
 	try
 	{
@@ -627,6 +637,7 @@ void GUI::setup_window()
 	actions->get_action("align-menu")->set_sensitive(project != nullptr);
 	actions->get_action("valid-menu")->set_sensitive(project != nullptr);
 	actions->get_action("display-menu")->set_sensitive(project != nullptr);
+	actions->get_action("structure-menu")->set_sensitive(project != nullptr);
 	actions->get_action("save-project")->set_sensitive(project != nullptr);
 	actions->get_action("reload-tei")->set_sensitive(project != nullptr);
 
@@ -649,7 +660,83 @@ void GUI::set_win_title()
 
 void GUI::add_line()
 {
-	GtkCRN::App::show_message("TODO", Gtk::MESSAGE_WARNING);
+	try
+	{
+		// convert selection to line
+		auto pts = img.get_selection_as_line();
+		if (crn::Abs(pts.first.X - pts.second.X) < crn::Abs(pts.first.Y - pts.second.Y))
+		{
+			GtkCRN::App::show_message(_("The line was not added because its skew is too high."), Gtk::MESSAGE_ERROR);
+			return;
+		}
+		auto plist = std::vector<crn::Point2DInt>{};
+		if (pts.first.X < pts.second.X)
+		{
+			plist.push_back(pts.first);
+			plist.push_back(pts.second);
+		}
+		else
+		{
+			plist.push_back(pts.second);
+			plist.push_back(pts.first);
+		}
+		// get column data
+		auto b = project->GetDoc()->GetView(current_view_id);
+		auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
+		auto it = tv.get_selection()->get_selected();
+		size_t colid = it->get_value(columns.index);
+		auto lines = std::static_pointer_cast<crn::Vector>(cols->At(colid));
+		// find where to place the new line
+		auto lh = size_t(0);
+		auto pos = std::numeric_limits<size_t>::max();
+		for (auto lnum : crn::Range(*lines))
+		{
+			auto l = std::static_pointer_cast<GraphicalLine>(lines->At(lnum));
+			lh = l->GetLineHeight();
+			if (l->GetFront().Y > plist.front().Y)
+			{
+				pos = lnum;
+				break;
+			}
+		}
+		// add the line
+		if (lh == 0)
+		{
+			// TODO ask for line height
+			lh = 10; // XXX
+		}
+		if (pos == std::numeric_limits<size_t>::max())
+			lines->PushBack(std::make_shared<GraphicalLine>(std::make_shared<crn::LinearInterpolation>(plist.begin(), plist.end()), lh));
+		else
+			lines->Insert(std::make_shared<GraphicalLine>(std::make_shared<crn::LinearInterpolation>(plist.begin(), plist.end()), lh), pos);
+		// clear column alignment
+		project->ClearAlignment(current_view_id, colid);
+		// update display
+		auto s = int(lines->Size()) + " "_s;
+		s += _("line(s)");
+		it->set_value(columns.image, Glib::ustring(s.CStr()));
+		img.clear_selection();
+		tree_selection_changed(false);
+	}
+	catch (...) { }
+}
+
+void GUI::rem_line(size_t v, size_t c, size_t l)
+{
+	// remove line
+	auto b = project->GetDoc()->GetView(v);
+	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
+	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
+	lines->Remove(l);
+	// clear column alignment
+	project->ClearAlignment(v, c);
+	// update display
+	auto s = int(lines->Size()) + " "_s;
+	s += _("line(s)");
+	auto it = tv.get_selection()->get_selected(); // XXX this expects the removed line to be on the selected view!
+	it->set_value(columns.image, Glib::ustring(s.CStr()));
+	img.clear_selection();
+	tree_selection_changed(false);
 }
 
 Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
@@ -1154,7 +1241,7 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 	for (std::vector<std::pair<crn::String, crn::String> >::const_iterator it = overlay_items_under_mouse.begin(); it != overlay_items_under_mouse.end(); ++it)
 	{
 		if (it->first == wordsOverlay)
-		{
+		{ // if it is a word, cycle through validation
 			try
 			{
 				WordPath path(it->second); // may throw
@@ -1170,6 +1257,15 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 				return; // modify just one
 			}
 			catch (...) { }
+		}
+		if (it->first == linesOverlay)
+		{ // if it is a line, pop a menu up
+			auto sit = tv.get_selection()->get_selected();
+			auto colid = sit->get_value(columns.index);
+			auto lineid = it->second.ToInt();
+			line_rem_connection.disconnect();
+			line_rem_connection = actions->get_action("remove-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_line), current_view_id, colid, lineid));
+			dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/LinePopup"))->popup(mouse_button, time);
 		}
 	}
 }
