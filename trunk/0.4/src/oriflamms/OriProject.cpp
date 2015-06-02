@@ -605,7 +605,7 @@ void Project::ComputeWordFrontiers(const ori::WordPath &wp)
 				heuristic(),
 				get_neighbors(lrec)));
 	std::for_each(frontpath.begin(), frontpath.end(), [&rec](crn::Point2DInt &p){ p.X += rec.GetLeft(); p.Y += rec.GetTop(); });
-	word.SetFrontFrontier(SimplifyCurve(frontpath, 3.5, 0.3));
+	word.SetFrontFrontier(SimplifyCurve(frontpath, 1));
 
 	std::vector<crn::Point2DInt> backpath(crn::AStar(
 				crn::Point2DInt(word.GetBBox().GetWidth() + MARGIN, 0),
@@ -614,7 +614,7 @@ void Project::ComputeWordFrontiers(const ori::WordPath &wp)
 				heuristic(),
 				get_neighbors(lrec)));
 	std::for_each(backpath.begin(), backpath.end(), [&rec](crn::Point2DInt &p){ p.X += rec.GetLeft(); p.Y += rec.GetTop(); });
-	word.SetBackFrontier(SimplifyCurve(backpath, 3.5, 0.3));
+	word.SetBackFrontier(SimplifyCurve(backpath, 1));
 }
 
 static crn::xml::Element addcell(crn::xml::Element &row)
@@ -1365,7 +1365,7 @@ void Project::AlignWordCharacters(const ori::WordPath & wp)
 						stepcost(rmg, r.GetRight()),
 						heuristic(),
 						get_neighbors(r)),
-					3.5, 0.3));
+					1));
 		for (auto &p : pathfron)
 		{
 			p.X += word.GetBBox().GetLeft();
