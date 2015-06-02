@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: oriflamms 0.4\n"
 "Report-Msgid-Bugs-To: yann@leydier.info\n"
-"POT-Creation-Date: 2015-06-02 11:03+0200\n"
-"PO-Revision-Date: 2015-06-02 11:02+0200\n"
+"POT-Creation-Date: 2015-06-02 11:49+0200\n"
+"PO-Revision-Date: 2015-06-02 11:48+0200\n"
 "Last-Translator: Yann LEYDIER <yann@leydier.info>\n"
 "Language-Team: French <>\n"
 "Language: en_GB\n"
@@ -111,7 +111,7 @@ msgstr "not an Oriflamms entity file."
 msgid "_New project"
 msgstr "_New project"
 
-#: ../oriflamms/OriGUI.cpp:61 ../oriflamms/OriGUI.cpp:322
+#: ../oriflamms/OriGUI.cpp:61 ../oriflamms/OriGUI.cpp:327
 msgid "New project"
 msgstr "New project"
 
@@ -231,7 +231,7 @@ msgstr "Statistics"
 msgid "_Find string"
 msgstr "_Find string"
 
-#: ../oriflamms/OriGUI.cpp:90 ../oriflamms/OriGUI.cpp:1637
+#: ../oriflamms/OriGUI.cpp:90 ../oriflamms/OriGUI.cpp:1695
 msgid "Find string"
 msgstr "Find string"
 
@@ -324,146 +324,161 @@ msgid "Manage entities"
 msgstr "Manage entities"
 
 #: ../oriflamms/OriGUI.cpp:115
-msgid "_Remove line"
-msgstr "_Remove line"
+msgid "_Add point"
+msgstr "_Add point"
 
 #: ../oriflamms/OriGUI.cpp:115
-msgid "Remove line"
-msgstr "Remove line"
+msgid "Add point"
+msgstr "Add point"
 
-#: ../oriflamms/OriGUI.cpp:213 ../oriflamms/OriGUI.cpp:1334
+#: ../oriflamms/OriGUI.cpp:116
+msgid "_Remove point"
+msgstr "_Remove point"
+
+#: ../oriflamms/OriGUI.cpp:116
+msgid "Remove point"
+msgstr "Remove point"
+
+#: ../oriflamms/OriGUI.cpp:117
+msgid "_Delete line"
+msgstr "_Delete line"
+
+#: ../oriflamms/OriGUI.cpp:117
+msgid "Delete line"
+msgstr "Delete line"
+
+#: ../oriflamms/OriGUI.cpp:218 ../oriflamms/OriGUI.cpp:1392
 msgid "View"
 msgstr "View"
 
-#: ../oriflamms/OriGUI.cpp:214
+#: ../oriflamms/OriGUI.cpp:219
 msgid "TEI"
 msgstr "TEI"
 
-#: ../oriflamms/OriGUI.cpp:215
+#: ../oriflamms/OriGUI.cpp:220
 msgid "Images"
 msgstr "Images"
 
-#: ../oriflamms/OriGUI.cpp:306
+#: ../oriflamms/OriGUI.cpp:311
 msgid "Text alignment between TEI xml and images"
 msgstr "Text alignment between TEI xml and images"
 
-#: ../oriflamms/OriGUI.cpp:323
+#: ../oriflamms/OriGUI.cpp:328
 msgid "Please select a TEI XML file"
 msgstr "Please select a TEI XML file"
 
-#: ../oriflamms/OriGUI.cpp:324
+#: ../oriflamms/OriGUI.cpp:329
 msgid "Please select the folder containing the images"
 msgstr "Please select the folder containing the images"
 
-#: ../oriflamms/OriGUI.cpp:329
+#: ../oriflamms/OriGUI.cpp:334
 msgid "Project name"
 msgstr "Project name"
 
-#: ../oriflamms/OriGUI.cpp:331
+#: ../oriflamms/OriGUI.cpp:336
 msgid "TEI XML file"
 msgstr "TEI XML file"
 
-#: ../oriflamms/OriGUI.cpp:333
+#: ../oriflamms/OriGUI.cpp:338
 msgid "Image folder"
 msgstr "Image folder"
 
-#: ../oriflamms/OriGUI.cpp:339 ../oriflamms/OriTEIImporter.cpp:78
+#: ../oriflamms/OriGUI.cpp:344 ../oriflamms/OriTEIImporter.cpp:78
 msgid "Next"
 msgstr "Next"
 
-#: ../oriflamms/OriGUI.cpp:361
+#: ../oriflamms/OriGUI.cpp:366
 msgid "All files"
 msgstr "All files"
 
-#: ../oriflamms/OriGUI.cpp:409
+#: ../oriflamms/OriGUI.cpp:414
 msgid "Analyzing images…"
 msgstr "Analyzing images…"
 
-#: ../oriflamms/OriGUI.cpp:410 ../oriflamms/OriProject.cpp:1000
+#: ../oriflamms/OriGUI.cpp:415 ../oriflamms/OriProject.cpp:1000
 #: ../oriflamms/OriValidationPanel.cpp:356
 msgid "Image"
 msgstr "Image"
 
-#: ../oriflamms/OriGUI.cpp:414 ../oriflamms/OriGUI.cpp:445
-#: ../oriflamms/OriGUI.cpp:1278
+#: ../oriflamms/OriGUI.cpp:419 ../oriflamms/OriGUI.cpp:450
+#: ../oriflamms/OriGUI.cpp:1336
 msgid "Loading…"
 msgstr "Loading…"
 
-#: ../oriflamms/OriGUI.cpp:415 ../oriflamms/OriGUI.cpp:446
-#: ../oriflamms/OriGUI.cpp:1279
+#: ../oriflamms/OriGUI.cpp:420 ../oriflamms/OriGUI.cpp:451
+#: ../oriflamms/OriGUI.cpp:1337
 msgid "Page"
 msgstr "Page"
 
-#: ../oriflamms/OriGUI.cpp:571
+#: ../oriflamms/OriGUI.cpp:576
 msgid "Please select a project file to import"
 msgstr "Please select a project file to import"
 
-#: ../oriflamms/OriGUI.cpp:669
+#: ../oriflamms/OriGUI.cpp:674
 msgid "The line was not added because its skew is too high."
 msgstr "The line was not added because its skew is too high."
 
-#: ../oriflamms/OriGUI.cpp:716 ../oriflamms/OriGUI.cpp:735
-#: ../oriflamms/OriGUI.cpp:783 ../oriflamms/OriGUI.cpp:831
+#: ../oriflamms/OriGUI.cpp:721 ../oriflamms/OriGUI.cpp:740
+#: ../oriflamms/OriGUI.cpp:835 ../oriflamms/OriGUI.cpp:883
 msgid "line(s)"
 msgstr "line(s)"
 
-#: ../oriflamms/OriGUI.cpp:762 ../oriflamms/OriGUI.cpp:766
+#: ../oriflamms/OriGUI.cpp:814 ../oriflamms/OriGUI.cpp:818
 msgid "column(s)"
 msgstr "column(s)"
 
-#: ../oriflamms/OriGUI.cpp:772 ../oriflamms/OriGUI.cpp:1294
-#: ../oriflamms/OriGUI.cpp:1336 ../oriflamms/OriValidationPanel.cpp:363
+#: ../oriflamms/OriGUI.cpp:824 ../oriflamms/OriGUI.cpp:1352
+#: ../oriflamms/OriGUI.cpp:1394 ../oriflamms/OriValidationPanel.cpp:363
 msgid "Column"
 msgstr "Column"
 
-#: ../oriflamms/OriGUI.cpp:789 ../oriflamms/OriGUI.cpp:1296
-#: ../oriflamms/OriGUI.cpp:1308 ../oriflamms/OriGUI.cpp:1338
+#: ../oriflamms/OriGUI.cpp:841 ../oriflamms/OriGUI.cpp:1354
+#: ../oriflamms/OriGUI.cpp:1366 ../oriflamms/OriGUI.cpp:1396
 #: ../oriflamms/OriValidationPanel.cpp:367
 msgid "Line"
 msgstr "Line"
 
-#: ../oriflamms/OriGUI.cpp:796
+#: ../oriflamms/OriGUI.cpp:848
 msgid "word(s)"
 msgstr "word(s)"
 
-#: ../oriflamms/OriGUI.cpp:1182 ../oriflamms/OriGUI.cpp:1288
-#: ../oriflamms/OriGUI.cpp:1333
+#: ../oriflamms/OriGUI.cpp:1346 ../oriflamms/OriGUI.cpp:1391
 msgid "Aligning…"
 msgstr "Aligning…"
 
-#: ../oriflamms/OriGUI.cpp:1364
+#: ../oriflamms/OriGUI.cpp:1422
 msgid "Saving…"
 msgstr "Saving…"
 
-#: ../oriflamms/OriGUI.cpp:1383
+#: ../oriflamms/OriGUI.cpp:1441
 msgid "The quick bꝛown fox jumpſ over the lazy dog."
 msgstr "The quick bꝛown fox jumpſ over the lazy dog."
 
-#: ../oriflamms/OriGUI.cpp:1402
+#: ../oriflamms/OriGUI.cpp:1460
 msgid "Export statistics to…"
 msgstr "Export statistics to…"
 
-#: ../oriflamms/OriGUI.cpp:1411
+#: ../oriflamms/OriGUI.cpp:1469
 msgid "ODS files"
 msgstr "ODS files"
 
-#: ../oriflamms/OriGUI.cpp:1429
+#: ../oriflamms/OriGUI.cpp:1487
 msgid "Are you sure you wish to flush the images' signatures?"
 msgstr "Are you sure you wish to flush the images' signatures?"
 
-#: ../oriflamms/OriGUI.cpp:1433
+#: ../oriflamms/OriGUI.cpp:1491
 msgid "Flushing signatures…"
 msgstr "Flushing signatures…"
 
-#: ../oriflamms/OriGUI.cpp:1443
+#: ../oriflamms/OriGUI.cpp:1501
 msgid "Propagating validation…"
 msgstr "Propagating validation…"
 
-#: ../oriflamms/OriGUI.cpp:1462
+#: ../oriflamms/OriGUI.cpp:1520
 msgid "Please choose a file name for the TEI export."
 msgstr "Please choose a file name for the TEI export."
 
-#: ../oriflamms/OriGUI.cpp:1651
+#: ../oriflamms/OriGUI.cpp:1709
 msgid "Found"
 msgstr "Found"
 

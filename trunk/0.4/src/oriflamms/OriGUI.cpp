@@ -112,7 +112,9 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("manage-entities", Gtk::Stock::EDIT, _("Manage _entities"), _("Manage entities")), sigc::mem_fun(this,&GUI::manage_entities));
 
 	// Line menu
-	actions->add(Gtk::Action::create("remove-line", Gtk::Stock::REMOVE, _("_Remove line"), _("Remove line")));
+	actions->add(Gtk::Action::create("add-point-to-line", Gtk::Stock::ADD, _("_Add point"), _("Add point")));
+	actions->add(Gtk::Action::create("rem-point-from-line", Gtk::Stock::REMOVE, _("_Remove point"), _("Remove point")));
+	actions->add(Gtk::Action::create("remove-line", Gtk::Stock::DELETE, _("_Delete line"), _("Delete line")));
 
 	ui_manager->insert_action_group(img.get_actions());
 
@@ -187,6 +189,9 @@ GUI::GUI():
 		"		<menuitem action='show-characters'/>"
 		"	</popup>"
 		"	<popup name='LinePopup'>"
+		"		<menuitem action='add-point-to-line'/>"
+		"		<menuitem action='rem-point-from-line'/>"
+		"		<separator/>"
 		"		<menuitem action='remove-line'/>"
 		"	</popup>"
 		"</ui>";
@@ -739,6 +744,53 @@ void GUI::rem_line(size_t v, size_t c, size_t l)
 	tree_selection_changed(false);
 }
 
+void GUI::add_point_to_line(size_t v, size_t c, size_t l, int x, int y)
+{
+	auto b = project->GetDoc()->GetView(v);
+	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
+	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
+	auto line = std::static_pointer_cast<GraphicalLine>(lines->At(l));
+	auto pts = std::vector<crn::Point2DInt>{};
+	for (const auto &p : line->GetMidline()) // get a copy of the points
+		pts.emplace_back(int(p.X), int(p.Y));
+	auto newpt = crn::Point2DInt(x, y);
+	auto it = std::upper_bound(pts.begin(), pts.end(), newpt, [](const crn::Point2DInt &p1, const crn::Point2DInt &p2){ return p1.X < p2.X; });
+	pts.insert(it, newpt);
+	line->SetMidline(pts);
+	set_need_save();
+	display_line(v, c, l); // refresh
+}
+
+void GUI::rem_point_from_line(size_t v, size_t c, size_t l, int x, int y)
+{
+	auto b = project->GetDoc()->GetView(v);
+	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
+	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
+	auto line = std::static_pointer_cast<GraphicalLine>(lines->At(l));
+	auto pts = std::vector<crn::Point2DInt>{};
+	for (const auto &p : line->GetMidline()) // get a copy of the points
+		pts.emplace_back(int(p.X), int(p.Y));
+	if (pts.size() <= 2)
+	{
+		return;
+	}
+	auto rit = pts.begin();
+	auto dist = std::numeric_limits<int>::max();
+	for (auto it = pts.begin(); it != pts.end(); ++it)
+	{
+		auto d = crn::Max(crn::Abs(it->X - x), crn::Abs(it->Y - y));
+		if (d < dist)
+		{
+			dist = d;
+			rit = it;
+		}
+	}
+	pts.erase(rit);
+	line->SetMidline(pts);
+	set_need_save();
+	display_line(v, c, l); // refresh
+}
+
 Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 {
 	Glib::RefPtr<Gtk::TreeStore> newstore = Gtk::TreeStore::create(columns);
@@ -1178,12 +1230,14 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		GtkCRN::Image::Polygon &po = static_cast<GtkCRN::Image::Polygon&>(item);
 		l->SetMidline(po.points);
 
+		/*
 		// realign
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t i = pw.add_progress_bar("");
 		pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
 		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), current_view_id, colid, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
 		project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected();
+		*/
 		set_need_save();
 		display_line(current_view_id, colid, linid); // refresh
 	}
@@ -1265,6 +1319,10 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 			auto lineid = it->second.ToInt();
 			line_rem_connection.disconnect();
 			line_rem_connection = actions->get_action("remove-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_line), current_view_id, colid, lineid));
+			line_add_point_connection.disconnect();
+			line_add_point_connection = actions->get_action("add-point-to-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::add_point_to_line), current_view_id, colid, lineid, x_on_image, y_on_image));
+			line_rem_point_connection.disconnect();
+			line_rem_point_connection = actions->get_action("rem-point-from-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_point_from_line), current_view_id, colid, lineid, x_on_image, y_on_image));
 			dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/LinePopup"))->popup(mouse_button, time);
 		}
 	}
