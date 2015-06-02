@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriLines.h
  * \author Yann LEYDIER
@@ -20,9 +20,9 @@ namespace ori
 	/*! \brief Detect lines and columns on an image */
 	crn::SVector DetectLines(crn::Block &b, const View &view);
 	/*! \brief Reduces the number of points in a curve */
-	std::vector<crn::Point2DInt> SimplifyCurve(const std::vector<crn::Point2DInt> &line, double dist, double d);
+	std::vector<crn::Point2DInt> SimplifyCurve(const std::vector<crn::Point2DInt> &line, double maxdist);
 	/*! \brief Reduces the number of points in a curve */
-	std::vector<crn::Point2DDouble> SimplifyCurve(const std::vector<crn::Point2DDouble> &line, double dist, double d);
+	std::vector<crn::Point2DDouble> SimplifyCurve(const std::vector<crn::Point2DDouble> &line, double maxdist);
 
 	class GraphicalLine: public crn::Object
 	{

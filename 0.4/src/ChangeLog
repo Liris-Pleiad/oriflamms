@@ -1,3 +1,6 @@
+2015-06-02 Yann LEYDIER <yann@leydier.info>
+	* SimplifyCurve: Rewritten.
+
 2015-06-01 Yann LEYDIER <yann@leydier.info>
 	* Word (ClearAlignement): Added.
 	* Project (ClearAlignement): Added.

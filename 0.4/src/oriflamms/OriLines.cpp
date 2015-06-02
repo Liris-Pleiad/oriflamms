@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriLines.cpp
  * \author Yann LEYDIER
@@ -279,7 +279,7 @@ struct LineSorter: public std::binary_function<const SLinearInterpolation&, cons
  * \warning	an image of two one-columned pages returns the same results as an image of a one two-columned page
  *
  * \param[in]	b	the block to analyze
- * \return	a vector of columns, columns being vectors of lines, a line being a LinearInterperlation
+ * \return	a vector of columns, columns being vectors of lines, a line being a LinearInterpolation
  */
 SVector ori::DetectLines(Block &b, const View &view)
 {
@@ -699,14 +699,8 @@ SVector ori::DetectLines(Block &b, const View &view)
 								if (p.X > margin)
 									newline.push_back(p);
 							}
-							//int thresh = filteredthresh[l];
 							if (newline.size() > 2)
-								newline = SimplifyCurve(newline, 0.005, 0.01);
-							else
-								newline = SimplifyCurve(l->GetData(), 0.005, 0.01);
-							l = std::make_shared<LinearInterpolation>(newline.begin(), newline.end());
-							// TODO XXX ELSE WHAT ???
-							//filteredthresh[l] = thresh;
+								l = std::make_shared<LinearInterpolation>(newline.begin(), newline.end());
 
 							// XXX DISPLAY
 							Rect r(int(l->GetData().front().X) - 20, int(l->GetData().front().Y) - 20, int(l->GetData().front().X) + 20, int(l->GetData().front().Y) + 20);
@@ -727,7 +721,10 @@ SVector ori::DetectLines(Block &b, const View &view)
 			std::sort(lines.begin(), lines.end(), sorter);
 			SVector col(std::make_shared<Vector>(Protocol::Serializable));
 			for (const SLinearInterpolation &l : lines)
-				col->PushBack(std::make_shared<ori::GraphicalLine>(l, lspace1/*, filteredthresh[l]*/));
+			{
+				auto sline = SimplifyCurve(l->GetData(), 0.1); // why 0.1?
+				col->PushBack(std::make_shared<ori::GraphicalLine>(std::make_shared<LinearInterpolation>(sline.begin(), sline.end()), lspace1));
+			}
 			cols->PushBack(col);
 		}
 	}
@@ -735,7 +732,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 	return cols;
 }
 
-template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, double dist, double d)
+template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, double maxdist)
 {
 	auto sline = std::vector<T>{line.front()};
 	auto sx = double(line.front().X);
@@ -754,20 +751,11 @@ template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, doubl
 		const auto n = double(tmp - prec + 1);
 		const auto varx = s2x / n - crn::Sqr(sx / n);
 		const auto varxy = sxy / n - (sx * sy) / crn::Sqr(n);
-		/*
-		auto varx = 0.0;
-		auto varxy = 0.0;
-		for (auto i = prec; i <= tmp; ++i)
-		{
-			varx += crn::Sqr(double(line[i].X) - sx / n);
-			varxy += (double(line[i].X) - sx / n) * (double(line[i].Y) - sy / n);
-		}
-		*/
 		const auto b1 = varxy / varx;
 		const auto b0 = sy / n - b1 * sx / n;
 		auto ok = true;
 		for (auto i = prec; i <= tmp; ++i)
-			if (crn::Abs(x * b1 + b0 - y) > 1)
+			if (crn::Abs(x * b1 + b0 - y) > maxdist)
 			{
 				ok = false;
 				break;
@@ -836,14 +824,14 @@ template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, doubl
 	*/
 }
 
-std::vector<Point2DInt> ori::SimplifyCurve(const std::vector<Point2DInt> &line, double dist, double d)
+std::vector<Point2DInt> ori::SimplifyCurve(const std::vector<Point2DInt> &line, double maxdist)
 {
-	return doSimplify(line, dist, d);
+	return doSimplify(line, maxdist);
 }
 
-std::vector<Point2DDouble> ori::SimplifyCurve(const std::vector<Point2DDouble> &line, double dist, double d)
+std::vector<Point2DDouble> ori::SimplifyCurve(const std::vector<Point2DDouble> &line, double maxdist)
 {
-	return doSimplify(line, dist, d);
+	return doSimplify(line, maxdist);
 }
 
 using namespace ori;
