@@ -1,5 +1,6 @@
 2015-06-02 Yann LEYDIER <yann@leydier.info>
 	* SimplifyCurve: Rewritten.
+	* GUI (add_point_to_line, rem_point_from_line): Added.
 
 2015-06-01 Yann LEYDIER <yann@leydier.info>
 	* Word (ClearAlignement): Added.
