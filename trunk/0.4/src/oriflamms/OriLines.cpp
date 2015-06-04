@@ -8,10 +8,11 @@
 #include <CRNMath/CRNLinearInterpolation.h>
 #include <CRNImage/CRNColorModel.h>
 #include <CRNMath/CRNMatrixComplex.h>
-#include <CRNAI/CRN2Means.h>
+#include <CRNAI/CRNOutliers.h>
 #include <CRNUtils/CRNXml.h>
 #include <CRNMath/CRNPolynomialRegression.h>
 #include <CRNImage/CRNDifferential.h>
+#include <CRNImage/CRNImageGray.h>
 #include <CRNImage/CRNImageBW.h>
 #include <OriStruct.h>
 #include <CRNMath/CRNMatrixComplex.h>
@@ -197,9 +198,14 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 		{
 			int x = bx - 1;
 			for (; x >= clip.GetLeft() + sw; --x)
-				//if (lumdiff(*b.GetGray(), x + 2*sw, l[x], 2*sw, 3*sw, enmask) < th)
-				if ((maxgrad(*b.GetGradient(), x + 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) < th) || enmask.At(x, l[x]))
+			{
+				const auto y = l[x];
+				if ((y < 0) || (y >= enmask.GetHeight()))
 					break;
+				//if (lumdiff(*b.GetGray(), x + 2*sw, l[x], 2*sw, 3*sw, enmask) < th)
+				if ((maxgrad(*b.GetGradient(), x + 2*int(sw), y, 2*int(sw), 3*int(sw), enmask) < th) || enmask.At(x, y))
+					break;
+			}
 			bx = x + 2*int(sw);
 		}
 	}
@@ -208,9 +214,14 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 		// shrink
 		int x = bx + 1;
 		for (; x < clip.GetRight() - sw; ++x)
-			//if (lumdiff(*b.GetGray(), x + 2*sw, l[x], 2*sw, 3*sw, enmask) > th)
-			if ((maxgrad(*b.GetGradient(), x + 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) > th) || enmask.At(x, l[x]))
+		{
+			const auto y = l[x];
+			if ((y < 0) || (y >= enmask.GetHeight()))
 				break;
+			//if (lumdiff(*b.GetGray(), x + 2*sw, l[x], 2*sw, 3*sw, enmask) > th)
+			if ((maxgrad(*b.GetGradient(), x + 2*int(sw), y, 2*int(sw), 3*int(sw), enmask) > th) || enmask.At(x, y))
+				break;
+		}
 		bx = x;
 	}
 
@@ -222,9 +233,14 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 		{
 			int x = ex + 1;
 			for (; x < clip.GetRight() - sw; ++x)
-				//if (lumdiff(*b.GetGray(), x - 2*sw, l[x], 2*sw, 3*sw, enmask) < th)
-				if ((maxgrad(*b.GetGradient(), x - 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) < th) || enmask.At(x, l[x]))
+			{
+				const auto y = l[x];
+				if ((y < 0) || (y >= enmask.GetHeight()))
 					break;
+				//if (lumdiff(*b.GetGray(), x - 2*sw, l[x], 2*sw, 3*sw, enmask) < th)
+				if ((maxgrad(*b.GetGradient(), x - 2*int(sw), y, 2*int(sw), 3*int(sw), enmask) < th) || enmask.At(x, y))
+					break;
+			}
 			ex = x - 2*int(sw);
 		}
 	}
@@ -233,9 +249,14 @@ static SLinearInterpolation cut_line(LinearInterpolation &l, Block &b, size_t sw
 		// shrink
 		int x = ex - 1;
 		for (; x >= clip.GetLeft() +	sw; --x)
-			//if (lumdiff(*b.GetGray(), x - 2*sw, l[x], 2*sw, 3*sw, enmask) > th)
-			if ((maxgrad(*b.GetGradient(), x - 2*int(sw), l[x], 2*int(sw), 3*int(sw), enmask) > th) || enmask.At(x, l[x]))
+		{
+			const auto y = l[x];
+			if ((y < 0) || (y >= enmask.GetHeight()))
 				break;
+			//if (lumdiff(*b.GetGray(), x - 2*sw, l[x], 2*sw, 3*sw, enmask) > th)
+			if ((maxgrad(*b.GetGradient(), x - 2*int(sw), y, 2*int(sw), 3*int(sw), enmask) > th) || enmask.At(x, y))
+				break;
+		}
 		ex = x;
 	}
 
@@ -288,47 +309,6 @@ SVector ori::DetectLines(Block &b, const View &view)
 	const size_t h = b.GetGray()->GetHeight();
 	const size_t lspace1 = EstimateLeading(*b.GetGray());
 	auto igr = b.GetGradient(true, double(sw)); // precompute with a huge sigma
-
-	//////////////////////////////////////////////////////////////
-	// Borders of the page
-	//////////////////////////////////////////////////////////////
-	// project horizontal gradients
-	auto cropbw = std::make_shared<ImageBW>(w, h, pixel::BWWhite);
-	for (auto tmp : Range(*igr))
-		if (igr->IsSignificant(tmp) && ((AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::LEFT) < 32) ||
-				(AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::RIGHT) < 32)))
-			cropbw->At(tmp) = pixel::BWBlack;
-
-	auto vproj = VerticalProjection(*cropbw);
-	// look for big mods
-	vproj.AverageSmoothing(sw / 2);
-	auto vmodes = vproj.Modes();
-	auto okmodes = std::vector<size_t>{};
-	for (auto m : vmodes)
-		if (vproj[m] > h / 3)
-			okmodes.push_back(m);
-
-	// copy horizontal gradients crossing the big mods to the mask
-	auto cropb = Block::New(cropbw);
-	auto cropmap = cropb->ExtractCC(U"cc");
-	auto ccs = cropb->GetTree(U"cc");
-	auto enmask = ImageBW(w, h, pixel::BWBlack);
-	if (ccs)
-		for (const auto &o : *ccs)
-		{
-			auto cc = std::static_pointer_cast<Block>(o);
-			auto num = cc->GetName().ToInt();
-			for (auto x : okmodes)
-				if (cc->GetAbsoluteBBox().Contains(int(x), cc->GetAbsoluteBBox().GetCenterY()))
-				{
-					for (const auto &p : cc->GetAbsoluteBBox())
-						if (cropmap->At(p.X, p.Y) == num)
-						{
-							enmask.At(p.X, p.Y) = pixel::BWWhite;
-						}
-					break;
-				}
-		}
 
 	//////////////////////////////////////////////////////////////
 	// thumbnail
@@ -388,6 +368,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 	// filter the color mask
 	SBlock colorb(Block::New(colormask));
 	auto colormap = colorb->ExtractCC(U"cc");
+	auto enmask = ImageBW(w, h, pixel::BWBlack);
 	if (colorb->HasTree(U"cc"))
 	{
 		for (Block::block_iterator it = colorb->BlockBegin(U"cc"); it != colorb->BlockEnd(U"cc"); ++it)
@@ -428,7 +409,6 @@ SVector ori::DetectLines(Block &b, const View &view)
 			}
 		}
 	}
-	//enmask.SavePNG("enmask.png"); // XXX display
 
 	//////////////////////////////////////////////////////////////
 	// vertical differential
@@ -448,6 +428,66 @@ SVector ori::DetectLines(Block &b, const View &view)
 	}
 
 	//////////////////////////////////////////////////////////////
+	// Borders of the page
+	//////////////////////////////////////////////////////////////
+	// project horizontal gradients
+	auto cropbw = std::make_shared<ImageBW>(w, h, pixel::BWWhite);
+	//for (auto tmp : Range(*igr))
+		//if (igr->IsSignificant(tmp) && ((AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::LEFT) < 32) ||
+				//(AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::RIGHT) < 32)))
+	FOREACHPIXEL(x, y, *igr)
+	{
+		auto stop = false;
+		for (const auto &box : thumbzones)
+			if (box.Contains(int(x / xdiv), int(y)))
+			{
+				stop = true;
+				break;
+			}
+		if (stop)
+			continue;
+		if (igr->IsSignificant(x, y) && ((AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::LEFT) < 32) ||
+				(AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::RIGHT) < 32)))
+			cropbw->At(x, y) = pixel::BWBlack;
+	}
+
+	auto vproj = VerticalProjection(*cropbw);
+	// look for big mods
+	vproj.AverageSmoothing(sw / 2);
+	auto vmodes = vproj.Modes();
+	auto okmodes = std::vector<size_t>{};
+	for (auto m : vmodes)
+		if (vproj[m] > h / 3)
+			okmodes.push_back(m);
+
+	// copy horizontal gradients crossing the big mods to the mask
+	auto cropb = Block::New(cropbw);
+	auto cropmap = cropb->ExtractCC(U"cc");
+	auto ccs = cropb->GetTree(U"cc");
+	if (ccs)
+		for (const auto &o : *ccs)
+		{
+			auto cc = std::static_pointer_cast<Block>(o);
+			auto num = cc->GetName().ToInt();
+			for (auto x : okmodes)
+				if (cc->GetAbsoluteBBox().Contains(int(x), cc->GetAbsoluteBBox().GetCenterY()))
+				{
+					for (const auto &p : cc->GetAbsoluteBBox())
+						if (cropmap->At(p.X, p.Y) == num)
+						{
+							enmask.At(p.X, p.Y) = pixel::BWWhite;
+						}
+					break;
+				}
+		}
+	ccs.reset();
+	cropb.reset();
+	cropbw.reset();
+
+	//static int cnt = 0;
+	//enmask.SavePNG("enmask"_p + cnt++ + ".png"_p); // XXX display
+
+	//////////////////////////////////////////////////////////////
 	// find lines
 	//////////////////////////////////////////////////////////////
 	// create mask of line guides
@@ -458,7 +498,9 @@ SVector ori::DetectLines(Block &b, const View &view)
 	auto linehist = Histogram{maxig + 1}; // histogram of absolute values of the vertical derivative
 	for (auto tmp : Range(ig))
 		linehist.IncBin(Abs(ig.At(tmp)));
-	auto linethresh = linehist.Fisher(); // derivative threshold
+	// auto linethresh = linehist.Fisher(); // derivative threshold
+	//std::cout << linethresh << " " << maxig << std::endl;
+	auto linethresh = maxig / 10;
 	for (const Rect &tz : thumbzones)
 	{
 		for (size_t y = tz.GetTop(); y < tz.GetBottom() - 1; ++y)
@@ -478,6 +520,8 @@ SVector ori::DetectLines(Block &b, const View &view)
 				}
 			}
 	}
+	//static int cnt = 0;
+	//crn::Threshold(ig, int(linethresh)).SavePNG("mask "_p + cnt + ".png"_p);
 
 	// extract lines
 	auto cols = std::make_shared<Vector>(Protocol::Serializable);
@@ -597,6 +641,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 			while (log2(fw) != floor(log2(fw))) fw += 1;
 			
 			auto distmat = std::vector<std::vector<double>>(lines.size(), std::vector<double>(lines.size(), 0.0));
+			auto maxd = 0.0;
 			for (size_t l1 = 0; l1 < lines.size(); ++l1)
 			{ // for each line
 				auto bx = Max(tz.GetLeft(), int(lines[l1]->GetData().front().X));
@@ -617,11 +662,21 @@ SVector ori::DetectLines(Block &b, const View &view)
 					double d = 0.0;
 					for (size_t tmp = 0; tmp < fw; ++tmp)
 						d += std::norm(sig[tmp] * sig2[tmp]);
-					distmat[l1][l2] = distmat[l2][l1] = 1/d;
+					distmat[l1][l2] = distmat[l2][l1] = -d;
+					if (d > maxd) maxd = d;
 				}
 			}
+			for (size_t i = 0; i < distmat.size(); ++i)
+				for (size_t j = 0; j < distmat.size(); ++j)
+				{
+					if (i == j)
+						distmat[i][j] = 0.0;
+					else
+						distmat[i][j] += maxd;
+				}
 
 			// central objects
+			/*
 			auto lsum = std::vector<double>(lines.size());
 			std::transform(distmat.begin(), distmat.end(), lsum.begin(), 
 					[](const std::vector<double> &l){ return std::accumulate(l.begin(), l.end(), 0.0); });
@@ -635,6 +690,11 @@ SVector ori::DetectLines(Block &b, const View &view)
 					v += distmat[l2][l1] / lsum[l2];
 				outmap.emplace(v, lines[l1]);
 			}
+			*/
+			auto outmap = std::multimap<double, SLinearInterpolation>{};
+			auto lof = crn::ComputeLOF(distmat, crn::Cap(size_t(1), size_t(5), distmat.size() - 1));
+			for (auto tmp : crn::Range(lof))
+				outmap.emplace(lof[tmp], lines[tmp]);
 
 			auto it = outmap.begin();
 			std::advance(it, nlines);

@@ -939,6 +939,8 @@ void GUI::tree_selection_changed(bool focus)
 				size_t colid = it->get_value(columns.index);
 				crn::SCBlock b(project->GetDoc()->GetView(viewid));
 				crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
+				if (cols->Size() <= colid)
+					break; // XXX do something else?
 				crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
 				if (!lines->IsEmpty() && focus)
 				{

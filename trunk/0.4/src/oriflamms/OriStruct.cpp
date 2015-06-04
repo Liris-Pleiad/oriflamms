@@ -267,7 +267,7 @@ void Document::Import(const crn::Path &fname, const TEISelectionNode &sel)
 {
 	std::unique_ptr<crn::xml::Document> xdoc(EntityManager::ExpandXML(fname)); // may throw
 	crn::xml::Element root = xdoc->GetRoot();
-	if (root.GetName() != "TEI")
+	if ((root.GetName() != "TEI") && (root.GetName() != "teiCorpus"))
 		throw crn::ExceptionInvalidArgument(_("Not a TEI document."));
 	views.clear();
 	crn::StringUTF8 lastwordid, txt;
