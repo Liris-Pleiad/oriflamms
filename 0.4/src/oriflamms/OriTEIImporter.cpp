@@ -1,4 +1,4 @@
-/* Copyright 2014 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2014-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriTEIImporter.cpp
  * \author ZHAO Xiaojuan, Yann LEYDIER
@@ -103,10 +103,8 @@ TEIImporter::TEIImporter(const crn::Path &path, Gtk::Window &parent):
 	xdoc = EntityManager::ExpandXML(path); // may throw
 	auto root = xdoc->GetRoot();
 
-	// TODO refaire la lecture du truc : il faut compacter la structure !
-
 	auto row = *treestore->append();
-	row[column.name] = "TEI";
+	row[column.name] = root.GetName().CStr();
 	auto toexpand = std::set<Gtk::TreePath>{};
 	auto tocollapse = std::set<Gtk::TreePath>{};
 	for (auto n = root.BeginNode(); n != root.EndNode(); ++n)
