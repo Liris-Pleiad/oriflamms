@@ -635,37 +635,66 @@ SVector ori::DetectLines(Block &b, const View &view)
 		// Remove supernumerary lines
 		/////////////////////////////////////////////////////////////
 		auto nlines = view.GetColumns()[tmpz].GetLines().size();
+		int fw = tz.GetWidth() * int(xdiv);
+		while (log2(fw) != floor(log2(fw))) fw += 1;
+		const auto adiv = 32;
+		b.FlushGradient();
+		igr = b.GetGradient();
 		if (nlines < lines.size())
 		{
-			int fw = tz.GetWidth() * int(xdiv);
-			while (log2(fw) != floor(log2(fw))) fw += 1;
-			
 			auto distmat = std::vector<std::vector<double>>(lines.size(), std::vector<double>(lines.size(), 0.0));
 			auto maxd = 0.0;
 			for (size_t l1 = 0; l1 < lines.size(); ++l1)
 			{ // for each line
-				auto bx = Max(tz.GetLeft(), int(lines[l1]->GetData().front().X));
-				auto ex = Min(tz.GetRight(), int(lines[l1]->GetData().back().X));
-				auto sig = std::vector<std::complex<double>>(fw, std::complex<double>{0.0, 0.0});
+				auto bx = Max(tz.GetLeft() * int(xdiv), int(lines[l1]->GetData().front().X));
+				auto ex = Min(tz.GetRight() * int(xdiv), int(lines[l1]->GetData().back().X));
+				//auto sig = std::vector<std::complex<double>>(fw, std::complex<double>{0.0, 0.0});
+				auto sig = std::vector<double>(256 / adiv, 0);
 				for (int x = bx; x <= ex; ++x)
-					sig[x - bx].real(b.GetGray()->At(x, (*lines[l1])[x]));
-				FFT(sig, true);
+				{
+					const auto y = (*lines[l1])[x];
+					//for (auto y = crn::Max(0, yref - int(lspace1 / 2)); y < crn::Min(int(b.GetGray()->GetHeight()), yref + int(lspace1 / 2)); ++y)
+						//sig[x - bx].real(sig[x - bx].real() + 255 - b.GetGray()->At(x, y));
+						if (igr->IsSignificant(x, y))
+							sig[igr->At(x, y).theta.value / adiv] += 1;
+				}
+				auto m = *std::max_element(sig.begin(), sig.end());
+				if (m)
+					for (auto &v : sig) v /= m;
+				//for (auto &v : sig) std::cout << v << " ";
+				//FFT(sig, true);
 				for (size_t l2 = l1 + 1; l2 < lines.size(); ++l2)
 				{
-					bx = Max(tz.GetLeft(), int(lines[l2]->GetData().front().X));
-					ex = Min(tz.GetRight(), int(lines[l2]->GetData().back().X));
-					auto sig2 = std::vector<std::complex<double>>(fw, std::complex<double>{0.0, 0.0});
+					bx = Max(tz.GetLeft() * int(xdiv), int(lines[l2]->GetData().front().X));
+					ex = Min(tz.GetRight() * int(xdiv), int(lines[l2]->GetData().back().X));
+					//auto sig2 = std::vector<std::complex<double>>(fw, std::complex<double>{0.0, 0.0});
+					auto sig2 = std::vector<double>(256 / adiv, 0);
 					for (int x = bx; x <= ex; ++x)
-						sig2[x - bx].real(b.GetGray()->At(x, (*lines[l2])[x]));
-					FFT(sig2, true); // TODO optimize: compute only once
+					{
+						const auto y = (*lines[l2])[x];
+						//for (auto y = crn::Max(0, yref - int(lspace1 / 2)); y < crn::Min(int(b.GetGray()->GetHeight()), yref + int(lspace1 / 2)); ++y)
+							//sig2[x - bx].real(sig2[x - bx].real() + 255 - b.GetGray()->At(x, y));
+							if (igr->IsSignificant(x, y))
+								sig2[igr->At(x, y).theta.value / adiv] += 1;
+					}
+					auto m = *std::max_element(sig2.begin(), sig2.end());
+					if (m)
+						for (auto &v : sig2) v /= m;
+					//FFT(sig2, true); // TODO optimize: compute only once
 
-					double d = 0.0;
-					for (size_t tmp = 0; tmp < fw; ++tmp)
-						d += std::norm(sig[tmp] * sig2[tmp]);
-					distmat[l1][l2] = distmat[l2][l1] = -d;
-					if (d > maxd) maxd = d;
+					auto d = 0.0;
+					//for (size_t tmp = 0; tmp < fw; ++tmp)
+						//d += std::norm(sig[tmp] * sig2[tmp]);
+					//distmat[l1][l2] = distmat[l2][l1] = -d;
+					//if (d > maxd) maxd = d;
+					for (auto tmp : crn::Range(sig))
+						d += crn::Abs(sig[tmp] - sig2[tmp]);
+					distmat[l1][l2] = distmat[l2][l1] = d;
+					//std::cout << d << " ";
 				}
+				//std::cout << std::endl;
 			}
+			/*
 			for (size_t i = 0; i < distmat.size(); ++i)
 				for (size_t j = 0; j < distmat.size(); ++j)
 				{
@@ -674,9 +703,9 @@ SVector ori::DetectLines(Block &b, const View &view)
 					else
 						distmat[i][j] += maxd;
 				}
-
+*/
 			// central objects
-			/*
+			
 			auto lsum = std::vector<double>(lines.size());
 			std::transform(distmat.begin(), distmat.end(), lsum.begin(), 
 					[](const std::vector<double> &l){ return std::accumulate(l.begin(), l.end(), 0.0); });
@@ -690,12 +719,18 @@ SVector ori::DetectLines(Block &b, const View &view)
 					v += distmat[l2][l1] / lsum[l2];
 				outmap.emplace(v, lines[l1]);
 			}
-			*/
+			
+			/*
 			auto outmap = std::multimap<double, SLinearInterpolation>{};
-			auto lof = crn::ComputeLOF(distmat, crn::Cap(size_t(1), size_t(5), distmat.size() - 1));
+			auto lof = crn::ComputeLOF(distmat, crn::Cap(size_t(1), size_t(9), distmat.size() - 1));
 			for (auto tmp : crn::Range(lof))
+			{
+				std::cout << lof[tmp] << " ";
 				outmap.emplace(lof[tmp], lines[tmp]);
-
+			}
+			std::cout << std::endl;
+			std::cout << std::endl;
+*/
 			auto it = outmap.begin();
 			std::advance(it, nlines);
 			{ // XXX DISPLAY
