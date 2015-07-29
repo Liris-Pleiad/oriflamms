@@ -109,8 +109,6 @@ void Line::Append(Line &other)
 
 void Column::Cleanup()
 {
-	//lines.erase(std::remove_if(lines.begin(), lines.end(), std::mem_fun_ref(&Line::IsEmpty)), lines.end());
-
 	std::vector<Line> oklines;
 	std::vector<Line> wrap;
 	for (Line &l : lines)
@@ -167,6 +165,8 @@ void Column::Cleanup()
 		}
 	}
 	oklines.swap(lines);
+
+	lines.erase(std::remove_if(lines.begin(), lines.end(), std::mem_fun_ref(&Line::IsEmpty)), lines.end());
 }
 
 void View::Cleanup()
@@ -183,6 +183,11 @@ void Document::Cleanup()
 
 void Document::AppendView(const crn::StringUTF8 &fname, const crn::StringUTF8 &i)
 {
+	if (fname.IsEmpty())
+	{
+		AppendColumn(int(views.back().columns.size()) + 1, int(views.back().columns.size()) + 1);
+		return;
+	}
 	views.push_back(View(fname, i));
 }
 
