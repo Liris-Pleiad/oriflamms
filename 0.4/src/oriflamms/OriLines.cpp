@@ -25,6 +25,276 @@
 using namespace crn;
 using namespace literals;
 
+struct EMask
+{
+	EMask(size_t w, size_t h):mask(w, h, crn::pixel::BWBlack) {}
+	size_t X(size_t x, size_t y) const
+	{
+		auto dist = 0;
+		while (mask.At((x + dist < mask.GetWidth()) ? x + dist : mask.GetWidth() - 1, y) && mask.At((x > dist) ? x - dist : 0, y))
+		{
+			dist += 1;
+		}
+		if (!mask.At((x > dist) ? x - dist : 0, y))
+			return x - dist;
+		else return x + dist;
+	}
+	size_t X(size_t x, size_t y, int dir) const
+	{
+		auto nx = int(x);
+		auto nchange = 0;
+		while (mask.At(nx, y))
+		{
+			nx += dir;
+			if (nx < 0)
+			{
+				nx = x;
+				dir = -dir;
+				nchange += 1;
+			}
+			else if (nx >= mask.GetWidth())
+			{
+				nx = x;
+				dir = -dir;
+				nchange += 1;
+			}
+			if (nchange >= 2)
+				return x;
+		}
+		return size_t(nx);
+	}
+	inline void Set(size_t x, size_t y) { mask.At(x, y) = crn::pixel::BWWhite; }
+	inline bool Get(size_t x, size_t y) { return mask.At(x, y); }
+	crn::ImageBW mask;
+};
+
+static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
+{
+	const auto sw = StrokesWidth(oig);
+	auto ig2 = std::make_shared<crn::ImageGray>(oig);
+	ig2->ScaleToSize(ig2->GetWidth(), ig2->GetHeight() / (2 * sw));
+	auto b = Block::New(ig2);
+	auto &ig = *b->GetGray();
+	const auto w = ig.GetWidth();
+	const auto h = ig.GetHeight();
+
+	// compute energy
+	auto energy = crn::ImageIntGray(w, h, 0);
+	FOREACHPIXEL(x, y, energy)
+	{
+		auto dx = 0;
+		if (x == 0)
+			dx = ig.At(1, y) - ig.At(0, y);
+		else if (x == w - 1)
+			dx = ig.At(w - 1, y) - ig.At(w - 2, y);
+		else
+			dx = ig.At(x + 1, y) - ig.At(x - 1, y);
+		auto dy = 0;
+		if (y == 0)
+			dy = ig.At(x, 1) - ig.At(x, 0);
+		else if (y == h - 1)
+			dy = ig.At(x, h - 1) - ig.At(x, h - 2);
+		else
+			dy = ig.At(x, y + 1) - ig.At(x, y - 1);
+		energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+	}
+
+	auto mask = EMask{w, h};
+	auto vp = Histogram(w);
+	auto nloop = size_t(50);
+	for (auto loop = 0; loop < nloop; ++loop)
+	{
+		for (auto cnt = 0; cnt < w / (20 * sw); ++cnt)
+		{
+			// cumulate energy
+			auto cenergy = energy;
+			for (auto y = size_t(1); y < h; ++y)
+			{
+				cenergy.At(0, y) += crn::Min(cenergy.At(mask.X(0, y - 1, 1), y - 1), cenergy.At(mask.X(1, y - 1, 1), y - 1));
+				for (auto x = size_t(1); x < w - 1; ++x)
+					cenergy.At(x, y) += crn::Min(cenergy.At(mask.X(x - 1, y - 1, -1), y - 1),
+							cenergy.At(mask.X(x, y - 1), y - 1), cenergy.At(mask.X(x + 1, y - 1, 1), y - 1));
+				cenergy.At(w - 1, y) += crn::Min(cenergy.At(mask.X(w - 2, y - 1, -1), y - 1),
+						cenergy.At(mask.X(w - 1, y - 1, -1), y - 1));
+			}
+
+			auto minx = size_t(0);
+			auto minenergy = std::numeric_limits<int>::max();
+			auto pts = std::vector<crn::Point2D<size_t>>();
+			for (auto x = 0; x < w; ++x)
+				if (!mask.Get(x, h - 1) && cenergy.At(x, h - 1) < minenergy)
+				{
+					minx = x;
+					minenergy = cenergy.At(x, h - 1);
+				}
+
+			auto x = minx;
+			auto y = h - 1;
+			do
+			{
+				mask.Set(x, y);
+				pts.emplace_back(x, y);
+
+				y -= 1;
+				auto newx = x;
+				auto e = cenergy.At(x, y);
+				auto shift = 0;
+				if (x > 0)
+				{
+					if (cenergy.At(mask.X(x - 1, y, -1), y) < e)
+					{
+						newx = mask.X(x - 1, y, -1);
+						e = cenergy.At(newx, y);
+					}
+				}
+				if (x + 1 < w)
+				{
+					if (cenergy.At(x + 1, y) < e)
+					{
+						newx = mask.X(x + 1, y, 1);
+						e = cenergy.At(newx, y);
+					}
+				}
+				x = newx;
+			} while (y > 0);
+			mask.Set(x, y);
+			pts.emplace_back(x, y);
+
+			// update energy
+			for (const auto pt : pts)
+			{
+				const auto y = pt.Y;
+				if (pt.X != 0)
+				{
+					const auto x = pt.X - 1;
+					auto dx = 0;
+					if (x == 0)
+						dx = ig.At(mask.X(1, y, 1), y) - ig.At(mask.X(0, y, 1), y);
+					else if (x == w - 1)
+						dx = ig.At(mask.X(w - 1, y, -1), y) - ig.At(mask.X(w - 2, y, -1), y);
+					else
+						dx = ig.At(mask.X(x + 1, y, 1), y) - ig.At(mask.X(x - 1, y, -1), y);
+					auto dy = 0;
+					if (y == 0)
+						dy = ig.At(mask.X(x, 1), 1) - ig.At(mask.X(x, 0), 0);
+					else if (y == h - 1)
+						dy = ig.At(mask.X(x, h), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
+					else
+						dy = ig.At(mask.X(x, y + 1), y + 1) - ig.At(mask.X(x, y - 1), y - 1);
+					energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+				}
+				if (pt.X != w - 1)
+				{
+					const auto x = pt.X + 1;
+					auto dx = 0;
+					if (x == 0)
+						dx = ig.At(mask.X(1, y, 1), y) - ig.At(mask.X(0, y, 1), y);
+					else if (x == w - 1)
+						dx = ig.At(mask.X(w - 1, y, -1), y) - ig.At(mask.X(w - 2, y, -1), y);
+					else
+						dx = ig.At(mask.X(x + 1, y, 1), y) - ig.At(mask.X(x - 1, y, -1), y);
+					auto dy = 0;
+					if (y == 0)
+						dy = ig.At(mask.X(x, 1), 1) - ig.At(mask.X(x, 0), 0);
+					else if (y == h - 1)
+						dy = ig.At(mask.X(x, h), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
+					else
+						dy = ig.At(mask.X(x, y + 1), y + 1) - ig.At(mask.X(x, y - 1), y - 1);
+					energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+				}
+			}
+
+		}
+		auto proj = crn::VerticalProjection(mask.mask);
+		auto start = size_t(0);
+		auto zones = std::vector<std::pair<size_t, size_t>>{};
+		for (auto tmp = size_t(1); tmp < proj.Size(); ++tmp)
+		{
+			if (proj[tmp] != proj[tmp - 1])
+			{
+				if ((tmp - start > 10 * sw) && (start > 0))
+				{
+					zones.emplace_back(start, tmp);
+					for (auto x = start; x < tmp; ++x)
+						vp.IncBin(x);
+				}
+				start = tmp;
+			}
+		}
+	}
+
+	// check number of modes for each Y in the histogram
+	const size_t max = vp.Max();
+	auto modesh = std::vector<size_t>();
+	for (size_t y = 0; y < max; ++y)
+	{
+		int t1 = 0, t2 = 0;
+		for (size_t x = 0; x < vp.Size() - 1; ++x)
+		{
+			bool in1 = vp.GetBin(x) > y;
+			bool in2 = vp.GetBin(x + 1) > y;
+			if (!in1 && in2)
+			{
+				t1 += 1; // entering the data
+			}
+			else if (in1 && !in2)
+			{
+				t2 += 1; // leaving the data
+			}
+		}
+		int nmodes = Max(t1, t2);
+		if (nmodes == ncols)
+			modesh.push_back(y);
+	}
+
+	if (modesh.empty())
+	{ // white page
+		auto thumbzones = std::vector<Rect>{};
+		int bx = 0;
+		const int w = int(oig.GetWidth()) / int(ncols);
+		const int h = int(oig.GetHeight()) - 1;
+		for (size_t tmp = 0; tmp < ncols; ++tmp)
+		{ // cut the page regularly
+			thumbzones.emplace_back(bx, 0, bx + w - 1, h);
+			bx += w;
+		}
+		return thumbzones;
+	}
+
+	//std::cout << "************** " << nmodes << std::endl;
+
+	bool in = false;
+	auto th = modesh[modesh.size() / 2]; // median Y for the correct number of modes/columns
+	//std::cout << th << std::endl;
+	int bx = 0;
+	auto thumbzones = std::vector<Rect>{};
+	for (size_t x = 0; x < vp.Size(); ++x)
+	{
+		if (in)
+		{
+			if (vp.GetBin(x) <= th)
+			{
+				thumbzones.emplace_back(bx, 0, int(x) - 1, int(oig.GetHeight()) - 1);
+				in = false;
+			}
+		}
+		else
+		{
+			if (vp.GetBin(x) > th)
+			{
+				bx = int(x);
+				in = true;
+			}
+		}
+	}
+	if (in)
+	{
+		thumbzones.emplace_back(bx, 0, int(oig.GetWidth()) - 1, int(oig.GetHeight()) - 1);
+	}
+	return thumbzones;
+}
+
+#if 0
 static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
 {
 	auto ig2 = ydiff;
@@ -104,6 +374,7 @@ static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
 	}
 	return thumbzones;
 }
+#endif
 
 static int lumdiff(const ImageGray &ig, int cx, int cy, int dx, int dy, const ImageGray &mask)
 {
@@ -332,7 +603,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 					int v = b.GetGray()->At(tx, ty);
 					//int v = igr->GetRhoPixels()[tx + ty * w];
 					if (v < mval)
-					//if (v > mval)
+						//if (v > mval)
 					{
 						mval = v;
 						okx = tx;
@@ -419,9 +690,15 @@ SVector ori::DetectLines(Block &b, const View &view)
 	ig.Convolve(ydiff);
 
 	// Columns
-	std::vector<Rect> thumbzones(detectColumns(ig, view.GetColumns().size()));
-	for (const Rect &r : thumbzones)
+	//std::vector<Rect> thumbzones(detectColumns(ig, view.GetColumns().size()));
+	std::vector<Rect> thumbzones(detectColumns(*b.GetGray(), view.GetColumns().size()));
+	for (Rect &r : thumbzones)
 	{
+		r.SetLeft(r.GetLeft() / xdiv);
+		r.SetRight(r.GetRight() / xdiv);
+		r.SetTop(r.GetTop() / ydiv);
+		r.SetBottom(r.GetBottom() / ydiv);
+
 		for (size_t x = r.GetLeft() * xdiv; x < r.GetRight() * xdiv; ++x)
 			for (size_t y = 0; y < h; ++y)
 				b.GetRGB()->At(x, y).b = 0;
@@ -433,8 +710,8 @@ SVector ori::DetectLines(Block &b, const View &view)
 	// project horizontal gradients
 	auto cropbw = std::make_shared<ImageBW>(w, h, pixel::BWWhite);
 	//for (auto tmp : Range(*igr))
-		//if (igr->IsSignificant(tmp) && ((AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::LEFT) < 32) ||
-				//(AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::RIGHT) < 32)))
+	//if (igr->IsSignificant(tmp) && ((AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::LEFT) < 32) ||
+	//(AngularDistance(igr->At(tmp).theta, Angle<ByteAngle>::RIGHT) < 32)))
 	FOREACHPIXEL(x, y, *igr)
 	{
 		auto stop = false;
@@ -447,7 +724,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 		if (stop)
 			continue;
 		if (igr->IsSignificant(x, y) && ((AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::LEFT) < 32) ||
-				(AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::RIGHT) < 32)))
+					(AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::RIGHT) < 32)))
 			cropbw->At(x, y) = pixel::BWBlack;
 	}
 
@@ -654,9 +931,9 @@ SVector ori::DetectLines(Block &b, const View &view)
 				{
 					const auto y = (*lines[l1])[x];
 					//for (auto y = crn::Max(0, yref - int(lspace1 / 2)); y < crn::Min(int(b.GetGray()->GetHeight()), yref + int(lspace1 / 2)); ++y)
-						//sig[x - bx].real(sig[x - bx].real() + 255 - b.GetGray()->At(x, y));
-						if (igr->IsSignificant(x, y))
-							sig[igr->At(x, y).theta.value / adiv] += 1;
+					//sig[x - bx].real(sig[x - bx].real() + 255 - b.GetGray()->At(x, y));
+					if (igr->IsSignificant(x, y))
+						sig[igr->At(x, y).theta.value / adiv] += 1;
 				}
 				auto m = *std::max_element(sig.begin(), sig.end());
 				if (m)
@@ -673,9 +950,9 @@ SVector ori::DetectLines(Block &b, const View &view)
 					{
 						const auto y = (*lines[l2])[x];
 						//for (auto y = crn::Max(0, yref - int(lspace1 / 2)); y < crn::Min(int(b.GetGray()->GetHeight()), yref + int(lspace1 / 2)); ++y)
-							//sig2[x - bx].real(sig2[x - bx].real() + 255 - b.GetGray()->At(x, y));
-							if (igr->IsSignificant(x, y))
-								sig2[igr->At(x, y).theta.value / adiv] += 1;
+						//sig2[x - bx].real(sig2[x - bx].real() + 255 - b.GetGray()->At(x, y));
+						if (igr->IsSignificant(x, y))
+							sig2[igr->At(x, y).theta.value / adiv] += 1;
 					}
 					auto m = *std::max_element(sig2.begin(), sig2.end());
 					if (m)
@@ -684,7 +961,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 
 					auto d = 0.0;
 					//for (size_t tmp = 0; tmp < fw; ++tmp)
-						//d += std::norm(sig[tmp] * sig2[tmp]);
+					//d += std::norm(sig[tmp] * sig2[tmp]);
 					//distmat[l1][l2] = distmat[l2][l1] = -d;
 					//if (d > maxd) maxd = d;
 					for (auto tmp : crn::Range(sig))
@@ -695,21 +972,21 @@ SVector ori::DetectLines(Block &b, const View &view)
 				//std::cout << std::endl;
 			}
 			/*
-			for (size_t i = 0; i < distmat.size(); ++i)
-				for (size_t j = 0; j < distmat.size(); ++j)
-				{
-					if (i == j)
-						distmat[i][j] = 0.0;
-					else
-						distmat[i][j] += maxd;
-				}
-*/
+				 for (size_t i = 0; i < distmat.size(); ++i)
+				 for (size_t j = 0; j < distmat.size(); ++j)
+				 {
+				 if (i == j)
+				 distmat[i][j] = 0.0;
+				 else
+				 distmat[i][j] += maxd;
+				 }
+				 */
 			// central objects
-			
+
 			auto lsum = std::vector<double>(lines.size());
 			std::transform(distmat.begin(), distmat.end(), lsum.begin(), 
 					[](const std::vector<double> &l){ return std::accumulate(l.begin(), l.end(), 0.0); });
-			
+
 			auto outmap = std::multimap<double, SLinearInterpolation>{};
 			for (size_t l1 = 0; l1 < lines.size(); ++l1)
 			{
@@ -719,18 +996,18 @@ SVector ori::DetectLines(Block &b, const View &view)
 					v += distmat[l2][l1] / lsum[l2];
 				outmap.emplace(v, lines[l1]);
 			}
-			
+
 			/*
-			auto outmap = std::multimap<double, SLinearInterpolation>{};
-			auto lof = crn::ComputeLOF(distmat, crn::Cap(size_t(1), size_t(9), distmat.size() - 1));
-			for (auto tmp : crn::Range(lof))
-			{
-				std::cout << lof[tmp] << " ";
-				outmap.emplace(lof[tmp], lines[tmp]);
-			}
-			std::cout << std::endl;
-			std::cout << std::endl;
-*/
+				 auto outmap = std::multimap<double, SLinearInterpolation>{};
+				 auto lof = crn::ComputeLOF(distmat, crn::Cap(size_t(1), size_t(9), distmat.size() - 1));
+				 for (auto tmp : crn::Range(lof))
+				 {
+				 std::cout << lof[tmp] << " ";
+				 outmap.emplace(lof[tmp], lines[tmp]);
+				 }
+				 std::cout << std::endl;
+				 std::cout << std::endl;
+				 */
 			auto it = outmap.begin();
 			std::advance(it, nlines);
 			{ // XXX DISPLAY
@@ -869,51 +1146,51 @@ template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, doubl
 	return sline;
 
 	/*
-	std::vector<T> simplified_line;
-	if (line.size() > 6)
-	{
-		simplified_line.push_back(line[0]);
-		simplified_line.push_back(line[1]);
-		size_t id = 0;
-		while (id < line.size() - 5)
-		{
-			size_t jump = 6;
-			size_t id_end = simplified_line.size() - 1;
-			Angle<Radian> angle1 = Angle<Radian>::Atan(simplified_line[id_end].Y-simplified_line[id_end - 1].Y, simplified_line[id_end].X-simplified_line[id_end - 1].X);
-			for (size_t n = 0; n < 4; ++n)
-			{
-				Angle<Radian> angle2 = Angle<Radian>::Atan(line[id + n + 1].Y-simplified_line[id_end].Y, line[id + n + 1].X-simplified_line[id_end].X);
-				Angle<Radian> disangle = AngularDistance(angle1, angle2);
-				double di = sqrt(Sqr(line[id + n + 1].Y-simplified_line[id_end].Y) + Sqr(line[id + n + 1].X-simplified_line[id_end].X))*sin(disangle.value);
+		 std::vector<T> simplified_line;
+		 if (line.size() > 6)
+		 {
+		 simplified_line.push_back(line[0]);
+		 simplified_line.push_back(line[1]);
+		 size_t id = 0;
+		 while (id < line.size() - 5)
+		 {
+		 size_t jump = 6;
+		 size_t id_end = simplified_line.size() - 1;
+		 Angle<Radian> angle1 = Angle<Radian>::Atan(simplified_line[id_end].Y-simplified_line[id_end - 1].Y, simplified_line[id_end].X-simplified_line[id_end - 1].X);
+		 for (size_t n = 0; n < 4; ++n)
+		 {
+		 Angle<Radian> angle2 = Angle<Radian>::Atan(line[id + n + 1].Y-simplified_line[id_end].Y, line[id + n + 1].X-simplified_line[id_end].X);
+		 Angle<Radian> disangle = AngularDistance(angle1, angle2);
+		 double di = sqrt(Sqr(line[id + n + 1].Y-simplified_line[id_end].Y) + Sqr(line[id + n + 1].X-simplified_line[id_end].X))*sin(disangle.value);
 
-				size_t last = simplified_line.size() - 1;
-				Angle<Radian> angleA = Angle<Radian>::Atan(simplified_line[last].Y-simplified_line[last - 1].Y, simplified_line[last].X-simplified_line[last - 1].X);
-				Angle<Radian> angleB = Angle<Radian>::Atan(line[id + n + 1].Y-simplified_line[last].Y, line[id + n + 1].X-simplified_line[last].X);
-				Angle<Radian> disan = AngularDistance(angleA, angleB);
-				if (disan.value < d)
-				{
-					simplified_line.back() = line[id+ n +1];
-					//id_end = id+ n +1;
-					jump = n + 1;
-				}
-				else
-				{
-					if(di > dist)
-					{
-						simplified_line.push_back(line[id+ n +1]);
-						//id_end = id+ n +1;
-						jump = n + 1;
-						id += jump; ;
-						break;
-					}
-				}
-			}
-			id += jump; ;
-		}
-		simplified_line.push_back(line.back());
+		 size_t last = simplified_line.size() - 1;
+		 Angle<Radian> angleA = Angle<Radian>::Atan(simplified_line[last].Y-simplified_line[last - 1].Y, simplified_line[last].X-simplified_line[last - 1].X);
+		 Angle<Radian> angleB = Angle<Radian>::Atan(line[id + n + 1].Y-simplified_line[last].Y, line[id + n + 1].X-simplified_line[last].X);
+		 Angle<Radian> disan = AngularDistance(angleA, angleB);
+		 if (disan.value < d)
+		 {
+		 simplified_line.back() = line[id+ n +1];
+	//id_end = id+ n +1;
+	jump = n + 1;
 	}
 	else
-		simplified_line = line;
+	{
+	if(di > dist)
+	{
+	simplified_line.push_back(line[id+ n +1]);
+	//id_end = id+ n +1;
+	jump = n + 1;
+	id += jump; ;
+	break;
+	}
+	}
+	}
+	id += jump; ;
+	}
+	simplified_line.push_back(line.back());
+	}
+	else
+	simplified_line = line;
 
 	return simplified_line;
 	*/
