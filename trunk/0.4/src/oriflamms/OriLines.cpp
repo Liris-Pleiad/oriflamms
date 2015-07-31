@@ -82,6 +82,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 	auto energy = crn::ImageIntGray(w, h, 0);
 	FOREACHPIXEL(x, y, energy)
 	{
+		/*
 		auto dx = 0;
 		if (x == 0)
 			dx = ig.At(1, y) - ig.At(0, y);
@@ -89,6 +90,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 			dx = ig.At(w - 1, y) - ig.At(w - 2, y);
 		else
 			dx = ig.At(x + 1, y) - ig.At(x - 1, y);
+			*/
 		auto dy = 0;
 		if (y == 0)
 			dy = ig.At(x, 1) - ig.At(x, 0);
@@ -96,15 +98,16 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 			dy = ig.At(x, h - 1) - ig.At(x, h - 2);
 		else
 			dy = ig.At(x, y + 1) - ig.At(x, y - 1);
-		energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+		//energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+		energy.At(x, y) = crn::Abs(dy);
 	}
 
 	auto mask = EMask{w, h};
 	auto vp = Histogram(w);
-	auto nloop = size_t(50);
+	auto nloop = size_t(100);
 	for (auto loop = 0; loop < nloop; ++loop)
 	{
-		for (auto cnt = 0; cnt < w / (20 * sw); ++cnt)
+		for (auto cnt = 0; cnt < w / (50 * sw); ++cnt)
 		{
 			// cumulate energy
 			auto cenergy = energy;
@@ -167,6 +170,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 				if (pt.X != 0)
 				{
 					const auto x = pt.X - 1;
+					/*
 					auto dx = 0;
 					if (x == 0)
 						dx = ig.At(mask.X(1, y, 1), y) - ig.At(mask.X(0, y, 1), y);
@@ -174,6 +178,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 						dx = ig.At(mask.X(w - 1, y, -1), y) - ig.At(mask.X(w - 2, y, -1), y);
 					else
 						dx = ig.At(mask.X(x + 1, y, 1), y) - ig.At(mask.X(x - 1, y, -1), y);
+						*/
 					auto dy = 0;
 					if (y == 0)
 						dy = ig.At(mask.X(x, 1), 1) - ig.At(mask.X(x, 0), 0);
@@ -181,11 +186,13 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 						dy = ig.At(mask.X(x, h), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
 					else
 						dy = ig.At(mask.X(x, y + 1), y + 1) - ig.At(mask.X(x, y - 1), y - 1);
-					energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+					//energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+					energy.At(x, y) = crn::Abs(dy);
 				}
 				if (pt.X != w - 1)
 				{
 					const auto x = pt.X + 1;
+					/*
 					auto dx = 0;
 					if (x == 0)
 						dx = ig.At(mask.X(1, y, 1), y) - ig.At(mask.X(0, y, 1), y);
@@ -193,6 +200,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 						dx = ig.At(mask.X(w - 1, y, -1), y) - ig.At(mask.X(w - 2, y, -1), y);
 					else
 						dx = ig.At(mask.X(x + 1, y, 1), y) - ig.At(mask.X(x - 1, y, -1), y);
+						*/
 					auto dy = 0;
 					if (y == 0)
 						dy = ig.At(mask.X(x, 1), 1) - ig.At(mask.X(x, 0), 0);
@@ -200,7 +208,8 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 						dy = ig.At(mask.X(x, h), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
 					else
 						dy = ig.At(mask.X(x, y + 1), y + 1) - ig.At(mask.X(x, y - 1), y - 1);
-					energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+					//energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
+					energy.At(x, y) = crn::Abs(dy);
 				}
 			}
 
