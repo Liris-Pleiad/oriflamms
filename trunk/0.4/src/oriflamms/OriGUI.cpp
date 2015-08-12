@@ -33,6 +33,7 @@ const int GUI::minwordwidth(5);
 
 GUI::GUI():
 	view_depth(ViewDepth::None),
+	aligndial(*this),
 	need_save(false)
 {
 	try
@@ -1345,61 +1346,73 @@ void GUI::reload_tei()
 
 void GUI::align_selection()
 {
-	GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
-	switch (view_depth)
+	if (aligndial.run() == Gtk::RESPONSE_ACCEPT)
 	{
-		case ViewDepth::Page:
-			{
-				// page
-				size_t ic = pw.add_progress_bar(_("Column"));
-				pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
-				size_t il = pw.add_progress_bar(_("Line"));
-				pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
-				pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignView), current_view_id, pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
-				set_need_save();
-			}
-			break;
-		case ViewDepth::Column:
-			{
-				// column
-				Gtk::TreeIter it = tv.get_selection()->get_selected();
-				size_t colid = it->get_value(columns.index);
+		aligndial.hide();
+		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
+		switch (view_depth)
+		{
+			case ViewDepth::Page:
+				{
+					// page
+					size_t ic = pw.add_progress_bar(_("Column"));
+					pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
+					size_t il = pw.add_progress_bar(_("Line"));
+					pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
+					pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignView), aligndial.get_config(), current_view_id, pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
+					set_need_save();
+				}
+				break;
+			case ViewDepth::Column:
+				{
+					// column
+					Gtk::TreeIter it = tv.get_selection()->get_selected();
+					size_t colid = it->get_value(columns.index);
 
-				size_t i = pw.add_progress_bar(_("Line"));
-				pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-				pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignColumn), current_view_id, colid, pw.get_crn_progress(i), (crn::Progress*)nullptr));
-				set_need_save();
-			}
-			break;
-		case ViewDepth::Line:
-			{
-				// line
-				Gtk::TreeIter it = tv.get_selection()->get_selected();
-				size_t linid = it->get_value(columns.index);
-				size_t colid = it->parent()->get_value(columns.index);
+					size_t i = pw.add_progress_bar(_("Line"));
+					pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
+					pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignColumn), aligndial.get_config(), current_view_id, colid, pw.get_crn_progress(i), (crn::Progress*)nullptr));
+					set_need_save();
+				}
+				break;
+			case ViewDepth::Line:
+				{
+					// line
+					Gtk::TreeIter it = tv.get_selection()->get_selected();
+					size_t linid = it->get_value(columns.index);
+					size_t colid = it->parent()->get_value(columns.index);
 
-				size_t i = pw.add_progress_bar("");
-				pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-				pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), current_view_id, colid, linid, pw.get_crn_progress(i)));
-				set_need_save();
-			}
-			break;
+					size_t i = pw.add_progress_bar("");
+					pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
+					pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), aligndial.get_config(), current_view_id, colid, linid, pw.get_crn_progress(i)));
+					set_need_save();
+				}
+				break;
+		}
+		tree_selection_changed(false); // update display
 	}
-	tree_selection_changed(false); // update display
+	else
+		aligndial.hide();
 }
 
 void GUI::align_all()
 {
-	GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
-	size_t iv = pw.add_progress_bar(_("View"));
-	pw.get_crn_progress(iv)->SetType(crn::Progress::Type::ABSOLUTE);
-	size_t ic = pw.add_progress_bar(_("Column"));
-	pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
-	size_t il = pw.add_progress_bar(_("Line"));
-	pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
-	pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignAll), pw.get_crn_progress(iv), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
-	set_need_save();
-	tree_selection_changed(false); // update display
+	if (aligndial.run() == Gtk::RESPONSE_ACCEPT)
+	{
+		aligndial.hide();
+		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
+		size_t iv = pw.add_progress_bar(_("View"));
+		pw.get_crn_progress(iv)->SetType(crn::Progress::Type::ABSOLUTE);
+		size_t ic = pw.add_progress_bar(_("Column"));
+		pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
+		size_t il = pw.add_progress_bar(_("Line"));
+		pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
+		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignAll), aligndial.get_config(), pw.get_crn_progress(iv), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
+		set_need_save();
+		tree_selection_changed(false); // update display
+	}
+	else
+		aligndial.hide();
 }
 
 void GUI::validate()
