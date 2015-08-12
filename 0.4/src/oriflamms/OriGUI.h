@@ -14,6 +14,7 @@
 #include <OriProject.h>
 #include <OriValidation.h>
 #include <CRNUtils/CRNOption.h>
+#include <OriAlignDialog.h>
 
 namespace ori
 {
@@ -82,6 +83,7 @@ namespace ori
 			sigc::connection line_add_point_connection;
 			sigc::connection line_rem_point_connection;
 			std::unique_ptr<Validation> validation_win;
+			AlignDialog aligndial;
 
 			std::unique_ptr<Project> project;
 			bool need_save;

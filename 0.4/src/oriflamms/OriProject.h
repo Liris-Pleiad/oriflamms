@@ -12,6 +12,7 @@
 #include <CRNUtils/CRNProgress.h>
 #include <OriTEIImporter.h>
 #include <OriStruct.h>
+#include <OriAlignConfig.h>
 
 namespace ori
 {
@@ -57,15 +58,15 @@ namespace ori
 			void ReloadTEI();
 
 			/*! \brief Computes alignment on the whole document */
-			void AlignAll(crn::Progress *docprog = nullptr, crn::Progress *viewprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			void AlignAll(AlignConfig conf, crn::Progress *docprog = nullptr, crn::Progress *viewprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 			/*! \brief Computes alignment on a view */
-			void AlignView(size_t view_num, crn::Progress *viewprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			void AlignView(AlignConfig conf, size_t view_num, crn::Progress *viewprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 			/*! \brief Computes alignment on a column */
-			void AlignColumn(size_t view_num, size_t col_num, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			void AlignColumn(AlignConfig conf, size_t view_num, size_t col_num, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 			/*! \brief Computes alignment on a line */
-			void AlignLine(size_t view_num, size_t col_num, size_t line_num, crn::Progress *prog = nullptr);
+			void AlignLine(AlignConfig conf, size_t view_num, size_t col_num, size_t line_num, crn::Progress *prog = nullptr);
 			/*! \brief Computes alignment on a range of words */
-			void AlignRange(const WordPath &first, const WordPath &last);
+			void AlignRange(AlignConfig conf, const WordPath &first, const WordPath &last);
 			/*! \brief Computes a word's frontiers */
 			void ComputeWordFrontiers(const ori::WordPath &wp);
 			/*! \brief Aligns the characters in a word */

@@ -355,13 +355,13 @@ void Project::ReloadTEI()
  * \param[in]	colprog	progress bar on lines
  * \param[in]	linprog	progress bar on words
  */
-void Project::AlignAll(crn::Progress *docprog, crn::Progress *viewprog, crn::Progress *colprog, crn::Progress *linprog)
+void Project::AlignAll(AlignConfig conf, crn::Progress *docprog, crn::Progress *viewprog, crn::Progress *colprog, crn::Progress *linprog)
 {
 	if (docprog)
 		docprog->SetMaxCount(int(xdoc.GetViews().size()));
 	for (size_t v = 0; v < xdoc.GetViews().size(); ++v)
 	{
-		AlignView(v, viewprog, colprog, linprog);
+		AlignView(conf, v, viewprog, colprog, linprog);
 		if (docprog)
 			docprog->Advance();
 	}
@@ -373,7 +373,7 @@ void Project::AlignAll(crn::Progress *docprog, crn::Progress *viewprog, crn::Pro
  * \param[in]	colprog	progress bar on lines
  * \param[in]	linprog	progress bar on words
  */
-void Project::AlignView(size_t view_num, crn::Progress *viewprog, crn::Progress *colprog, crn::Progress *linprog)
+void Project::AlignView(AlignConfig conf, size_t view_num, crn::Progress *viewprog, crn::Progress *colprog, crn::Progress *linprog)
 {
 	crn::SBlock b(doc->GetView(view_num)); // load once and for all (avoids to reload the image each time we have to compute features)
 	size_t ncols = xdoc.GetViews()[view_num].GetColumns().size();
@@ -381,7 +381,7 @@ void Project::AlignView(size_t view_num, crn::Progress *viewprog, crn::Progress 
 		viewprog->SetMaxCount(int(ncols));
 	for (size_t c = 0; c < ncols; ++c)
 	{
-		AlignColumn(view_num, c, colprog, linprog);
+		AlignColumn(conf, view_num, c, colprog, linprog);
 		if (viewprog)
 			viewprog->Advance();
 	}
@@ -394,7 +394,7 @@ void Project::AlignView(size_t view_num, crn::Progress *viewprog, crn::Progress 
  * \param[in]	colprog	progress bar on lines
  * \param[in]	linprog	progress bar on words
  */
-void Project::AlignColumn(size_t view_num, size_t col_num, crn::Progress *colprog, crn::Progress *linprog)
+void Project::AlignColumn(AlignConfig conf, size_t view_num, size_t col_num, crn::Progress *colprog, crn::Progress *linprog)
 {
 	crn::SBlock b(doc->GetView(view_num)); // load once and for all (avoids to reload the image each time we have to compute features)
 	size_t nlines = xdoc.GetViews()[view_num].GetColumns()[col_num].GetLines().size();
@@ -402,7 +402,7 @@ void Project::AlignColumn(size_t view_num, size_t col_num, crn::Progress *colpro
 		colprog->SetMaxCount(int(nlines));
 	for (size_t l = 0; l < nlines; ++l)
 	{
-		AlignLine(view_num, col_num, l, linprog);
+		AlignLine(conf, view_num, col_num, l, linprog);
 		if (colprog)
 			colprog->Advance();
 	}
@@ -414,7 +414,7 @@ void Project::AlignColumn(size_t view_num, size_t col_num, crn::Progress *colpro
  * \param[in]	line_num	the index of the line
  * \param[in]	prog	progress bar on words
  */
-void Project::AlignLine(size_t view_num, size_t col_num, size_t line_num, crn::Progress *prog)
+void Project::AlignLine(AlignConfig conf, size_t view_num, size_t col_num, size_t line_num, crn::Progress *prog)
 {
 	ori::Line &ol = xdoc.GetViews()[view_num].GetColumns()[col_num].GetLines()[line_num];
 	std::vector<std::vector<size_t>> wranges;
@@ -465,7 +465,7 @@ void Project::AlignLine(size_t view_num, size_t col_num, size_t line_num, crn::P
 		}
 		else
 		{
-			AlignRange(WordPath {view_num, col_num, line_num, r.front()}, WordPath {view_num, col_num, line_num, r.back()});
+			AlignRange(conf, WordPath {view_num, col_num, line_num, r.front()}, WordPath {view_num, col_num, line_num, r.back()});
 		}
 		if (prog)
 			prog->Advance();
@@ -480,7 +480,7 @@ void Project::AlignLine(size_t view_num, size_t col_num, size_t line_num, crn::P
 		}
 		else
 		{
-			AlignRange(WordPath {view_num, col_num, line_num, r.front()}, WordPath {view_num, col_num, line_num, r.back()});
+			AlignRange(conf, WordPath {view_num, col_num, line_num, r.front()}, WordPath {view_num, col_num, line_num, r.back()});
 		}
 		if (prog)
 			prog->Advance();
@@ -496,7 +496,7 @@ void Project::AlignLine(size_t view_num, size_t col_num, size_t line_num, crn::P
  * \param[in]	first	the first word to align
  * \param[in]	last	the last word to align (included!)
  */
-void Project::AlignRange(const WordPath &first, const WordPath &last)
+void Project::AlignRange(AlignConfig conf, const WordPath &first, const WordPath &last)
 {
 	if (last < first)
 		throw crn::ExceptionDimension(_("The last word is locate before the first."));

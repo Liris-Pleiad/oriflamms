@@ -1,3 +1,7 @@
+2015-08-12 Yann LEYDIER <yann@leydier.info>
+	* AlignConfig: Added.
+	* AlignDialog: Added.
+
 2015-06-08 Yann LEYDIER <yann@leydier.info>
 	* TEIImpoter (fill_tree): Added <am> to OK element list.
 
