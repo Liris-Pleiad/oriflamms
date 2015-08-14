@@ -70,7 +70,7 @@ namespace ori
 			/*! \brief Computes a word's frontiers */
 			void ComputeWordFrontiers(const ori::WordPath &wp);
 			/*! \brief Aligns the characters in a word */
-			void AlignWordCharacters(const ori::WordPath &wp);
+			void AlignWordCharacters(AlignConfig conf, const ori::WordPath &wp);
 
 			/*! \brief Exports statistics on alignment validation to an ODS file */
 			void ExportStats(const crn::Path &fname) const;
