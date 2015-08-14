@@ -48,7 +48,7 @@ void Word::ClearAlignment()
 
 const std::vector<crn::Point2DInt>& Word::GetCharacterFront(size_t i) const
 {
-	if (frontfrontier.empty())
+	if (!CharactersAligned())
 		throw crn::ExceptionUninitialized(crn::StringUTF8("const std::vector<crn::Point2DInt>& Word::GetCharacterFront(size_t i) const: ") + _("character frontiers were not computed."));
 	if (i >= text.Size())
 		throw crn::ExceptionDomain(crn::StringUTF8("const std::vector<crn::Point2DInt>& Word::GetCharacterFront(size_t i) const: ") + _("index out of bounds."));
@@ -64,7 +64,7 @@ const std::vector<crn::Point2DInt>& Word::GetCharacterFront(size_t i) const
 
 const std::vector<crn::Point2DInt>& Word::GetCharacterBack(size_t i) const
 {
-	if (frontfrontier.empty())
+	if (!CharactersAligned())
 		throw crn::ExceptionUninitialized(crn::StringUTF8("const std::vector<crn::Point2DInt>& Word::GetCharacterBack(size_t i) const: ") + _("character frontiers were not computed."));
 	if (i >= text.Size())
 		throw crn::ExceptionDomain(crn::StringUTF8("const std::vector<crn::Point2DInt>& Word::GetCharacterBack(size_t i) const: ") + _("index out of bounds."));
@@ -73,7 +73,12 @@ const std::vector<crn::Point2DInt>& Word::GetCharacterBack(size_t i) const
 		if (ignore_list.find(tmp) == ignore_list.end())
 			realindex += 1;
 	if (realindex == 0)
-		return frontiers.front();
+	{
+		if (frontiers.empty())
+			return backfrontier; 
+		else
+			return frontiers.front();
+	}
 	else
 		realindex -= 1;
 	if (realindex >= frontiers.size())
@@ -84,7 +89,7 @@ const std::vector<crn::Point2DInt>& Word::GetCharacterBack(size_t i) const
 
 std::vector<Word::Character> Word::GetCharacters() const
 {
-	if (frontfrontier.empty())
+	if (!CharactersAligned())
 		throw crn::ExceptionUninitialized(crn::StringUTF8("std::vector<Character> Word::GetCharacters() const: ") + _("character frontiers were not computed."));
 
 	std::vector<Character> chars;
@@ -100,6 +105,28 @@ std::vector<Word::Character> Word::GetCharacters() const
 		tmp = e;
 	}
 	return chars;
+}
+
+bool Word::IsAligned() const
+{
+	return GetBBox().IsValid();
+}
+
+bool Word::CharactersAligned() const
+{
+	if (!IsAligned())
+		return false; // word not aligned
+	if (!frontiers.empty())
+		return true; // there are character frontiers
+	// no characters frontiers, count characters
+	auto cnt = 0;
+	for (auto tmp : crn::Range(text))
+		if (ignore_list.find(tmp) == ignore_list.end())
+			cnt += 1;
+	if (cnt <= 1)
+		return true; // one non-ignored character => no need of characters frontiers
+	else
+		return false; // more than one character => they were not aligned
 }
 
 void Line::Append(Line &other)

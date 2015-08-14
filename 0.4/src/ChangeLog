@@ -1,3 +1,8 @@
+2015-08-14 Yann LEYDIER <yann@leydier.info>
+	* Project (AlignLine): Rewritten.
+	* Word (GetCharacterFront, GetCharacterBack, GetCharacters): Bugfix.
+	* Word (IsAligned, CharactersAligned): Added.
+
 2015-08-12 Yann LEYDIER <yann@leydier.info>
 	* AlignConfig: Added.
 	* AlignDialog: Added.

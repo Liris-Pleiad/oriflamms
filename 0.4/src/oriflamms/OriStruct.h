@@ -93,6 +93,8 @@ namespace ori
 
 			/*! \brief Removes all word and character alignment info */
 			void ClearAlignment();
+			/*! \brief Removes character frontiers inside the word */
+			void ClearCharacterFrontiers() { frontiers.clear(); }
 			/*! \brief Removes all word and character frontiers */
 			void ClearFrontiers() { frontiers.clear(); frontfrontier.clear(); backfrontier.clear(); }
 
@@ -102,6 +104,11 @@ namespace ori
 			void SetIgnoreList(const std::set<size_t> &il) { ignore_list = il; }
 			/*! \brief Sets the list of characters that have no frontiers (subscripted or diacritical) */
 			void SetIgnoreList(std::set<size_t> &&il) { ignore_list = std::move(il); }
+
+			/*! \brief Is the word aligned? */
+			bool IsAligned() const;
+			/*! \brief Are the characters aligned? */
+			bool CharactersAligned() const;
 
 		private:
 			Word(const crn::StringUTF8 &word_id, const crn::String &content):id(word_id),text(content),valid(crn::Prop3::Unknown),leftcorr(0),rightcorr(0) { }

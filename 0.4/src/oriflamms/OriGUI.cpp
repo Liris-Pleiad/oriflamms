@@ -1054,19 +1054,13 @@ void GUI::display_characters(size_t viewid, size_t colid, size_t linid)
 
 	for (int tmpw = 0; tmpw < words.size(); ++tmpw)
 	{
+		if (!words[tmpw].IsAligned() || !words[tmpw].CharactersAligned())
+			continue; // word not aligned
 		crn::String ov = wordsOverlayUn;
-		if (words[tmpw].GetValid().IsTrue()) ov = wordsOverlayOk;
-		if (words[tmpw].GetValid().IsFalse()) ov = wordsOverlayKo;
+		//if (words[tmpw].GetValid().IsTrue()) ov = wordsOverlayOk;
+		//if (words[tmpw].GetValid().IsFalse()) ov = wordsOverlayKo;
 
-		std::vector<ori::Word::Character> chars;
-		try
-		{
-			chars = words[tmpw].GetCharacters();
-		}
-		catch	(crn::ExceptionUninitialized&)
-		{
-			continue;
-		}
+		auto chars = words[tmpw].GetCharacters();
 		int cnt = 0;
 		for (const auto &c : chars)
 		{
@@ -1079,68 +1073,7 @@ void GUI::display_characters(size_t viewid, size_t colid, size_t linid)
 			std::vector<crn::Point2DInt> poly(c.front);
 			poly.insert(poly.end(), c.back.rbegin(), c.back.rend());
 			img.add_overlay_item(charOverlay, s, poly);
-		}		
-		/*
-			 std::vector<std::vector<crn::Point2DInt>> l = words[tmpw].GetCharacterFrontiers();
-			 for (size_t fron = 0; fron < l.size(); ++fron)
-			 {
-			 crn::String s(words[tmpw].GetId() + " " + crn::String(fron));
-
-			 if (!words[tmpw].GetCharacterFrontiers()[fron].empty())
-			 {
-			 std::vector<crn::Point2DInt> frontiers = l[fron];
-			 std::vector<crn::Point2DInt> lis;
-
-			 if (fron == l.size() - 1)
-			 {
-			 lis = words[tmpw].GetBackFrontier();
-			 }
-			 else
-			 {
-			 lis = l[fron + 1];
-			 }
-			 if (fron == 0)
-			 {
-			 std::vector<crn::Point2DInt> li = words[tmpw].GetFrontFrontier();
-			 for(size_t id = frontiers.size(); id > 0 ; --id)
-			 li.push_back(frontiers[id - 1]);
-			 crn::String ss (s);
-			 ss.Insert(ss.NPos(),crn::String("0"));
-			 img.add_overlay_item(charOverlay, ss,li);
-
-			 crn::Rect topbox;
-			 int w = li.back().X - li[0].X;
-			 topbox.SetLeft(li[0].X);
-			 topbox.SetTop(li[0].Y);
-			 topbox.SetWidth(w);
-			 topbox.SetHeight(words[tmpw].GetBBox().GetHeight() / 4);
-			 crn::String ch(words[tmpw].GetText().CStr());
-			 crn::String ov = wordsOverlayUn;
-			 if (words[tmpw].GetValid().IsTrue()) ov = wordsOverlayOk;
-			 if (words[tmpw].GetValid().IsFalse()) ov = wordsOverlayKo;
-			 img.add_overlay_item(ov, ss, topbox, ch.SubString(fron, 1).CStr());
-			 }
-
-			 for(size_t id = lis.size(); id > 0; --id)
-			 frontiers.push_back(lis[id - 1]);
-
-			 img.add_overlay_item(charOverlay,s,frontiers );
-
-			 int w = frontiers.back().X - frontiers[0].X;
-			 crn::Rect topbox;
-			 topbox.SetLeft(frontiers[0].X);
-			 topbox.SetTop(frontiers[0].Y);
-			 topbox.SetWidth(w);
-			 topbox.SetHeight(words[tmpw].GetBBox().GetHeight() / 4);
-			 crn::String ch(words[tmpw].GetText().CStr());
-			 crn::String ov = wordsOverlayUn;
-			 if (words[tmpw].GetValid().IsTrue()) ov = wordsOverlayOk;
-			 if (words[tmpw].GetValid().IsFalse()) ov = wordsOverlayKo;
-			 img.add_overlay_item(ov, s, topbox, ch.SubString(fron + 1, 1).CStr());
-
-			 }
-			 }
-			 */
+		}
 	} // foreach word
 }
 
@@ -1173,7 +1106,7 @@ void GUI::display_update_word(const WordPath &path, const crn::Option<int> &newl
 		if (newright || newleft)
 		{
 			project->ComputeWordFrontiers(path);
-			project->AlignWordCharacters(path);
+			project->AlignWordCharacters(AlignConfig::AllChars, path);
 		}
 
 		if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
@@ -1604,8 +1537,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 						{
 							//if (oriword.GetCharacterFrontiers().empty())
 								//continue;
-							crn::Rect bbox(oriword.GetBBox());
-							if (!bbox.IsValid())
+							if (!oriword.IsAligned())
 								break;
 
 							// create small image (not using subpixbuf since it keeps a reference to the original image)
@@ -1630,6 +1562,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 							}
 							if(max_x -min_x == 0)
 								break;
+							crn::Rect bbox(oriword.GetBBox());
 							Glib::RefPtr<Gdk::Pixbuf> wpb(Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, bbox.GetHeight()));
 
 							pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, bbox.GetHeight(), wpb, 0, 0);
