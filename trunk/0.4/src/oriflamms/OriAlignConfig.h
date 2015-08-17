@@ -17,12 +17,14 @@ namespace ori
 		AllWords = 1, // align all words
 		NOKWords = 2, // align non-validated words (i.e.: unknown and rejected)
 
-		CharsAllWords = 4, // align characters in all aligned words
-		CharsOKWords = 8, // align characters in validated words
-		CharsNKOWords = 16, // align characters in non-rejected words (i.e.: validated and unknown)
+		WordFrontiers = 4, // update aligned words' frontiers
 
-		AllChars = 32, // align all characters (in previous selection)
-		NOKChars = 64 // align non-validated characters
+		CharsAllWords = 8, // align characters in all aligned words
+		CharsOKWords = 16, // align characters in validated words
+		CharsNKOWords = 32, // align characters in non-rejected words (i.e.: validated and unknown)
+
+		AllChars = 64, // align all characters (in previous selection)
+		NOKChars = 128 // align non-validated characters
 	};
 }
 

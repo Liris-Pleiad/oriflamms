@@ -23,6 +23,7 @@ namespace ori
 
 			Gtk::CheckButton wbut;
 			Gtk::RadioButton wall, wnok;
+			Gtk::CheckButton wfrontbut;
 			Gtk::CheckButton charbut;
 			Gtk::RadioButton callw, cokw, cnkow;
 			Gtk::RadioButton call, cnok;

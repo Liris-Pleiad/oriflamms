@@ -464,10 +464,21 @@ void Project::AlignLine(AlignConfig conf, size_t view_num, size_t col_num, size_
 				prog->Advance();
 		}
 	}
+	// Only update frontiers
+	if (!!(conf & AlignConfig::WordFrontiers))
+	{
+		for (size_t w = 0; w < ol.GetWords().size(); ++w)
+		{
+			if (ol.GetWords()[w].IsAligned())
+			{
+				ComputeWordFrontiers(WordPath{view_num, col_num, line_num, w});
+			}
+		}
+	}
 	// Align characters
 	for (size_t w = 0; w < ol.GetWords().size(); ++w)
 	{
-		if (!ol.GetWords()[w].GetBBox().IsValid())
+		if (!ol.GetWords()[w].IsAligned())
 			continue;
 
 		if (!!(conf & AlignConfig::CharsAllWords) ||
@@ -475,78 +486,6 @@ void Project::AlignLine(AlignConfig conf, size_t view_num, size_t col_num, size_
 				(!!(conf & AlignConfig::CharsNKOWords) && !ol.GetWords()[w].GetValid().IsFalse()))
 			AlignWordCharacters(conf, WordPath{view_num, col_num, line_num, w});
 	}
-	
-	/*
-	ori::Line &ol = xdoc.GetViews()[view_num].GetColumns()[col_num].GetLines()[line_num];
-	std::vector<std::vector<size_t>> wranges;
-	bool in = false;
-	for (size_t w = 0; w < ol.GetWords().size(); ++w)
-	{
-		if (!ol.GetWords()[w].GetBBox().IsValid() || !ol.GetWords()[w].GetValid().IsTrue())
-		{
-			if (!in)
-			{
-				in = true;
-				wranges.push_back(std::vector<size_t> {});
-			}
-			wranges.back().push_back(w);
-		}
-		else
-		{
-			in = false;
-		}
-	}
-	std::vector<std::vector<size_t>> ranges;
-	bool b = false;
-	for (size_t w = 0; w < ol.GetWords().size(); ++w)
-	{
-		if (ol.GetWords()[w].GetBBox().IsValid() && ol.GetWords()[w].GetValid().IsTrue())
-		{
-			if (!b)
-			{
-				b = true;
-				ranges.push_back(std::vector<size_t> {});
-			}
-			ranges.back().push_back(w);
-		}
-		else
-		{
-			b = false;
-		}
-
-	}
-	if (prog)
-		prog->SetMaxCount(int(wranges.size() + ranges.size()));
-	for (const std::vector<size_t> &r : wranges)
-	{
-		if ((r.size() == 1) && ol.GetWords()[r.front()].GetBBox().IsValid())
-		{
-			// a single word between validated words
-			ol.GetWords()[r.front()].SetValid(crn::Prop3::True);
-		}
-		else
-		{
-			AlignRange(conf, WordPath{view_num, col_num, line_num, r.front()}, WordPath{view_num, col_num, line_num, r.back()});
-		}
-		if (prog)
-			prog->Advance();
-	}
-
-	for (const std::vector<size_t> &r : ranges)
-	{
-		if ((r.size() == 1) && ol.GetWords()[r.front()].GetBBox().IsValid())
-		{
-			// a single word between validated words
-			ol.GetWords()[r.front()].SetValid(crn::Prop3::True);
-		}
-		else
-		{
-			AlignRange(conf, WordPath{view_num, col_num, line_num, r.front()}, WordPath{view_num, col_num, line_num, r.back()});
-		}
-		if (prog)
-			prog->Advance();
-	}
-	*/
 }
 
 /*!
@@ -633,7 +572,6 @@ void Project::AlignRange(AlignConfig conf, const WordPath &first, const WordPath
 
 		auto wp = WordPath(first.view, first.col, first.line, w);
 		ComputeWordFrontiers(wp);
-		//AlignWordCharacters(wp);
 		bbn += 1;
 	} // for each word
 }
@@ -653,7 +591,7 @@ void Project::ComputeWordFrontiers(const ori::WordPath &wp)
 
 	crn::Differential diff(crn::Differential::NewGaussian(irgb, crn::Differential::RGBProjection::ABSMAX, 0));
 	diff.Diffuse(5);
-	crn::ImageDoubleGray roadmap(diff.MakeKappa1()); // TODO do better
+	crn::ImageDoubleGray roadmap(diff.MakeLaplacian()); // TODO do better
 	crn::ImageGray rmg(crn::Downgrade<crn::ImageGray>(roadmap));
 
 	crn::Rect lrec(rec);

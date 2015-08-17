@@ -22,5 +22,6 @@
 ../oriflamms/OriValidation.cpp
 ../oriflamms/main.cpp
 ../oriflamms/OriConfig.cpp
+../oriflamms/OriAlignConfig.h
 ../oriflamms/OriLines.cpp
 ../utils/signatures.cpp

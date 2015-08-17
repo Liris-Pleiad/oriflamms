@@ -1,3 +1,7 @@
+2015-08-17 Yann LEYDIER <yann@leydier.info>
+	* AlignConfig, AlignDialog, Project (AlignLine): Added option to 
+			recompute words' frontiers without realigning.
+
 2015-08-14 Yann LEYDIER <yann@leydier.info>
 	* Project (AlignLine): Rewritten.
 	* Word (GetCharacterFront, GetCharacterBack, GetCharacters): Bugfix.
