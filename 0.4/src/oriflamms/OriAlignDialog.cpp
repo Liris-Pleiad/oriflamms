@@ -14,6 +14,7 @@ AlignDialog::AlignDialog(Gtk::Window &parent):
 	wbut(_("Align words")),
 	wall(_("Align all words")),
 	wnok(_("Align non-validated words")),
+	wfrontbut(_("Update aligned words' frontiers")),
 	charbut(_("Align characters")),
 	callw(_("in all aligned words")),
 	cokw(_("in validated words")),
@@ -40,6 +41,9 @@ AlignDialog::AlignDialog(Gtk::Window &parent):
 	wall.set_group(g1);
 	get_vbox()->pack_start(wnok, true, true, 2);
 	wnok.set_group(g1);
+
+	get_vbox()->pack_start(wfrontbut, true, true, 2);
+	wfrontbut.set_active(false);
 
 	get_vbox()->pack_start(charbut, true, true, 2);
 	charbut.set_active(false);
@@ -69,6 +73,8 @@ void AlignDialog::update()
 	wall.set_sensitive(wbut.get_active());
 	wnok.set_sensitive(wbut.get_active());
 
+	wfrontbut.set_sensitive(!wbut.get_active());
+
 	callw.set_sensitive(charbut.get_active());
 	cokw.set_sensitive(charbut.get_active());
 	cnkow.set_sensitive(charbut.get_active());
@@ -86,6 +92,9 @@ AlignConfig AlignDialog::get_config() const
 		else
 			a |= AlignConfig::NOKWords;
 	}
+	else if (wfrontbut.get_active())
+		a |= AlignConfig::WordFrontiers;
+
 	if (charbut.get_active())
 	{
 		if (callw.get_active())
