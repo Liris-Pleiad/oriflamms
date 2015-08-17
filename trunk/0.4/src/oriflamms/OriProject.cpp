@@ -30,7 +30,7 @@ struct stepcost
 	const int ref;
 	inline double operator()(const crn::Point2DInt &p1, const crn::Point2DInt &p2) const
 	{
-		return img.At(p2.X, p2.Y) + 4 * crn::Abs(ref - p2.X);
+		return img.At(p2.X, p2.Y) + 2 * crn::Abs(ref - p2.X);
 	}
 };
 
@@ -593,6 +593,11 @@ void Project::ComputeWordFrontiers(const ori::WordPath &wp)
 	diff.Diffuse(5);
 	crn::ImageDoubleGray roadmap(diff.MakeLaplacian()); // TODO do better
 	crn::ImageGray rmg(crn::Downgrade<crn::ImageGray>(roadmap));
+	crn::ImageGray ig(crn::MakeImageGray(irgb));
+	for (auto tmp : Range(rmg))
+	{
+		rmg.At(tmp) = uint8_t(rmg.At(tmp) / 2 + 127 - ig.At(tmp) / 2);
+	}
 
 	crn::Rect lrec(rec);
 	lrec.Translate(-rec.GetLeft(), -rec.GetTop());
