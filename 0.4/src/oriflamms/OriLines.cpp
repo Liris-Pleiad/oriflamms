@@ -104,7 +104,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 
 	auto mask = EMask{w, h};
 	auto vp = Histogram(w);
-	auto nloop = size_t(100);
+	auto nloop = size_t(150);
 	for (auto loop = 0; loop < nloop; ++loop)
 	{
 		for (auto cnt = 0; cnt < w / (50 * sw); ++cnt)
@@ -216,14 +216,12 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 		}
 		auto proj = crn::VerticalProjection(mask.mask);
 		auto start = size_t(0);
-		auto zones = std::vector<std::pair<size_t, size_t>>{};
 		for (auto tmp = size_t(1); tmp < proj.Size(); ++tmp)
 		{
 			if (proj[tmp] != proj[tmp - 1])
 			{
 				if ((tmp - start > 10 * sw) && (start > 0))
 				{
-					zones.emplace_back(start, tmp);
 					for (auto x = start; x < tmp; ++x)
 						vp.IncBin(x);
 				}
@@ -237,10 +235,13 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 	auto modesh = std::vector<size_t>();
 	for (size_t y = 0; y < max; ++y)
 	{
-		int t1 = 0, t2 = 0;
+		auto t1 = 0, t2 = 0;
+		auto len = 0;
 		for (size_t x = 0; x < vp.Size() - 1; ++x)
 		{
 			bool in1 = vp.GetBin(x) > y;
+			if (in1)
+				len += 1;
 			bool in2 = vp.GetBin(x + 1) > y;
 			if (!in1 && in2)
 			{
@@ -253,7 +254,8 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 		}
 		int nmodes = Max(t1, t2);
 		if (nmodes == ncols)
-			modesh.push_back(y);
+			for (auto c = 0; c < int(log(len)); ++c)
+				modesh.push_back(y);
 	}
 
 	if (modesh.empty())
