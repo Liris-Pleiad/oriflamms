@@ -16,10 +16,10 @@
 #include <CRNImage/CRNImageBW.h>
 #include <OriStruct.h>
 #include <CRNMath/CRNMatrixComplex.h>
+#include <CRNAI/CRN2Means.h>
 #include <numeric>
 #include <math.h>
 #include <CRNi18n.h>
-
 #include <iostream>
 
 using namespace crn;
@@ -886,13 +886,15 @@ SVector ori::DetectLines(Block &b, const View &view)
 				int ty = (*l)[x];
 				//diff.push_back(lumdiff(*b.GetGray(), x, ty, 0, int(3*sw), enmask));
 				diff.push_back(maxgrad(*igr, x, ty, 0, int(3*sw), enmask));
-				diff.push_back(mingrad(*igr, x, ty, 0, int(3*sw), enmask));
+				//diff.push_back(mingrad(*igr, x, ty, 0, int(3*sw), enmask));
 			}
-			//auto mM = TwoMeans(diff.begin(), diff.end());
+			auto mM = TwoMeans(diff.begin(), diff.end());
 			//thresholds.push_back((mM.first + mM.second) / 4); // XXX whhhhhhhhhhhhhhhhhhy /4 ???
-			thresholds.push_back(std::accumulate(diff.begin(), diff.end(), 0) / int(diff.size()));
+			//thresholds.push_back(std::accumulate(diff.begin(), diff.end(), 0) / int(diff.size()));
+			thresholds.push_back(Min(mM.first, mM.second));
 		}
-		//auto thr = TwoMeans(thresholds.begin(), thresholds.end()).second;
+		//auto thr = TwoMeans(thresholds.begin(), thresholds.end()).first;
+		auto thr = std::accumulate(thresholds.begin(), thresholds.end(), 0) / int(thresholds.size());
 
 		// cut lines
 		auto filteredlines = std::vector<SLinearInterpolation>{};
@@ -905,8 +907,8 @@ SVector ori::DetectLines(Block &b, const View &view)
 			if (tmpz == thumbzones.size() - 1) right = b.GetAbsoluteBBox().GetRight(); // grow last zone to end
 			else right = int(right + thumbzones[tmpz + 1].GetLeft() * xdiv) / 2; // grow to half the distance to next zone
 
-			//auto fl = cut_line(*lines[tmp], b, sw, thr, enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
-			auto fl = cut_line(*lines[tmp], b, sw, thresholds[tmp], enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
+			auto fl = cut_line(*lines[tmp], b, sw, thr, enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
+			//auto fl = cut_line(*lines[tmp], b, sw, thresholds[tmp], enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
 			if (fl)
 				filteredlines.push_back(fl);
 
