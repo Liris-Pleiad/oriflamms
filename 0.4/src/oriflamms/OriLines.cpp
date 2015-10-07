@@ -925,9 +925,10 @@ SVector ori::DetectLines(Block &b, const View &view)
 		// Remove supernumerary lines
 		/////////////////////////////////////////////////////////////
 		auto nlines = view.GetColumns()[tmpz].GetLines().size();
-		int fw = tz.GetWidth() * int(xdiv);
+		auto fw = tz.GetWidth() * int(xdiv);
 		while (log2(fw) != floor(log2(fw))) fw += 1;
-		const auto adiv = 32;
+		//const auto adiv = 32;
+		const auto adiv = 4;
 		b.FlushGradient();
 		igr = b.GetGradient();
 		if (nlines < lines.size())
