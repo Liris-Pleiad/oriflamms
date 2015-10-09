@@ -5,6 +5,32 @@
 using namespace ori;
 
 //////////////////////////////////////////////////////////////////////////////////
+// Utils
+//////////////////////////////////////////////////////////////////////////////////
+enum class XMLType { Text, Zone, Link, Unknown };
+static XMLType getType(crn::xml::Document &doc)
+{
+	auto root = doc.GetRoot();
+	if (root.GetName() != "TEI")
+		return XMLType::Unknown;
+	auto el = root.GetFirstChildElement("facsimile");
+	if (el)
+		return XMLType::Zone;
+	el = root.GetFirstChildElement("text");
+	if (el)
+	{
+		el = el.GetFirstChildElement("body");
+		if (!el)
+			return XMLType::Unknown;
+		if (el.GetFirstChildElement().GetName() == "ab")
+			return XMLType::Link;
+		else
+			return XMLType::Text;
+	}
+	return XMLType::Unknown;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 // Page
 //////////////////////////////////////////////////////////////////////////////////
 Page::Page() = default;
@@ -80,19 +106,21 @@ Zone& Page::GetZone(const Id &id)
 //////////////////////////////////////////////////////////////////////////////////
 Document::Document(const crn::Path &dirpath, crn::Progress *prog)
 {
-	const auto txtdir = dirpath / "texts";
-	const auto zonedir = dirpath / "zones";
-	const auto linkdir = dirpath / "links";
+	const auto txtdir = crn::Directory{dirpath / "texts"};
+	for (const auto fname : txtdir)
+	{
+	}
+	const auto zonedir = crn::Directory{dirpath / "zones"};
+	for (const auto fname : zonedir)
+	{
+	}
+	const auto linkdir = crn::Directory{dirpath / "links"};
+	for (const auto fname : linkdir)
+	{
+	}
 }
 
 Document::~Document() = default;
-
-void Document::readText(const crn::Path &xmlpath)
-{
-	auto doc = crn::xml::Document(xmlpath);
-	auto root = doc.GetRoot();
-}
-
 
 std::shared_ptr<Page> Document::PageRef::GetPage()
 {

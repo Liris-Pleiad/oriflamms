@@ -1,6 +1,7 @@
 #include <CRNStringUTF8.h>
 #include <CRNIO/CRNPath.h>
 #include <CRNGeometry/CRNRect.h>
+#include <CRNGeometry/CRNPoint2DInt.h>
 #include <CRNUtils/CRNXml.h>
 #include <CRNUtils/CRNProgress.h>
 #include <vector>
@@ -17,6 +18,7 @@ namespace ori
 		private:
 			Id id;
 			crn::Rect pos;
+			std::vector<crn::Point2DInt> box;
 			crn::StringUTF8 type;
 			crn::xml::Element el;
 	};
@@ -28,7 +30,6 @@ namespace ori
 		private:
 			Id id;
 			Id zone;
-			crn::xml::Element el;
 	};
 
 	class Word
@@ -39,7 +40,6 @@ namespace ori
 			Id id;
 			std::vector<Id> characters;
 			Id zone;
-			crn::xml::Element el;
 	};
 
 	class Line
@@ -47,6 +47,7 @@ namespace ori
 		public:
 		private:
 			std::vector<Id> left, center, right;
+			Id zone;
 	};
 
 	class Column
@@ -57,7 +58,6 @@ namespace ori
 			Id id;
 			std::vector<Line> lines;
 			Id zone;
-			crn::xml::Element el;
 	};
 
 	class Page
@@ -89,13 +89,8 @@ namespace ori
 			std::unordered_map<Id, Character> characters;
 			std::unordered_map<Id, Zone> zones;
 
-			//crn::xml::Document transcription;
-			//crn::xml::Document zonedefs;
-			//crn::xml::Document links;
-			// ou ?
-			//std::unordered_map<crn::StringUTF8, crn::xml::Document> files;
-			// ou carrément
 			std::vector<crn::xml::Document> files;
+			std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
 	};
 
 	class Document
@@ -110,9 +105,6 @@ namespace ori
 			Document& operator=(Document&&) = default;
 
 		private:
-			/*! \brief Reads the content of a TEI file containing the transcription of a document */
-			void readText(const crn::Path &xmlpath);
-
 			struct PageRef
 			{
 				std::shared_ptr<Page> GetPage();
