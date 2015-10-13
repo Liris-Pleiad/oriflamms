@@ -1,5 +1,6 @@
 #include <oriflamms_config.h>
 #include "test.h"
+#include <CRNIO/CRNIO.h>
 #include <CRNi18n.h>
 
 using namespace ori;
@@ -106,17 +107,100 @@ Zone& Page::GetZone(const Id &id)
 //////////////////////////////////////////////////////////////////////////////////
 Document::Document(const crn::Path &dirpath, crn::Progress *prog)
 {
-	const auto txtdir = crn::Directory{dirpath / "texts"};
-	for (const auto fname : txtdir)
+	const auto txtdir = crn::IO::Directory{dirpath / "texts"};
+	for (const auto fname : txtdir.GetFiles())
 	{
+		try
+		{
+			auto xdoc = crn::xml::Document(fname); // may throw
+			auto el = xdoc.GetRoot(); // may throw
+			if (el.GetName() != "TEI")
+				throw crn::ExceptionInvalidArgument(_("not a TEI file."));
+			el = el.GetFirstChildElement("text");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <text> element."));
+			el = el.GetFirstChildElement("body");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <body> element."));
+			el = el.GetFirstChildElement("pb");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <pb> element."));
+			const auto id = el.GetAttribute<crn::StringUTF8>("xml:id", true); // may throw
+			page_refs[id].files.push_back(fname);
+		}
+		catch (std::exception &ex)
+		{
+			report += fname;
+			report += ": ";
+			report += ex.what();
+			report += "\n";
+		}
 	}
-	const auto zonedir = crn::Directory{dirpath / "zones"};
-	for (const auto fname : zonedir)
+	const auto zonedir = crn::IO::Directory{dirpath / "zones"};
+	for (const auto fname : zonedir.GetFiles())
 	{
+		try
+		{
+			auto xdoc = crn::xml::Document(fname); // may throw
+			auto el = xdoc.GetRoot(); // may throw
+			if (el.GetName() != "TEI")
+				throw crn::ExceptionInvalidArgument(_("not a TEI file."));
+			el = el.GetFirstChildElement("facsimile");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <facsimile> element."));
+			el = el.GetFirstChildElement("surface");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <surface> element."));
+			el = el.GetFirstChildElement("graphic");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <graphic> element."));
+			const auto id = el.GetAttribute<crn::StringUTF8>("xml:id", true); // may throw
+			//page_refs[id].files.push_back(fname);
+			// RAH! ÇA MARCHE PAS!!!
+		}
+		catch (std::exception &ex)
+		{
+			report += fname;
+			report += ": ";
+			report += ex.what();
+			report += "\n";
+		}
 	}
-	const auto linkdir = crn::Directory{dirpath / "links"};
-	for (const auto fname : linkdir)
+	const auto linkdir = crn::IO::Directory{dirpath / "links"};
+	for (const auto fname : linkdir.GetFiles())
 	{
+		try
+		{
+			auto xdoc = crn::xml::Document(fname); // may throw
+			auto el = xdoc.GetRoot(); // may throw
+			if (el.GetName() != "TEI")
+				throw crn::ExceptionInvalidArgument(_("not a TEI file."));
+			el = el.GetFirstChildElement("text");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <text> element."));
+			el = el.GetFirstChildElement("body");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <body> element."));
+			el = el.GetFirstChildElement("ab");
+			if (!el)
+				throw crn::ExceptionNotFound(_("no <ab> element."));
+			for (auto gel = el.GetFirstChildElement("linkGrp"); gel; gel = gel.GetNextSiblingElement("linkGrp"))
+				if (gel.GetAttribute<crn::StringUTF8>("type") == "pages")
+				{
+					el = gel.GetFirstChildElement("link");
+					if (!el)
+						throw crn::ExceptionNotFound(_("no <link> element in pages' <linkGrp>."));
+					const auto link = el.GetAttribute<crn::StringUTF8>("target", true).Split(" \t"); // may throw
+					break;
+				}
+		}
+		catch (std::exception &ex)
+		{
+			report += fname;
+			report += ": ";
+			report += ex.what();
+			report += "\n";
+		}
 	}
 }
 

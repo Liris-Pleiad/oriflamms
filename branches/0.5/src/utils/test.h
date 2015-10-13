@@ -104,6 +104,17 @@ namespace ori
 			Document& operator=(const Document&) = delete;
 			Document& operator=(Document&&) = default;
 
+			const crn::StringUTF8& ErrorReport() const { return report; }
+
+			struct Position
+			{
+				size_t page = 0;
+				size_t column = 0;
+				size_t line = 0;
+				size_t word = 0;
+			};
+			const Position& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
+
 		private:
 			struct PageRef
 			{
@@ -113,7 +124,14 @@ namespace ori
 				std::vector<crn::Path> files;
 			};
 			std::unordered_map<Id, PageRef> page_refs; // wear references to pages
+			std::unordered_map<Id, Position> positions;
 			std::vector<Id> pages; // pages in order of the document
+			std::vector<Id> columns;
+			std::vector<Id> lines;
+			std::vector<Id> words;
+			std::vector<Id> characters;
+
+			crn::StringUTF8 report;
 	};
 
 }
