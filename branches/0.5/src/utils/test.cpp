@@ -40,66 +40,78 @@ Page::~Page() = default;
 
 const Column& Page::GetColumn(const Id &id) const
 {
-	auto it = columns.find(id);
-	if (it == columns.end())
+	auto it = pimpl->columns.find(id);
+	if (it == pimpl->columns.end())
 		throw crn::ExceptionNotFound(_("Invalid column id."));
 	return it->second;
 }
 
 Column& Page::GetColumn(const Id &id)
 {
-	auto it = columns.find(id);
-	if (it == columns.end())
+	auto it = pimpl->columns.find(id);
+	if (it == pimpl->columns.end())
 		throw crn::ExceptionNotFound(_("Invalid column id."));
 	return it->second;
 }
 
 const Word& Page::GetWord(const Id &id) const
 {
-	auto it = words.find(id);
-	if (it == words.end())
+	auto it = pimpl->words.find(id);
+	if (it == pimpl->words.end())
 		throw crn::ExceptionNotFound(_("Invalid word id."));
 	return it->second;
 }
 
 Word& Page::GetWord(const Id &id)
 {
-	auto it = words.find(id);
-	if (it == words.end())
+	auto it = pimpl->words.find(id);
+	if (it == pimpl->words.end())
 		throw crn::ExceptionNotFound(_("Invalid word id."));
 	return it->second;
 }
 
 const Character& Page::GetCharacter(const Id &id) const
 {
-	auto it = characters.find(id);
-	if (it == characters.end())
+	auto it = pimpl->characters.find(id);
+	if (it == pimpl->characters.end())
 		throw crn::ExceptionNotFound(_("Invalid character id."));
 	return it->second;
 }
 
 Character& Page::GetCharacter(const Id &id)
 {
-	auto it = characters.find(id);
-	if (it == characters.end())
+	auto it = pimpl->characters.find(id);
+	if (it == pimpl->characters.end())
 		throw crn::ExceptionNotFound(_("Invalid character id."));
 	return it->second;
 }
 
 const Zone& Page::GetZone(const Id &id) const
 {
-	auto it = zones.find(id);
-	if (it == zones.end())
+	auto it = pimpl->zones.find(id);
+	if (it == pimpl->zones.end())
 		throw crn::ExceptionNotFound(_("Invalid zone id."));
 	return it->second;
 }
 
 Zone& Page::GetZone(const Id &id)
 {
-	auto it = zones.find(id);
-	if (it == zones.end())
+	auto it = pimpl->zones.find(id);
+	if (it == pimpl->zones.end())
 		throw crn::ExceptionNotFound(_("Invalid zone id."));
 	return it->second;
+}
+
+
+
+
+Page::Impl::Impl(const std::vector<crn::Path> &filenames)
+{
+	for (const auto &fname : filenames)
+	{
+		files.emplace_back(fname);
+		// TODO
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -191,6 +203,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog)
 					if (!el)
 						throw crn::ExceptionNotFound(_("no <link> element in pages' <linkGrp>."));
 					const auto link = el.GetAttribute<crn::StringUTF8>("target", true).Split(" \t"); // may throw
+					// TODO
 					break;
 				}
 		}
@@ -206,17 +219,28 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog)
 
 Document::~Document() = default;
 
-std::shared_ptr<Page> Document::PageRef::GetPage()
+Page Document::GetPage(const Id &id)
 {
-	auto p = std::shared_ptr<Page>{};
+	auto it = page_refs.find(id);
+	if (it == page_refs.end())
+		throw crn::ExceptionNotFound(_("Cannot find page with id ") + id);
+	return it->second.GetPage();
+}
+
+
+
+
+Page Document::PageRef::GetPage()
+{
+	auto p = std::shared_ptr<Page::Impl>{};
 	if (page.expired())
 	{
-		p = std::make_shared<Page>();
+		p = std::make_shared<Page::Impl>(files);
 		page = p;
 	}
 	else
 		p = page.lock();
-	return p;
+	return Page(p);
 }
 
 

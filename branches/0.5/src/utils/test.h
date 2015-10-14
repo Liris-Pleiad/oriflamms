@@ -30,6 +30,7 @@ namespace ori
 		private:
 			Id id;
 			Id zone;
+			crn::StringUTF8 text;
 	};
 
 	class Word
@@ -40,6 +41,7 @@ namespace ori
 			Id id;
 			std::vector<Id> characters;
 			Id zone;
+			//crn::StringUTF8 text; ???
 	};
 
 	class Line
@@ -60,17 +62,18 @@ namespace ori
 			Id zone;
 	};
 
+	class Document;
 	class Page
 	{
 		public:
-			Page();// TODO
-			Page(const Page&) = delete;
-			Page(Page&&) = delete;
-			Page& operator=(const Page&) = delete;
-			Page& operator=(Page&&) = delete;
+			Page();
+			Page(const Page&) = default;
+			Page(Page&&) = default;
+			Page& operator=(const Page&) = default;
+			Page& operator=(Page&&) = default;
 			~Page();
 
-			const Id& GetId() const { return id; }
+			const Id& GetId() const { return pimpl->id; }
 
 			const Column& GetColumn(const Id &id) const;
 			Column& GetColumn(const Id &id);
@@ -82,15 +85,27 @@ namespace ori
 			Zone& GetZone(const Id &id);
 
 		private:
-			Id id;
-			Id zone;
-			std::unordered_map<Id, Column> columns;
-			std::unordered_map<Id, Word> words;
-			std::unordered_map<Id, Character> characters;
-			std::unordered_map<Id, Zone> zones;
+			struct Impl
+			{
+				Impl(const std::vector<crn::Path> &filenames);
 
-			std::vector<crn::xml::Document> files;
-			std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
+				Id id;
+				Id zone;
+				
+				std::unordered_map<Id, Column> columns;
+				std::unordered_map<Id, Word> words;
+				std::unordered_map<Id, Character> characters;
+				std::unordered_map<Id, Zone> zones;
+
+				std::vector<crn::xml::Document> files;
+				std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
+			};
+
+			Page(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
+
+			std::shared_ptr<Impl> pimpl;
+			
+			friend class Document;
 	};
 
 	class Document
@@ -115,12 +130,14 @@ namespace ori
 			};
 			const Position& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
 
+			Page GetPage(const Id &id);
+
 		private:
 			struct PageRef
 			{
-				std::shared_ptr<Page> GetPage();
+				Page GetPage();
 
-				std::weak_ptr<Page> page;
+				std::weak_ptr<Page::Impl> page;
 				std::vector<crn::Path> files;
 			};
 			std::unordered_map<Id, PageRef> page_refs; // wear references to pages
