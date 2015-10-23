@@ -4,6 +4,14 @@
 #include <CRNi18n.h>
 
 using namespace ori;
+using namespace crn::literals;
+
+const auto PAGELINKS = "pages"_s;
+const auto COLUMNLINKS = "columns"_s;
+const auto LINELINKS = "lines"_s;
+const auto WORDLINKS = "words"_s;
+const auto CHARLINKS = "characters"_s;
+const auto GLYPHLINKS = "character-classes"_s;
 
 //////////////////////////////////////////////////////////////////////////////////
 // Utils
@@ -32,13 +40,29 @@ static XMLType getType(crn::xml::Document &doc)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-// Page
+// View
 //////////////////////////////////////////////////////////////////////////////////
-Page::Page() = default;
+View::View() = default;
 
-Page::~Page() = default;
+View::~View() = default;
 
-const Column& Page::GetColumn(const Id &id) const
+const Page& View::GetPage(const Id &id) const
+{
+	auto it = pimpl->pages.find(id);
+	if (it == pimpl->pages.end())
+		throw crn::ExceptionNotFound(_("Invalid page id."));
+	return it->second;
+}
+
+Page& View::GetPage(const Id &id)
+{
+	auto it = pimpl->pages.find(id);
+	if (it == pimpl->pages.end())
+		throw crn::ExceptionNotFound(_("Invalid page id."));
+	return it->second;
+}
+
+const Column& View::GetColumn(const Id &id) const
 {
 	auto it = pimpl->columns.find(id);
 	if (it == pimpl->columns.end())
@@ -46,7 +70,7 @@ const Column& Page::GetColumn(const Id &id) const
 	return it->second;
 }
 
-Column& Page::GetColumn(const Id &id)
+Column& View::GetColumn(const Id &id)
 {
 	auto it = pimpl->columns.find(id);
 	if (it == pimpl->columns.end())
@@ -54,7 +78,7 @@ Column& Page::GetColumn(const Id &id)
 	return it->second;
 }
 
-const Word& Page::GetWord(const Id &id) const
+const Word& View::GetWord(const Id &id) const
 {
 	auto it = pimpl->words.find(id);
 	if (it == pimpl->words.end())
@@ -62,7 +86,7 @@ const Word& Page::GetWord(const Id &id) const
 	return it->second;
 }
 
-Word& Page::GetWord(const Id &id)
+Word& View::GetWord(const Id &id)
 {
 	auto it = pimpl->words.find(id);
 	if (it == pimpl->words.end())
@@ -70,7 +94,7 @@ Word& Page::GetWord(const Id &id)
 	return it->second;
 }
 
-const Character& Page::GetCharacter(const Id &id) const
+const Character& View::GetCharacter(const Id &id) const
 {
 	auto it = pimpl->characters.find(id);
 	if (it == pimpl->characters.end())
@@ -78,7 +102,7 @@ const Character& Page::GetCharacter(const Id &id) const
 	return it->second;
 }
 
-Character& Page::GetCharacter(const Id &id)
+Character& View::GetCharacter(const Id &id)
 {
 	auto it = pimpl->characters.find(id);
 	if (it == pimpl->characters.end())
@@ -86,7 +110,7 @@ Character& Page::GetCharacter(const Id &id)
 	return it->second;
 }
 
-const Zone& Page::GetZone(const Id &id) const
+const Zone& View::GetZone(const Id &id) const
 {
 	auto it = pimpl->zones.find(id);
 	if (it == pimpl->zones.end())
@@ -94,7 +118,7 @@ const Zone& Page::GetZone(const Id &id) const
 	return it->second;
 }
 
-Zone& Page::GetZone(const Id &id)
+Zone& View::GetZone(const Id &id)
 {
 	auto it = pimpl->zones.find(id);
 	if (it == pimpl->zones.end())
@@ -105,11 +129,11 @@ Zone& Page::GetZone(const Id &id)
 
 
 
-Page::Impl::Impl(const std::vector<crn::Path> &filenames)
+View::Impl::Impl(const std::vector<crn::Path> &filenames)
 {
 	for (const auto &fname : filenames)
 	{
-		files.emplace_back(fname);
+		//files.emplace_back(fname);
 		// TODO
 	}
 }
@@ -117,8 +141,11 @@ Page::Impl::Impl(const std::vector<crn::Path> &filenames)
 //////////////////////////////////////////////////////////////////////////////////
 // Document
 //////////////////////////////////////////////////////////////////////////////////
-Document::Document(const crn::Path &dirpath, crn::Progress *prog)
+Document::Document(const crn::Path &main_tei_file, crn::Progress *prog):
+	name(main_tei_file.GetBase())
 {
+	const auto basedir = main_tei_file.GetDirectory();
+	/*
 	const auto txtdir = crn::IO::Directory{dirpath / "texts"};
 	for (const auto fname : txtdir.GetFiles())
 	{
@@ -215,32 +242,26 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog)
 			report += "\n";
 		}
 	}
+*/
 }
 
 Document::~Document() = default;
 
-Page Document::GetPage(const Id &id)
+View Document::GetView(const Id &id)
 {
-	auto it = page_refs.find(id);
-	if (it == page_refs.end())
-		throw crn::ExceptionNotFound(_("Cannot find page with id ") + id);
-	return it->second.GetPage();
-}
+	auto it = view_refs.find(id);
+	if (it == view_refs.end())
+		throw crn::ExceptionNotFound(_("Cannot find view with id ") + id);
 
-
-
-
-Page Document::PageRef::GetPage()
-{
-	auto p = std::shared_ptr<Page::Impl>{};
-	if (page.expired())
+	auto v = std::shared_ptr<View::Impl>{};
+	if (it->second.expired())
 	{
-		p = std::make_shared<Page::Impl>(files);
-		page = p;
+		//v = std::make_shared<View::Impl>(files);
+		it->second = v;
 	}
 	else
-		p = page.lock();
-	return Page(p);
+		v = it->second.lock();
+	return View(v);
 }
 
 

@@ -11,6 +11,13 @@ namespace ori
 {
 	using Id = crn::StringUTF8;
 
+	class CharacterClass
+	{
+		public:
+		private:
+			crn::xml::Element el;
+	};
+
 	class Zone
 	{
 		public:
@@ -66,15 +73,25 @@ namespace ori
 	class Page
 	{
 		public:
-			Page();
-			Page(const Page&) = default;
-			Page(Page&&) = default;
-			Page& operator=(const Page&) = default;
-			Page& operator=(Page&&) = default;
-			~Page();
+			const Id& GetId() const { return id; }
 
-			const Id& GetId() const { return pimpl->id; }
+		private:
+			Id id;
+			Id zone;
+	};
 
+	class View
+	{
+		public:
+			View();
+			View(const View&) = default;
+			View(View&&) = default;
+			View& operator=(const View&) = default;
+			View& operator=(View&&) = default;
+			~View();
+
+			const Page& GetPage(const Id &id) const;
+			Page& GetPage(const Id &id);
 			const Column& GetColumn(const Id &id) const;
 			Column& GetColumn(const Id &id);
 			const Word& GetWord(const Id &id) const;
@@ -90,28 +107,31 @@ namespace ori
 				Impl(const std::vector<crn::Path> &filenames);
 
 				Id id;
-				Id zone;
+				crn::Path imagename;
 				
+				std::unordered_map<Id, Page> pages;
 				std::unordered_map<Id, Column> columns;
 				std::unordered_map<Id, Word> words;
 				std::unordered_map<Id, Character> characters;
 				std::unordered_map<Id, Zone> zones;
 
-				std::vector<crn::xml::Document> files;
+				crn::xml::Document zonesw;
+				crn::xml::Document zonesc;
+				crn::xml::Document links;
 				std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
 			};
 
-			Page(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
+			View(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
 
 			std::shared_ptr<Impl> pimpl;
 			
-			friend class Document;
+		friend class Document;
 	};
 
 	class Document
 	{
 		public:
-			Document(const crn::Path &dirpath, crn::Progress *prog = nullptr);
+			Document(const crn::Path &main_tei_file, crn::Progress *prog = nullptr);
 			~Document();
 
 			Document(const Document&) = delete;
@@ -123,6 +143,7 @@ namespace ori
 
 			struct Position
 			{
+				size_t view = 0;
 				size_t page = 0;
 				size_t column = 0;
 				size_t line = 0;
@@ -130,24 +151,20 @@ namespace ori
 			};
 			const Position& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
 
-			Page GetPage(const Id &id);
+			View GetView(const Id &id);
 
 		private:
-			struct PageRef
-			{
-				Page GetPage();
-
-				std::weak_ptr<Page::Impl> page;
-				std::vector<crn::Path> files;
-			};
-			std::unordered_map<Id, PageRef> page_refs; // wear references to pages
+			using ViewRef = std::weak_ptr<View::Impl>;
+			std::unordered_map<Id, ViewRef> view_refs; // wear references to pages
 			std::unordered_map<Id, Position> positions;
-			std::vector<Id> pages; // pages in order of the document
+			std::vector<Id> views; // views in order of the document
+			std::vector<Id> pages;
 			std::vector<Id> columns;
 			std::vector<Id> lines;
 			std::vector<Id> words;
 			std::vector<Id> characters;
 
+			crn::StringUTF8 name;
 			crn::StringUTF8 report;
 	};
 
