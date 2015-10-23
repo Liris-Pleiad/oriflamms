@@ -124,7 +124,7 @@ Project::Project(const crn::Path &name, const crn::Path &xmlpath, const STEISele
 		}
 		*/
 		// XXX display
-		view->GetRGB()->SavePNG(crn::Path("zzzzz") + int(v) + ".png");
+		//view->GetRGB()->SavePNG(crn::Path("zzzzz") + int(v) + ".png");
 
 		// store
 		doc->GetView(v)->SetUserData(LinesKey, cols);
@@ -162,7 +162,7 @@ Project::Project(const crn::Path &fname):
 			auto vel = root.PushBackElement("View");
 			vel.SetAttribute("imagename", v.GetImageName());
 			vel.SetAttribute("id", v.GetId());
-			
+
 			auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(LinesKey));
 			for (auto cnum : crn::Range(*cols))
 			{
@@ -171,7 +171,7 @@ Project::Project(const crn::Path &fname):
 
 				auto cel = vel.PushBackElement("Column");
 				cel.SetAttribute("id", c.GetId());
-				cel.SetAttribute("num", c.GetNumber());				
+				cel.SetAttribute("num", c.GetNumber());
 
 				for (auto lnum : crn::Range(*col))
 				{
@@ -576,7 +576,7 @@ void Project::AlignRange(AlignConfig conf, const WordPath &first, const WordPath
 	} // for each word
 }
 
-/*! Computes a word's frontiers 
+/*! Computes a word's frontiers
  * \param[in]	wp	the path to a word
  */
 void Project::ComputeWordFrontiers(const ori::WordPath &wp)
@@ -1289,7 +1289,7 @@ crn::StringUTF8 Project::GetTitle() const
 	return doc->GetBasename().GetFilename();
 }
 
-/*! Erases a column's alignment 
+/*! Erases a column's alignment
  * \param[in]	view_num	the index of the view
  * \param[in]	col_num	the index of the column
  */
