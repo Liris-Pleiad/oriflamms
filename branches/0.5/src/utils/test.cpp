@@ -6,12 +6,19 @@
 using namespace ori;
 using namespace crn::literals;
 
+const auto SURFACELINKS = "surfaces"_s;
 const auto PAGELINKS = "pages"_s;
 const auto COLUMNLINKS = "columns"_s;
 const auto LINELINKS = "lines"_s;
 const auto WORDLINKS = "words"_s;
 const auto CHARLINKS = "characters"_s;
 const auto GLYPHLINKS = "character-classes"_s;
+
+const auto TEXTDIR = "texts"_p;
+const auto IMGDIR = "img"_p;
+const auto LINKDIR = "links"_p;
+const auto ZONEDIR = "zones"_p;
+const auto ONTODIR = "ontologies"_p;
 
 //////////////////////////////////////////////////////////////////////////////////
 // Utils
@@ -126,30 +133,144 @@ Zone& View::GetZone(const Id &id)
 	return it->second;
 }
 
-
-
-
-View::Impl::Impl(const std::vector<crn::Path> &filenames)
+View::Impl::Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 &projname):
+	id(surfid)
 {
+	// read TEXTDIR/projname-w/projname_id-w.xml for structure and words' transcription
+	auto doc = crn::xml::Document{base / TEXTDIR / projname + "-w" / projname + "_" + crn::Path{id} + "-w.xml"};
+	auto root = doc.GetRoot();
+	auto pos = ElementPosition{id};
+	readTextWElement(root, pos);
+	// read TEXTDIR/projname-w/projname_id-c.xml for characters
+	// read ZONEDIR/projname_id-zones-w.xml for boxes and image
+	// read LINKDIR/projname_id-links-w.xml for boxes
+	// read if it exists ZONEDIR/projname_id-zones-c.xml for boxes
+	// read if it exists LINKDIR/projname_id-links-c.xml for boxes
+	// read if it exists ONTODIR/projname_*.xml for character classes
+}
+
+void View::Impl::readTextWElement(crn::xml::Element &el, ElementPosition &pos)
+{
+	const auto elname = el.GetName();
+	if (elname == "pb")
+	{
+		const auto id = el.GetAttribute<Id>("xml:id", false);
+		pages.emplace(id, Page{});
+		pos.page = id;
+	}
+	else if (elname == "cb")
+	{
+		const auto id = el.GetAttribute<Id>("xml:id", false);
+		columns.emplace(id, Column{});
+		pages[pos.page].columns.push_back(id);
+		pos.column = id;
+	}
+	else if (elname == "lb")
+	{
+		const auto id = el.GetAttribute<Id>("xml:id", false);
+		lines.emplace(id, Line{});
+		columns[pos.column].lines.push_back(id);
+		pos.line = id;
+		// TODO renvois
+	}
+	else if ((elname == "w") || (elname == "seg") || (elname == "pc"))
+	{
+		if (!el.GetFirstChildElement("seg"))
+		{
+			const auto id = el.GetAttribute<Id>("xml:id", false);
+			words.emplace(id, Word{});
+			lines[pos.line].left.push_back(id); // TODO renvois
+			words[id].text = ""; // TODO lire la structure jusqu'au bout
+		}
+	}
+	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
+		readTextWElement(sel, pos);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// Document
+//////////////////////////////////////////////////////////////////////////////////
+static void findMilestones(crn::xml::Element &el, std::multimap<int, Id> &milestones)
+{
+	if (el.GetName() == "milestone")
+		if (el.GetAttribute<crn::StringUTF8>("unit", true) == "surface")
+		{
+			try
+			{
+				const auto id = el.GetAttribute<crn::StringUTF8>("xml:id", false);
+				const auto n = el.GetAttribute<int>("n", false);
+				milestones.emplace(n, id);
+			}
+			catch (...)
+			{
+				throw crn::ExceptionNotFound(_("Malformed milestone element."));
+			}
+		}
+
+	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
+		findMilestones(sel, milestones);
+}
+
+/*!
+ * \param[in]	dirpath	base directory of the project
+ * \param[in]	prog	a progress bar
+ *
+ * \throws	crn::ExceptionInvalidArgument	malformed main transcription filename
+ */
+Document::Document(const crn::Path &dirpath, crn::Progress *prog):
+	base(dirpath)
+{
+	// get base name
+	const auto txtdir = crn::IO::Directory{base / TEXTDIR};
+	auto dir = crn::IO::Directory{txtdir};
+	auto fname = dir.GetFiles().front();
+	name = fname.GetBase();
+	if (!name.EndsWith("-w"_s))
+		throw crn::ExceptionInvalidArgument{_("malformed main transcription filename.")};
+	name.Crop(0, name.Size() - 2);
+
+	// read milestones
+	auto milestones = std::multimap<int, Id>{};
+	try
+	{
+		auto doc = crn::xml::Document{fname};
+		auto root = doc.GetRoot();
+		findMilestones(root, milestones);
+	}
+	catch (std::exception &ex)
+	{
+		report += fname;
+		report += ": ";
+		report += ex.what();
+		report += "\n";
+	}
+	// check if milestones are well ordered
+	auto cnt = 1;
+	auto msok = true;
+	for (const auto &ms : milestones)
+	{
+		if (ms.first != cnt++)
+			msok = false;
+		views.push_back(ms.second);
+	}
+	if (!msok)
+	{
+		report += fname;
+		report += ": ";
+		report += _("milestones are not numbered correctly.");
+		report += "\n";
+	}
+	
+	/*
+	for (const auto fname : txtdir.GetFiles())
+	{
+		try
 	for (const auto &fname : filenames)
 	{
 		//files.emplace_back(fname);
 		// TODO
 	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-// Document
-//////////////////////////////////////////////////////////////////////////////////
-Document::Document(const crn::Path &main_tei_file, crn::Progress *prog):
-	name(main_tei_file.GetBase())
-{
-	const auto basedir = main_tei_file.GetDirectory();
-	/*
-	const auto txtdir = crn::IO::Directory{dirpath / "texts"};
-	for (const auto fname : txtdir.GetFiles())
-	{
-		try
 		{
 			auto xdoc = crn::xml::Document(fname); // may throw
 			auto el = xdoc.GetRoot(); // may throw
@@ -256,7 +377,7 @@ View Document::GetView(const Id &id)
 	auto v = std::shared_ptr<View::Impl>{};
 	if (it->second.expired())
 	{
-		//v = std::make_shared<View::Impl>(files);
+		v = std::make_shared<View::Impl>(id, base, name);
 		it->second = v;
 	}
 	else
