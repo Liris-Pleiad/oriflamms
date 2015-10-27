@@ -3,6 +3,8 @@
 #include <CRNIO/CRNIO.h>
 #include <CRNi18n.h>
 
+#include <iostream>
+
 using namespace ori;
 using namespace crn::literals;
 
@@ -47,11 +49,136 @@ static XMLType getType(crn::xml::Document &doc)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
+// Zone
+//////////////////////////////////////////////////////////////////////////////////
+Zone::Zone(crn::xml::Element &elem):
+	el(elem)
+{
+	try
+	{
+		auto x1 = el.GetAttribute<int>("ulx", false);
+		auto y1 = el.GetAttribute<int>("uly", false);
+		auto x2 = el.GetAttribute<int>("lrx", false);
+		auto y2 = el.GetAttribute<int>("lry", false);
+		pos = {x1, y1, x2, y2};
+	}
+	catch (...) { }
+	try
+	{
+		auto str = el.GetAttribute<crn::StringUTF8>("points", false);
+		auto pts = str.Split(" \t");
+		decltype(box) tmpbox;
+		for (const auto pt : pts)
+		{
+			const auto coma = pt.Find(",");
+			if (coma == crn::StringUTF8::NPos())
+				throw 0;
+			tmpbox.emplace_back(pt.SubString(0, coma - 1).ToInt(), pt.SubString(coma + 1, 0).ToInt());
+		}
+		box.swap(tmpbox);
+	}
+	catch (...) { }
+}
+
+const crn::Rect& Zone::GetPosition() const noexcept
+{
+	if (!pos.IsValid() && !box.empty())
+	{
+		auto ulx = std::numeric_limits<int>::max();
+		auto uly = std::numeric_limits<int>::max();
+		auto lrx = 0;
+		auto lry = 0;
+		for (const auto &pt : box)
+		{
+			if (pt.X < ulx) ulx = pt.X;
+			if (pt.X > lrx) lrx = pt.X;
+			if (pt.Y < uly) uly = pt.Y;
+			if (pt.Y > lry) lry = pt.Y;
+		}
+		pos = {ulx, uly, lrx, lry};
+	}
+	return pos;
+}
+
+void Zone::SetPosition(const crn::Rect &r)
+{
+	if (!r.IsValid())
+		throw crn::ExceptionInvalidArgument{"Zone::SetPosition(): "_s + _("null rectangle.")};
+	pos = r;
+	el.SetAttribute("ulx", pos.GetLeft());
+	el.SetAttribute("uly", pos.GetTop());
+	el.SetAttribute("lrx", pos.GetRight());
+	el.SetAttribute("lry", pos.GetBottom());
+}
+
+void Zone::SetContour(const std::vector<crn::Point2DInt> &c)
+{
+	if (c.size() < 3)
+		throw crn::ExceptionInvalidArgument{"Zone::SetContour(): "_s + _("the contour has less than 3 points.")};
+	box = c;
+	auto str = ""_s;
+	for (const auto &pt : box)
+		str += pt.X + ","_s + pt.Y + " "_s;
+	str.Crop(0, str.Size() - 1);
+	el.SetAttribute("points", str);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Line
+//////////////////////////////////////////////////////////////////////////////////
+const std::vector<Id>& Line::GetWords() const
+{
+	if (!center.empty())
+	{
+		std::move(center.begin(), center.end(), std::back_inserter(left));
+		center.clear();
+		center.shrink_to_fit();
+	}
+	if (!right.empty())
+	{
+		std::move(right.begin(), right.end(), std::back_inserter(left));
+		right.clear();
+		right.shrink_to_fit();
+	}
+	return left;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 // View
 //////////////////////////////////////////////////////////////////////////////////
+struct View::Impl
+{
+	Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 &projname);
+	~Impl();
+	void readTextWElements(crn::xml::Element &el, ElementPosition &pos);
+	void readTextCElements(crn::xml::Element &el, ElementPosition &pos);
+	void readZoneWElements(crn::xml::Element &el);
+	void readZoneCElements(crn::xml::Element &el);
+	void readLinkElements(crn::xml::Element &el);
+
+	Id id;
+	crn::SBlock img;
+	std::vector<Id> pageorder;
+	crn::Path imagename;
+
+	std::unordered_map<Id, Page> pages;
+	std::unordered_map<Id, Column> columns;
+	std::unordered_map<Id, Line> lines;
+	std::unordered_map<Id, Word> words;
+	std::unordered_map<Id, Character> characters;
+	std::unordered_map<Id, Zone> zones;
+
+	crn::xml::Document wzones;
+	crn::xml::Document czones;
+	crn::xml::Document links;
+	std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
+};
+
 View::View() = default;
 
 View::~View() = default;
+
+const std::vector<Id>& View::GetPages() const noexcept { return pimpl->pageorder; }
 
 const Page& View::GetPage(const Id &id) const
 {
@@ -82,6 +209,22 @@ Column& View::GetColumn(const Id &id)
 	auto it = pimpl->columns.find(id);
 	if (it == pimpl->columns.end())
 		throw crn::ExceptionNotFound(_("Invalid column id."));
+	return it->second;
+}
+
+const Line& View::GetLine(const Id &id) const
+{
+	auto it = pimpl->lines.find(id);
+	if (it == pimpl->lines.end())
+		throw crn::ExceptionNotFound(_("Invalid line id."));
+	return it->second;
+}
+
+Line& View::GetLine(const Id &id)
+{
+	auto it = pimpl->lines.find(id);
+	if (it == pimpl->lines.end())
+		throw crn::ExceptionNotFound(_("Invalid line id."));
 	return it->second;
 }
 
@@ -140,53 +283,306 @@ View::Impl::Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 
 	auto doc = crn::xml::Document{base / TEXTDIR / projname + "-w" / projname + "_" + crn::Path{id} + "-w.xml"};
 	auto root = doc.GetRoot();
 	auto pos = ElementPosition{id};
-	readTextWElement(root, pos);
+	readTextWElements(root, pos);
+
 	// read TEXTDIR/projname-w/projname_id-c.xml for characters
+	doc = crn::xml::Document{base / TEXTDIR / projname + "-c" / projname + "_" + crn::Path{id} + "-c.xml"};
+	root = doc.GetRoot();
+	pos = ElementPosition{id};
+	readTextCElements(root, pos);
+
 	// read ZONEDIR/projname_id-zones-w.xml for boxes and image
-	// read LINKDIR/projname_id-links-w.xml for boxes
-	// read if it exists ZONEDIR/projname_id-zones-c.xml for boxes
-	// read if it exists LINKDIR/projname_id-links-c.xml for boxes
+	wzones = crn::xml::Document{base / ZONEDIR / projname + "_" + crn::Path{id} + "-zones-w.xml"};
+	root = wzones.GetRoot();
+	auto el = root.GetFirstChildElement("facsimile");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-zones-w.xml: " + _("no facsimile element."));
+	el = el.GetFirstChildElement("surface");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-zones-w.xml: " + _("no surface element."));
+	auto grel = el.GetFirstChildElement("graphic");
+	if (!grel)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-zones-w.xml: " + _("no graphic element."));
+	imagename = base / IMGDIR / grel.GetAttribute<crn::StringUTF8>("url", false);
+	img = crn::Block::New(crn::NewImageFromFile(imagename));
+	readZoneWElements(el);
+
+	// read or create ZONEDIR/projname_id-zones-c.xml for boxes
+	try
+	{
+		czones = crn::xml::Document{base / ZONEDIR / projname + "_" + crn::Path{id} + "-zones-c.xml"};
+		root = czones.GetRoot();
+		auto el = root.GetFirstChildElement("facsimile");
+		if (!el)
+			throw crn::ExceptionNotFound(projname + "_" + id + "-zones-c.xml: " + _("no facsimile element."));
+		el = el.GetFirstChildElement("surface");
+		if (!el)
+			throw crn::ExceptionNotFound(projname + "_" + id + "-zones-c.xml: " + _("no surface element."));
+		readZoneCElements(el);
+	}
+	catch (crn::ExceptionNotFound&)
+	{
+		czones = crn::xml::Document{};
+		root = czones.PushBackElement("TEI");
+		root.SetAttribute("xmlns", "http://www.tei-c.org/ns/1.0");
+		// header
+		auto headel = root.PushBackElement("teiHeader");
+		auto subel = headel.PushBackElement("fileDesc");
+		el = subel.PushBackElement("titleStmt");
+		el = el.PushBackElement("title");
+		el.PushBackText("Character zones for " + projname + "_" + id);
+		el = subel.PushBackElement("publicationStmt");
+		el = el.PushBackElement("p");
+		el.PushBackText("Oriflamms");
+		el = subel.PushBackElement("sourceDesc");
+		el = el.PushBackElement("p");
+		el.PushBackText("Generated by Oriflamms");
+		subel = headel.PushBackElement("revisionDesc");
+		el = subel.PushBackElement("change");
+		el.SetAttribute("xml:id", "auto");
+		el.PushBackText("Automatic alignment");
+		el = subel.PushBackElement("change");
+		el.SetAttribute("xml:id", "manual");
+		el.PushBackText("Manual alignment correction");
+		// facsimile
+		el = root.PushBackElement("facsimile");
+		el.SetAttribute("xml:base", "img/");
+		// TODO add the whole structure?
+		// save file
+		czones.Save(base / ZONEDIR / projname + "_" + crn::Path{id} + "-zones-c.xml");
+	}
+
+	// read LINKDIR/projname_id-links.xml for boxes
+	links = crn::xml::Document{base / LINKDIR / projname + "_" + crn::Path{id} + "-links.xml"};
+	root = links.GetRoot();
+	el = root.GetFirstChildElement("text");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-links.xml: " + _("no text element."));
+	el = el.GetFirstChildElement("body");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-links.xml: " + _("no body element."));
+	el = el.GetFirstChildElement("ab");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-links.xml: " + _("no ab element."));
+	readLinkElements(el);
+	
 	// read if it exists ONTODIR/projname_*.xml for character classes
+	// TODO
 }
 
-void View::Impl::readTextWElement(crn::xml::Element &el, ElementPosition &pos)
+View::Impl::~Impl()
+{
+	wzones.Save();
+	if (czones)
+		czones.Save();
+	links.Save();
+}
+
+static crn::StringUTF8 allTextInElement(crn::xml::Element &el)
+{
+	auto txt = ""_s;
+	for (auto n = el.BeginNode(); n != el.EndNode(); ++n)
+	{
+		if (n.IsText())
+		{
+			txt += n.AsText().GetValue();
+		}
+		else if (n.IsElement())
+		{
+			auto sel = n.AsElement();
+			txt += allTextInElement(sel);
+		}
+	}
+	return txt;
+}
+
+void View::Impl::readTextWElements(crn::xml::Element &el, ElementPosition &pos)
 {
 	const auto elname = el.GetName();
+	const auto elid = el.GetAttribute<Id>("xml:id", true);
 	if (elname == "pb")
 	{
-		const auto id = el.GetAttribute<Id>("xml:id", false);
-		pages.emplace(id, Page{});
-		pos.page = id;
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-w: "_s + _("page without an id."));
+		pages.emplace(elid, Page{});
+		pageorder.push_back(elid);
+		pos.page = elid;
 	}
 	else if (elname == "cb")
 	{
-		const auto id = el.GetAttribute<Id>("xml:id", false);
-		columns.emplace(id, Column{});
-		pages[pos.page].columns.push_back(id);
-		pos.column = id;
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-w: "_s + _("column without an id."));
+		columns.emplace(elid, Column{});
+		pages[pos.page].columns.push_back(elid);
+		pos.column = elid;
 	}
 	else if (elname == "lb")
 	{
-		const auto id = el.GetAttribute<Id>("xml:id", false);
-		lines.emplace(id, Line{});
-		columns[pos.column].lines.push_back(id);
-		pos.line = id;
-		// TODO renvois
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-w: "_s + _("line without an id."));
+		lines.emplace(elid, Line{});
+		columns[pos.column].lines.push_back(elid);
+		pos.line = elid;
+		// TODO rejets
 	}
 	else if ((elname == "w") || (elname == "seg") || (elname == "pc"))
 	{
 		if (!el.GetFirstChildElement("seg"))
 		{
-			const auto id = el.GetAttribute<Id>("xml:id", false);
-			words.emplace(id, Word{});
-			lines[pos.line].left.push_back(id); // TODO renvois
-			words[id].text = ""; // TODO lire la structure jusqu'au bout
+			if (elid.IsEmpty())
+				throw crn::ExceptionNotFound(id + "-w: "_s + _("word, seg or pc without an id."));
+			words.emplace(elid, Word{});
+			words[elid].text = allTextInElement(el);
+			lines[pos.line].left.push_back(elid); // TODO rejets
 		}
 	}
 	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
-		readTextWElement(sel, pos);
+		readTextWElements(sel, pos);
 }
 
+void View::Impl::readTextCElements(crn::xml::Element &el, ElementPosition &pos)
+{
+	const auto elname = el.GetName();
+	const auto elid = el.GetAttribute<Id>("xml:id", true);
+	if (elname == "pb")
+	{
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-c: "_s + _("page without an id."));
+		pos.page = elid;
+	}
+	else if (elname == "cb")
+	{
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-c: "_s + _("column without an id."));
+		pos.column = elid;
+	}
+	else if (elname == "lb")
+	{
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-c: "_s + _("line without an id."));
+		pos.line = elid;
+		// TODO rejets
+	}
+	else if ((elname == "w") || (elname == "seg") || (elname == "pc"))
+	{
+		if (!el.GetFirstChildElement("seg"))
+		{
+			if (elid.IsEmpty())
+				throw crn::ExceptionNotFound(id + "-c: "_s + _("word, seg or pc without an id."));
+			pos.word = elid;
+		}
+	}
+	else if (elname == "c")
+	{
+		if (elid.IsEmpty())
+			throw crn::ExceptionNotFound(id + "-c: "_s + _("character without an id."));
+		characters.emplace(elid, Character{});
+		characters[elid].text = allTextInElement(el);
+		words[pos.word].characters.push_back(elid);
+	}
+	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
+		readTextCElements(sel, pos);
+}
+
+void View::Impl::readZoneWElements(crn::xml::Element &el)
+{
+	if (el.GetName() == "zone")
+	{
+		const auto id = el.GetAttribute<Id>("xml:id", false);
+		zones.emplace(id, Zone{el});
+	}
+	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
+		readZoneWElements(sel);
+}
+
+void View::Impl::readZoneCElements(crn::xml::Element &el)
+{
+	// TODO
+	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
+		readZoneCElements(sel);
+}
+
+void View::Impl::readLinkElements(crn::xml::Element &el)
+{
+	auto grel = el.GetFirstChildElement("linkGrp");
+	while (grel)
+	{
+		const auto type = grel.GetAttribute<crn::StringUTF8>("type", false);
+		link_groups.emplace(type, grel);
+
+		auto lel = grel.GetFirstChildElement("link");
+		while (lel)
+		{
+			const auto targets = lel.GetAttribute<crn::StringUTF8>("target", false).Split(" \t");
+			auto txtid = ""_s;
+			auto zoneid = ""_s;
+			for (const auto &target : targets)
+			{
+				if (target.StartsWith("txt:"))
+					txtid = target.SubString(4, 0);
+				else if (target.StartsWith("img:"))
+				{
+					zoneid = target.SubString(4, 0);
+				}
+				else
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("invalid target base."));
+			}
+			if (txtid.IsEmpty() || zoneid.IsEmpty())
+				throw crn::ExceptionInvalidArgument(id + "-links: " + _("incomplete target."));
+			if (type == SURFACELINKS)
+			{ // well... errrrrrrrrr... we could check if the target is consistent
+			}
+			else if (type == PAGELINKS )
+			{
+				auto it = pages.find(txtid);
+				if (it == pages.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown page: ") + txtid);
+				if (zones.find(zoneid) == zones.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown zone: ") + zoneid);
+				it->second.zone = zoneid;
+			}
+			else if (type == COLUMNLINKS )
+			{
+				auto it = columns.find(txtid);
+				if (it == columns.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown column: ") + txtid);
+				if (zones.find(zoneid) == zones.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown zone: ") + zoneid);
+				it->second.zone = zoneid;
+			}
+			else if (type == LINELINKS )
+			{
+				auto it = lines.find(txtid);
+				if (it == lines.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown line: ") + txtid);
+				if (zones.find(zoneid) == zones.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown zone: ") + zoneid);
+				it->second.zone = zoneid;
+			}
+			else if (type == WORDLINKS )
+			{
+				auto it = words.find(txtid);
+				if (it == words.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown word: ") + txtid);
+				if (zones.find(zoneid) == zones.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown zone: ") + zoneid);
+				it->second.zone = zoneid;
+			}
+			else if (type == CHARLINKS )
+			{
+				auto it = characters.find(txtid);
+				if (it == characters.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown character: ") + txtid);
+				if (zones.find(zoneid) == zones.end())
+					throw crn::ExceptionInvalidArgument(id + "-links: " + _("target points to an unknown zone: ") + zoneid);
+				it->second.zone = zoneid;
+			}
+
+			lel = lel.GetNextSiblingElement("link");
+		} // links
+		grel = grel.GetNextSiblingElement("linkGrp");
+	} // link groups
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 // Document
@@ -253,117 +649,65 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		if (ms.first != cnt++)
 			msok = false;
 		views.push_back(ms.second);
+		view_refs.emplace(ms.second, ViewRef{});
 	}
 	if (!msok)
 	{
 		report += fname;
 		report += ": ";
-		report += _("milestones are not numbered correctly.");
+		report += _("milestones are not numbered correctly: ");
+		for (const auto &ms : milestones)
+			report += ms.first + " "_s;
 		report += "\n";
 	}
 	
-	/*
-	for (const auto fname : txtdir.GetFiles())
+	// read all files
+	for (const auto &id : views)
 	{
-		try
-	for (const auto &fname : filenames)
-	{
-		//files.emplace_back(fname);
-		// TODO
-	}
-		{
-			auto xdoc = crn::xml::Document(fname); // may throw
-			auto el = xdoc.GetRoot(); // may throw
-			if (el.GetName() != "TEI")
-				throw crn::ExceptionInvalidArgument(_("not a TEI file."));
-			el = el.GetFirstChildElement("text");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <text> element."));
-			el = el.GetFirstChildElement("body");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <body> element."));
-			el = el.GetFirstChildElement("pb");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <pb> element."));
-			const auto id = el.GetAttribute<crn::StringUTF8>("xml:id", true); // may throw
-			page_refs[id].files.push_back(fname);
-		}
-		catch (std::exception &ex)
-		{
-			report += fname;
-			report += ": ";
-			report += ex.what();
-			report += "\n";
-		}
-	}
-	const auto zonedir = crn::IO::Directory{dirpath / "zones"};
-	for (const auto fname : zonedir.GetFiles())
-	{
-		try
-		{
-			auto xdoc = crn::xml::Document(fname); // may throw
-			auto el = xdoc.GetRoot(); // may throw
-			if (el.GetName() != "TEI")
-				throw crn::ExceptionInvalidArgument(_("not a TEI file."));
-			el = el.GetFirstChildElement("facsimile");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <facsimile> element."));
-			el = el.GetFirstChildElement("surface");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <surface> element."));
-			el = el.GetFirstChildElement("graphic");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <graphic> element."));
-			const auto id = el.GetAttribute<crn::StringUTF8>("xml:id", true); // may throw
-			//page_refs[id].files.push_back(fname);
-			// RAH! ÇA MARCHE PAS!!!
-		}
-		catch (std::exception &ex)
-		{
-			report += fname;
-			report += ": ";
-			report += ex.what();
-			report += "\n";
-		}
-	}
-	const auto linkdir = crn::IO::Directory{dirpath / "links"};
-	for (const auto fname : linkdir.GetFiles())
-	{
-		try
-		{
-			auto xdoc = crn::xml::Document(fname); // may throw
-			auto el = xdoc.GetRoot(); // may throw
-			if (el.GetName() != "TEI")
-				throw crn::ExceptionInvalidArgument(_("not a TEI file."));
-			el = el.GetFirstChildElement("text");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <text> element."));
-			el = el.GetFirstChildElement("body");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <body> element."));
-			el = el.GetFirstChildElement("ab");
-			if (!el)
-				throw crn::ExceptionNotFound(_("no <ab> element."));
-			for (auto gel = el.GetFirstChildElement("linkGrp"); gel; gel = gel.GetNextSiblingElement("linkGrp"))
-				if (gel.GetAttribute<crn::StringUTF8>("type") == "pages")
+		auto v = GetView(id);
+		// index and compute boxes if needed
+		for (auto &p : v.pimpl->pages)
+		{ // for each page
+			positions.emplace(p.first, id);
+			auto pbox = crn::Rect{};
+			for (auto &cid : p.second.GetColumns())
+			{
+				positions.emplace(cid, ElementPosition{id, p.first});
+				auto cbox = crn::Rect{};
+				const auto &col = v.GetColumn(cid);
+				for (auto &lid : col.GetLines())
 				{
-					el = gel.GetFirstChildElement("link");
-					if (!el)
-						throw crn::ExceptionNotFound(_("no <link> element in pages' <linkGrp>."));
-					const auto link = el.GetAttribute<crn::StringUTF8>("target", true).Split(" \t"); // may throw
-					// TODO
-					break;
-				}
-		}
-		catch (std::exception &ex)
-		{
-			report += fname;
-			report += ": ";
-			report += ex.what();
-			report += "\n";
-		}
+					positions.emplace(lid, ElementPosition{id, p.first, cid});
+					auto lbox = crn::Rect{};
+					const auto &line = v.GetLine(lid);
+					for (auto &wid : line.GetWords())
+					{
+						positions.emplace(wid, ElementPosition{id, p.first, cid, lid});
+						const auto &word = v.GetWord(wid);
+						for (const auto &cid : word.GetCharacters())
+							positions.emplace(wid, ElementPosition{id, p.first, cid, lid, wid});
+
+						const auto &wzone = v.GetZone(word.GetZone());
+						lbox |= wzone.GetPosition();
+					} // words
+
+					auto &lzone = v.GetZone(line.GetZone());
+					if (!lzone.GetPosition().IsValid() && lbox.IsValid())
+						lzone.SetPosition(lbox);
+					cbox |= lzone.GetPosition();
+				} // lines
+
+				auto &czone = v.GetZone(col.GetZone());
+				if (!czone.GetPosition().IsValid() && cbox.IsValid())
+					czone.SetPosition(cbox);
+				pbox |= czone.GetPosition();
+			} // columns
+
+			auto &pzone = v.GetZone(p.second.GetZone());
+			if (!pzone.GetPosition().IsValid() && pbox.IsValid())
+				pzone.SetPosition(pbox);
+		} // pages
 	}
-*/
 }
 
 Document::~Document() = default;
@@ -395,7 +739,15 @@ View Document::GetView(const Id &id)
 
 int main(int argc, char *argv[])
 {
-	auto doc = Document("/data/Dropbox/ORIFLAMMS-Fichiers-exemple/Référentiels/Encodage XML/conversions vers TEI Oriflamms");
+	try
+	{
+		auto doc = Document{"/data/Dropbox/ORIFLAMMS-Fichiers-exemple/Référentiels/Encodage XML/graal yann"};
+		std::cout << "error report: " << doc.ErrorReport() << std::endl;
+	}
+	catch (std::exception &ex)
+	{
+		std::cout << "unexpected exception: " << ex.what() << std::endl;
+	}
 	return 0;
 }
 

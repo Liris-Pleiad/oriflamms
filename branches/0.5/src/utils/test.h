@@ -31,25 +31,32 @@ namespace ori
 		Id word;
 	};
 	
-	class View;
 	class CharacterClass
 	{
 		public:
 		private:
 			crn::xml::Element el;
-		
-		friend class View;
 	};
 
+	class View;
 	class Zone
 	{
 		public:
-			const Id& GetId() const noexcept { return id; }
+			Zone(crn::xml::Element &elem);
+			Zone(const Zone&) = delete;
+			Zone(Zone&&) = default;
+			Zone& operator=(const Zone&) = delete;
+			Zone& operator=(Zone&&) = default;
+			//const Id& GetId() const noexcept { return id; }
+			const crn::Rect& GetPosition() const noexcept;
+			const std::vector<crn::Point2DInt>& GetContour() const noexcept { return box; }
+
+			void SetPosition(const crn::Rect &r);
+			void SetContour(const std::vector<crn::Point2DInt> &c);
 		private:
-			Id id;
-			crn::Rect pos;
+			//Id id;
+			mutable crn::Rect pos;
 			std::vector<crn::Point2DInt> box;
-			crn::StringUTF8 type;
 			crn::xml::Element el;
 		
 		friend class View;
@@ -58,10 +65,17 @@ namespace ori
 	class Character
 	{
 		public:
-			const Id& GetId() const noexcept { return id; }
+			Character() = default;
+			Character(const Character&) = delete;
+			Character(Character&&) = default;
+			Character& operator=(const Character&) = delete;
+			Character& operator=(Character&&) = default;
+			//const Id& GetId() const noexcept { return id; }
 			const crn::StringUTF8& GetText() const noexcept { return text; }
+			const Id& GetZone() const noexcept { return zone; }
+
 		private:
-			Id id;
+			//Id id;
 			Id zone;
 			crn::StringUTF8 text;
 		
@@ -71,10 +85,18 @@ namespace ori
 	class Word
 	{
 		public:
-			const Id& GetId() const { return id; }
+			Word() = default;
+			Word(const Word&) = delete;
+			Word(Word&&) = default;
+			Word& operator=(const Word&) = delete;
+			Word& operator=(Word&&) = default;
+			//const Id& GetId() const { return id; }
 			const crn::StringUTF8& GetText() const noexcept { return text; }
+			const std::vector<Id>& GetCharacters() const noexcept { return characters; }
+			const Id& GetZone() const noexcept { return zone; }
+
 		private:
-			Id id;
+			//Id id;
 			std::vector<Id> characters;
 			Id zone;
 			crn::StringUTF8 text;
@@ -85,10 +107,18 @@ namespace ori
 	class Line
 	{
 		public:
-			const Id& GetId() const noexcept { return id; }
-			Id id;
+			Line() = default;
+			Line(const Line&) = delete;
+			Line(Line&&) = default;
+			Line& operator=(const Line&) = delete;
+			Line& operator=(Line&&) = default;
+			//const Id& GetId() const noexcept { return id; }
+			const std::vector<Id>& GetWords() const;
+			const Id& GetZone() const noexcept { return zone; }
+
 		private:
-			std::vector<Id> left, center, right;
+			//Id id;
+			mutable std::vector<Id> left, center, right;
 			Id zone;
 		
 		friend class View;
@@ -97,9 +127,17 @@ namespace ori
 	class Column
 	{
 		public:
-			const Id& GetId() const noexcept { return id; }
+			Column() = default;
+			Column(const Column&) = delete;
+			Column(Column&&) = default;
+			Column& operator=(const Column&) = delete;
+			Column& operator=(Column&&) = default;
+			//const Id& GetId() const noexcept { return id; }
+			const std::vector<Id>& GetLines() const noexcept { return lines; }
+			const Id& GetZone() const noexcept { return zone; }
+
 		private:
-			Id id;
+			//Id id;
 			std::vector<Id> lines;
 			Id zone;
 		
@@ -110,10 +148,17 @@ namespace ori
 	class Page
 	{
 		public:
-			const Id& GetId() const noexcept { return id; }
+			Page() = default;
+			Page(const Page&) = delete;
+			Page(Page&&) = default;
+			Page& operator=(const Page&) = delete;
+			Page& operator=(Page&&) = default;
+			//const Id& GetId() const noexcept { return id; }
+			const std::vector<Id>& GetColumns() const noexcept { return columns; }
+			const Id& GetZone() const noexcept { return zone; }
 
 		private:
-			Id id;
+			//Id id;
 			std::vector<Id> columns;
 			Id zone;
 		
@@ -130,10 +175,13 @@ namespace ori
 			View& operator=(View&&) = default;
 			~View();
 
+			const std::vector<Id>& GetPages() const noexcept;
 			const Page& GetPage(const Id &id) const;
 			Page& GetPage(const Id &id);
 			const Column& GetColumn(const Id &id) const;
 			Column& GetColumn(const Id &id);
+			const Line& GetLine(const Id &id) const;
+			Line& GetLine(const Id &id);
 			const Word& GetWord(const Id &id) const;
 			Word& GetWord(const Id &id);
 			const Character& GetCharacter(const Id &id) const;
@@ -142,26 +190,7 @@ namespace ori
 			Zone& GetZone(const Id &id);
 
 		private:
-			struct Impl
-			{
-				Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 &projname);
-				void readTextWElement(crn::xml::Element &el, ElementPosition &pos);
-
-				Id id;
-				crn::SBlock img;
-				std::vector<Id> pageorder;
-				crn::Path imagename;
-				
-				std::unordered_map<Id, Page> pages;
-				std::unordered_map<Id, Column> columns;
-				std::unordered_map<Id, Line> lines;
-				std::unordered_map<Id, Word> words;
-				std::unordered_map<Id, Character> characters;
-				std::unordered_map<Id, Zone> zones;
-
-				crn::xml::Document links;
-				std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
-			};
+			struct Impl;
 
 			View(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
 
@@ -185,6 +214,7 @@ namespace ori
 
 			const ElementPosition& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
 
+			const std::vector<Id>& GetViews() const noexcept { return views; }
 			View GetView(const Id &id);
 
 		private:
