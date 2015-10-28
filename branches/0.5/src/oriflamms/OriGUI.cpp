@@ -21,7 +21,7 @@
 using namespace ori;
 using namespace crn::literals;
 
-const Glib::ustring GUI::wintitle(Glib::ustring("Oriflamms ") + ORIFLAMMS_PACKAGE_VERSION + Glib::ustring(" – LIRIS & IRHT"));
+const Glib::ustring GUI::wintitle(Glib::ustring("Oriflamms ") + ORIFLAMMS_PACKAGE_VERSION + Glib::ustring(" – LIRIS, IRHT & LIPADE"));
 const crn::String GUI::linesOverlay("lines");
 const crn::String GUI::wordsOverlay("zwords");
 const crn::String GUI::wordsOverlayOk("wordsok");
@@ -59,11 +59,9 @@ GUI::GUI():
 	Gtk::AccelMap::add_entry("<Oriflamms>/DisplayMenu/Edit", k, mod);
 
 	// File menu
-	actions->add(Gtk::Action::create("new-project", Gtk::Stock::NEW, _("_New project"), _("New project")), sigc::mem_fun(this, &GUI::new_project));
 	actions->add(Gtk::Action::create("load-project", Gtk::Stock::OPEN, _("_Open project"), _("Open project")), sigc::mem_fun(this, &GUI::load_project));
 	actions->add(Gtk::Action::create("import-project", Gtk::Stock::CONVERT, _("_Import project"), _("Import project")), sigc::mem_fun(this, &GUI::import_project));
 	actions->add(Gtk::Action::create("save-project", Gtk::Stock::SAVE, _("_Save project"), _("Save project")), sigc::mem_fun(this, &GUI::save_project));
-	actions->add(Gtk::Action::create("reload-tei", Gtk::Stock::REFRESH, _("Reload _TEI"), _("Reload TEI")), sigc::mem_fun(this, &GUI::reload_tei));
 
 	// Display menu
 	actions->add(Gtk::Action::create("display-menu", _("_Display"), _("Display")));
@@ -97,8 +95,6 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("align-all", Gtk::StockID("gtk-crn-two-pages"), _("Align _all"), _("Align all")), sigc::mem_fun(this, &GUI::align_all));
 	actions->add(Gtk::Action::create("align-selection", Gtk::StockID("gtk-crn-block"), _("Align _selection"), _("Align selection")), sigc::mem_fun(this, &GUI::align_selection));
 
-	actions->add(Gtk::Action::create("align-export-tei",_("_Export TEI"),_("Export TEI")),sigc::mem_fun(this,&GUI::export_tei_alignment));
-	
 	// Structure menu
 	actions->add(Gtk::Action::create("structure-menu", _("_Structure"), _("Structure")));
 	actions->add(Gtk::Action::create("add-line", Gtk::Stock::INDENT, _("Add _line"), _("Add line")), sigc::mem_fun(this, &GUI::add_line));
@@ -125,12 +121,9 @@ GUI::GUI():
 		"<ui>"
 		"	<menubar name='MenuBar'>"
 		"		<menu action='app-file-menu'>"
-		"			<menuitem action='new-project'/>"
 		"			<menuitem action='load-project'/>"
 		"			<menuitem action='import-project'/>"
 		"			<menuitem action='save-project'/>"
-		"			<separator/>"
-		"			<menuitem action='reload-tei'/>"
 		"			<separator/>"
 		"			<menuitem action='app-quit'/>"
 		"		</menu>"
@@ -156,8 +149,6 @@ GUI::GUI():
 		"			<menuitem action='align-clear-sig'/>"
 		"			<menuitem action='align-all'/>"
 		"			<menuitem action='align-selection'/>"
-		"			<separator/>"
-		"			<menuitem action='align-export-tei'/>"
 		"		</menu>"
 		"		<menu action='valid-menu'>"
 		"			<menuitem action='valid-words'/>"
@@ -321,133 +312,34 @@ void GUI::about()
 	dial.run();
 }
 
-class NewProject: public Gtk::Dialog
-{
-	public:
-		NewProject(Gtk::Window &parent, const Glib::ustring &project_name = "", const Glib::ustring &tei_name = ""):
-			Gtk::Dialog(_("New project"), parent, true, false),
-			xfile(_("Please select a TEI XML file"), Gtk::FILE_CHOOSER_ACTION_OPEN),
-			imagedir(_("Please select the folder containing the images"), Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER)
-			{
-				set_position(Gtk::WIN_POS_CENTER_ON_PARENT);
-				Gtk::Table *tab = Gtk::manage(new Gtk::Table(3, 2));
-				get_vbox()->pack_start(*tab, true, true, 4);
-				tab->attach(*Gtk::manage(new Gtk::Label(_("Project name"))), 0, 1, 0, 1, Gtk::FILL, Gtk::FILL);
-				tab->attach(pname, 1, 2, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL);
-				tab->attach(*Gtk::manage(new Gtk::Label(_("TEI XML file"))), 0, 1, 1, 2, Gtk::FILL, Gtk::FILL);
-				tab->attach(xfile, 1, 2, 1, 2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL);
-				tab->attach(*Gtk::manage(new Gtk::Label(_("Image folder"))), 0, 1, 2, 3, Gtk::FILL, Gtk::FILL);
-				tab->attach(imagedir, 1, 2, 2, 3, Gtk::FILL|Gtk::EXPAND, Gtk::FILL);
-				get_vbox()->show_all();
-
-				add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
-				//okbut = add_button(Gtk::Stock::OK, Gtk::RESPONSE_ACCEPT);
-				okbut = add_button(_("Next"), Gtk::RESPONSE_ACCEPT);
-				okbut->set_image(*Gtk::manage(new Gtk::Image(Gtk::Stock::GO_FORWARD, Gtk::ICON_SIZE_BUTTON)));
-				okbut->set_sensitive(false);
-				std::vector<int> altbut;
-				altbut.push_back(Gtk::RESPONSE_ACCEPT);
-				altbut.push_back(Gtk::RESPONSE_CANCEL);
-				set_alternative_button_order_from_array(altbut);
-				set_default_response(Gtk::RESPONSE_ACCEPT);
-
-				pname.signal_changed().connect(sigc::mem_fun(this, &NewProject::updatebut));
-				xfile.signal_selection_changed().connect(sigc::mem_fun(this, &NewProject::updatebut));
-				imagedir.signal_current_folder_changed().connect(sigc::mem_fun(this, &NewProject::updatebut));
-
-				if (!project_name.empty())
-					pname.set_text(project_name);
-				if (!tei_name.empty())
-				{
-					Gtk::FileFilter ff;
-					ff.set_name(tei_name);
-					ff.add_pattern(tei_name);
-					xfile.add_filter(ff);
-					Gtk::FileFilter ff2;
-					ff2.set_name(_("All files"));
-					ff2.add_pattern("*");
-					xfile.add_filter(ff2);
-				}
-			}
-
-		crn::Path GetName() const
-		{
-			return pname.get_text().c_str();
-		}
-		crn::Path GetXML() const
-		{
-			return xfile.get_filename().c_str();
-		}
-		crn::Path GetImages() const
-		{
-			return imagedir.get_current_folder().c_str();
-		}
-	private:
-		void updatebut()
-		{
-			bool active = true;
-			Glib::ustring name = pname.get_text();
-			if (name.empty())
-				active = false;
-			else if (name.find(crn::Path::Separator()) != Glib::ustring::npos)
-				active = false;
-			else if (xfile.get_filename().empty() || imagedir.get_current_folder().empty())
-				active = false;
-			okbut->set_sensitive(active);
-		}
-		Gtk::Entry pname;
-		Gtk::FileChooserButton xfile, imagedir;
-		Gtk::Button *okbut;
-};
-
-void GUI::new_project()
-{
-	NewProject dial(*this);
-	if (dial.run() == Gtk::RESPONSE_ACCEPT)
-	{
-		dial.hide();
-		try
-		{
-			ori::TEIImporter p(dial.GetXML(), *this); // may throw
-			if(p.run() == Gtk::RESPONSE_ACCEPT)
-			{
-				STEISelectionNode sel(std::make_shared<TEISelectionNode>(std::move(p.export_selected_elements())));
-				GtkCRN::ProgressWindow pw(_("Analyzing images…"), this, true);
-				size_t i = pw.add_progress_bar(_("Image"));
-				pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-				project = pw.run<std::unique_ptr<Project>>(sigc::bind(sigc::ptr_fun(&Project::New), dial.GetName(), dial.GetXML(), sel, dial.GetImages(), pw.get_crn_progress(i)));
-
-				GtkCRN::ProgressWindow pw2(_("Loading…"), this, true);
-				i = pw2.add_progress_bar(_("Page"));
-				pw2.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-				store = pw2.run<Glib::RefPtr<Gtk::TreeStore>>(sigc::bind(sigc::mem_fun(this, &GUI::fill_tree), pw2.get_crn_progress(i)));
-				tv.set_model(store);
-				setup_window();
-			}
-		}
-		catch (crn::Exception &ex)
-		{
-			project.reset();
-			GtkCRN::App::show_exception(ex, false);
-		}
-	}
-}
-
 void GUI::load_project()
 {
-	GtkCRN::FileSelecterDialog dial(crn::Document::GetDefaultDirName(), this);
+	Gtk::FileChooserDialog dial(*this, _("Open project"), Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER);
+	dial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+	dial.add_button(Gtk::Stock::OPEN, Gtk::RESPONSE_ACCEPT);
+	std::vector<int> altbut;
+	altbut.push_back(Gtk::RESPONSE_ACCEPT);
+	altbut.push_back(Gtk::RESPONSE_CANCEL);
+	dial.set_alternative_button_order_from_array(altbut);
+	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
 	if (dial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		dial.hide();
 		try
 		{
-			project = std::make_unique<Project>(dial.get_selection());
+			doc = std::make_unique<Document>(dial.get_current_folder().c_str());
+			const auto &error = doc->ErrorReport();
+			if (error.IsNotEmpty())
+			{
+				GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
+			}
 		}
 		catch (crn::Exception &ex)
 		{
-			project.reset();
+			doc.reset();
 			GtkCRN::App::show_exception(ex, false);
 		}
+
 		GtkCRN::ProgressWindow pw(_("Loading…"), this, true);
 		size_t i = pw.add_progress_bar(_("Page"));
 		pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
@@ -573,6 +465,8 @@ void GUI::load_project()
 
 void GUI::import_project()
 {
+	//TODO
+#if 0
 	// select project file
 	Gtk::FileChooserDialog impfile(*this, _("Please select a project file to import"), Gtk::FILE_CHOOSER_ACTION_OPEN);
 	impfile.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
@@ -636,16 +530,16 @@ void GUI::import_project()
 	{
 		show_exception(ex, false);
 	}
+#endif
 }
 
 void GUI::setup_window()
 {
-	actions->get_action("align-menu")->set_sensitive(project != nullptr);
-	actions->get_action("valid-menu")->set_sensitive(project != nullptr);
-	actions->get_action("display-menu")->set_sensitive(project != nullptr);
-	actions->get_action("structure-menu")->set_sensitive(project != nullptr);
-	actions->get_action("save-project")->set_sensitive(project != nullptr);
-	actions->get_action("reload-tei")->set_sensitive(project != nullptr);
+	actions->get_action("align-menu")->set_sensitive(doc != nullptr);
+	actions->get_action("valid-menu")->set_sensitive(doc != nullptr);
+	actions->get_action("display-menu")->set_sensitive(doc != nullptr);
+	actions->get_action("structure-menu")->set_sensitive(doc != nullptr);
+	actions->get_action("save-project")->set_sensitive(doc != nullptr);
 
 	set_win_title();
 }
@@ -655,10 +549,10 @@ void GUI::set_win_title()
 	Glib::ustring t(wintitle);
 	if (need_save)
 		t += " *";
-	if (project)
+	if (doc)
 	{
 		t += " (";
-		t += project->GetTitle().CStr();
+		t += doc->GetName().CStr();
 		t += ")";
 	}
 	set_title(t);
@@ -686,8 +580,10 @@ void GUI::add_line()
 			plist.push_back(pts.second);
 			plist.push_back(pts.first);
 		}
+		// TODO
+#if 0
 		// get column data
-		auto b = project->GetDoc()->GetView(current_view_id);
+		auto b = doc->GetView(current_view_id);
 		auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
 		auto it = tv.get_selection()->get_selected();
 		size_t colid = it->get_value(columns.index);
@@ -723,12 +619,15 @@ void GUI::add_line()
 		it->set_value(columns.image, Glib::ustring(s.CStr()));
 		img.clear_selection();
 		tree_selection_changed(false);
+#endif
 	}
 	catch (...) { }
 }
 
-void GUI::rem_line(size_t v, size_t c, size_t l)
+void GUI::rem_line(const Id &l)
 {
+	// TODO
+#if 0
 	// remove line
 	auto b = project->GetDoc()->GetView(v);
 	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
@@ -743,10 +642,13 @@ void GUI::rem_line(size_t v, size_t c, size_t l)
 	it->set_value(columns.image, Glib::ustring(s.CStr()));
 	img.clear_selection();
 	tree_selection_changed(false);
+#endif
 }
 
-void GUI::add_point_to_line(size_t v, size_t c, size_t l, int x, int y)
+void GUI::add_point_to_line(const Id &l, int x, int y)
 {
+	// TODO
+#if 0
 	auto b = project->GetDoc()->GetView(v);
 	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
 	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
@@ -760,10 +662,13 @@ void GUI::add_point_to_line(size_t v, size_t c, size_t l, int x, int y)
 	line->SetMidline(pts);
 	set_need_save();
 	display_line(v, c, l); // refresh
+#endif
 }
 
-void GUI::rem_point_from_line(size_t v, size_t c, size_t l, int x, int y)
+void GUI::rem_point_from_line(const Id &l, int x, int y)
 {
+	// TODO
+#if 0
 	auto b = project->GetDoc()->GetView(v);
 	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
 	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
@@ -790,26 +695,57 @@ void GUI::rem_point_from_line(size_t v, size_t c, size_t l, int x, int y)
 	line->SetMidline(pts);
 	set_need_save();
 	display_line(v, c, l); // refresh
+#endif
 }
 
 Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 {
 	Glib::RefPtr<Gtk::TreeStore> newstore = Gtk::TreeStore::create(columns);
-	current_view_id = std::numeric_limits<size_t>::max();
-	if (!project)
+	current_view_id = "";
+	current_view = View{};
+	if (!doc)
 		return newstore;
 
-	prog->SetMaxCount(int(project->GetNbViews()));
-	for (size_t tmp = 0; tmp < project->GetNbViews(); ++tmp)
+	prog->SetMaxCount(int(doc->GetViews().size()));
+	for (const auto &vid : doc->GetViews())
 	{
-		Project::View v(project->GetView(tmp));
-		Gtk::TreeIter vit = newstore->append();
+		auto view = doc->GetView(vid);
+		auto vit = newstore->append();
+		vit->set_value(columns.id, Glib::ustring{vid.CStr()});
+		vit->set_value(columns.name, Glib::ustring(view.GetImageName().CStr()));
+
+		for (const auto &pid : view.GetPages())
+		{
+			auto pit = newstore->append(vit->children());
+			pit->set_value(columns.id, Glib::ustring{pid.CStr()});
+			const auto &p = view.GetPage(pid);
+			for (const auto &cid : p.GetColumns())
+			{
+				auto cit = newstore->append(pit->children());
+				cit->set_value(columns.id, Glib::ustring{cid.CStr()});
+				const auto &c = view.GetColumn(cid);
+				auto ctxt = ""_s;
+				for (const auto &lid : c.GetLines())
+				{
+					auto lit = newstore->append(cit->children());
+					lit->set_value(columns.id, Glib::ustring{lid.CStr()});
+					const auto &l = view.GetLine(lid);
+					auto ltxt = ""_s;
+					for (const auto &wid : l.GetWords())
+						ltxt += view.GetWord(wid).GetText() + " ";
+					lit->set_value(columns.text, Glib::ustring{ltxt.CStr()});
+
+					ctxt += ltxt + "\n";
+				} // lines
+				cit->set_value(columns.text, Glib::ustring{ctxt.CStr()});
+			} // columns
+		} // pages
+	// TODO
+#if 0
 		size_t xcol = v.page.GetColumns().size();
 		crn::SVector ilines(std::static_pointer_cast<crn::Vector>(v.image->GetUserData(Project::LinesKey)));
 		size_t icol = ilines->Size();
 		vit->set_value(columns.error, xcol != icol ? Pango::STYLE_ITALIC : Pango::STYLE_NORMAL);
-		vit->set_value(columns.name, Glib::ustring(v.page.GetImageName().CStr()));
-		vit->set_value(columns.index, tmp);
 		crn::StringUTF8 s = xcol;
 		s += " ";
 		s += _("column(s)");
@@ -892,8 +828,9 @@ Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 				vit->set_value(columns.error, Pango::STYLE_ITALIC);
 			}
 		}
+#endif
 		prog->Advance();
-	}
+	} // views
 	return newstore;
 }
 
@@ -916,11 +853,12 @@ void GUI::tree_selection_changed(bool focus)
 		level += 1;
 		it = it->parent();
 	}
-	size_t viewid = it->get_value(columns.index);
+	auto viewid = Id{it->get_value(columns.id).c_str()};
 	if (viewid != current_view_id)
 	{
-		img.set_pixbuf(Gdk::Pixbuf::create_from_file(project->GetDoc()->GetFilenames()[viewid].CStr()));
 		current_view_id = viewid;
+		current_view = doc->GetView(current_view_id);
+		img.set_pixbuf(Gdk::Pixbuf::create_from_file(current_view.GetImageName().CStr()));
 	}
 	img.set_selection_type(GtkCRN::Image::Overlay::None);
 	img.clear_selection();
@@ -929,15 +867,32 @@ void GUI::tree_selection_changed(bool focus)
 	switch (level)
 	{
 		case 0:
+			// view
+			tv.expand_row(Gtk::TreePath(it), false);
+			view_depth = ViewDepth::View;
+			break;
+		case 1:
 			// page
 			tv.expand_row(Gtk::TreePath(it), false);
 			view_depth = ViewDepth::Page;
 			break;
-		case 1:
+		case 2:
 			{
 				// column
 				it = tv.get_selection()->get_selected();
-				size_t colid = it->get_value(columns.index);
+				auto colid = Id{it->get_value(columns.id).c_str()};
+				const auto &column = current_view.GetColumn(colid);
+				for (const auto &lid : column.GetLines())
+				{
+					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+						display_line(lid);
+					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
+						display_words(lid);
+					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
+						display_characters(lid);
+				}
+	// TODO
+#if 0
 				crn::SCBlock b(project->GetDoc()->GetView(viewid));
 				crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
 				if (cols->Size() <= colid)
@@ -948,41 +903,33 @@ void GUI::tree_selection_changed(bool focus)
 					SCGraphicalLine l(std::static_pointer_cast<const GraphicalLine>(lines->Front()));
 					img.focus_on((l->GetFront().X + l->GetBack().X) / 2, l->GetFront().Y);
 				}
-
-				for (size_t tmpl = 0; tmpl < lines->Size(); ++tmpl)
-				{
-					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
-						display_line(viewid, colid, tmpl);
-					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
-						display_word(viewid, colid, tmpl);
-					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
-						display_characters(viewid, colid, tmpl);
-
-				}
+#endif
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
 					img.set_selection_type(GtkCRN::Image::Overlay::Line);
 
 				view_depth = ViewDepth::Column;
 			}
 			break;
-		case 2:
+		case 3:
 			{
 				// line
 				it = tv.get_selection()->get_selected();
-				size_t linid = it->get_value(columns.index);
-				size_t colid = it->parent()->get_value(columns.index);
+				auto linid = Id{it->get_value(columns.id).c_str()};
+	// TODO
+#if 0
 				crn::SCBlock b(project->GetDoc()->GetView(viewid));
 				crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
 				crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
 				SCGraphicalLine l(std::static_pointer_cast<const GraphicalLine>(lines->At(linid)));
 				if (focus)
 					img.focus_on((l->GetFront().X + l->GetBack().X) / 2, l->GetFront().Y);
+#endif
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
-					display_line(viewid, colid, linid);
+					display_line(linid);
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
-					display_word(viewid, colid, linid);
+					display_words(linid);
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
-					display_characters(viewid, colid, linid);
+					display_characters(linid);
 
 				view_depth = ViewDepth::Line;
 			}
@@ -1016,8 +963,10 @@ void GUI::edit_overlays()
 		tree_selection_changed(false);
 }
 
-void GUI::display_line(size_t viewid, size_t colid, size_t linid)
+void GUI::display_line(const Id &linid)
 {
+	// TODO
+#if 0
 	crn::SCBlock b(project->GetDoc()->GetView(viewid));
 	crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
 	crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
@@ -1026,110 +975,93 @@ void GUI::display_line(size_t viewid, size_t colid, size_t linid)
 	for (const crn::Point2DDouble &p : l->GetMidline())
 		pts.push_back(crn::Point2DInt{int(p.X), int(p.Y)});
 	img.add_overlay_item(linesOverlay, linid, pts);
+#endif
 }
 
-void GUI::display_word(size_t viewid, size_t colid, size_t linid)
+void GUI::display_words(const Id &linid)
 {
-	if (colid >= project->GetView(viewid).page.GetColumns().size())
-		return; // this column does not exist in the XML file
-	if (linid >= project->GetView(viewid).page.GetColumns()[colid].GetLines().size())
-		return; // this line does not exist in the XML file
-	const std::vector<ori::Word> &words(project->GetView(viewid).page.GetColumns()[colid].GetLines()[linid].GetWords());
-	for (size_t tmpw = 0; tmpw < words.size(); ++tmpw)
+	const auto &line = current_view.GetLine(linid);
+	for (const auto &wid : line.GetWords())
 	{
-		display_update_word(WordPath(viewid, colid, linid, tmpw));
+		display_update_word(wid);
 	}
 }
 
-void GUI::display_characters(size_t viewid, size_t colid, size_t linid)
+void GUI::display_characters(const Id &linid)
 {
-	crn::SCBlock b(project->GetDoc()->GetView(viewid));
-	crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
-	crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
-	if (colid >= project->GetView(viewid).page.GetColumns().size())
-		return; // this column does not exist in the XML file
-	if (linid >= project->GetView(viewid).page.GetColumns()[colid].GetLines().size())
-		return; // this line does not exist in the XML file
-	std::vector<ori::Word> &words(project->GetView(viewid).page.GetColumns()[colid].GetLines()[linid].GetWords());
-
-	for (int tmpw = 0; tmpw < words.size(); ++tmpw)
+	const auto &line = current_view.GetLine(linid);
+	for (const auto &wid : line.GetWords())
 	{
-		if (!words[tmpw].IsAligned() || !words[tmpw].CharactersAligned())
-			continue; // word not aligned
-		crn::String ov = wordsOverlayUn;
-		//if (words[tmpw].GetValid().IsTrue()) ov = wordsOverlayOk;
-		//if (words[tmpw].GetValid().IsFalse()) ov = wordsOverlayKo;
-
-		auto chars = words[tmpw].GetCharacters();
-		int cnt = 0;
-		for (const auto &c : chars)
+		const auto &word = current_view.GetWord(wid);
+		if (word.GetZone().IsEmpty())
+			continue;
+		for (const auto &cid : word.GetCharacters())
 		{
-			crn::String s(words[tmpw].GetId() + " " + crn::String(cnt++));
-
-			int topy = crn::Min(c.front.front().Y, c.back.front().Y);
-			crn::Rect topbox(c.front.front().X, topy, c.back.front().X, topy + words[tmpw].GetBBox().GetHeight() / 4);
-			img.add_overlay_item(ov, s, topbox, c.text.CStr());
-
-			std::vector<crn::Point2DInt> poly(c.front);
-			poly.insert(poly.end(), c.back.rbegin(), c.back.rend());
-			img.add_overlay_item(charOverlay, s, poly);
+			const auto &character = current_view.GetCharacter(cid);
+			const auto &zid = character.GetZone();
+			if (zid.IsEmpty())
+				continue;
+			auto ov = wordsOverlayUn;
+			// TODO change color if validated? wordsOverlayOk wordsOverlayKo
+			const auto &zone = current_view.GetZone(zid);
+			auto topbox = zone.GetPosition();
+			topbox.SetHeight(topbox.GetHeight() / 4);
+			img.add_overlay_item(ov, cid, topbox, character.GetText().CStr());
+			img.add_overlay_item(charOverlay, cid, zone.GetContour());
 		}
-	} // foreach word
+	}
 }
 
-void GUI::display_update_word(const WordPath &path, const crn::Option<int> &newleft, const crn::Option<int> &newright)
+void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft, const crn::Option<int> &newright)
 {
 	// compute id
-	crn::String itemid = path.ToString();
+	auto itemid = crn::String{wordid};
 	// clean old overlay items
 	try { img.remove_overlay_item(wordsOverlay, itemid); } catch (...) { }
 	try { img.remove_overlay_item(wordsOverlayUn, itemid); } catch (...) { }
 	try { img.remove_overlay_item(wordsOverlayOk, itemid); } catch (...) { } 
 	try { img.remove_overlay_item(wordsOverlayKo, itemid); } catch (...) { }
 
-	// add overlay items
-	ori::Word &w(project->GetStructure().GetWord(path));
-	if (w.GetBBox().IsValid())
+	const auto &word = current_view.GetWord(wordid);
+	if (word.GetZone().IsNotEmpty())
 	{
+		auto &zone = current_view.GetZone(word.GetZone());
 		if (newleft)
 		{
-			w.SetLeft(newleft.Get());
-			if (w.GetRightCorrection())
-				w.SetValid(true);
+	// TODO
+			//zone.SetLeft(newleft.Get());
+			//if (w.GetRightCorrection())
+				//w.SetValid(true);
 		}
 		if (newright)
 		{
-			w.SetRight(newright.Get());
-			if (w.GetLeftCorrection())
-				w.SetValid(true);
+	// TODO
+			//zone.SetRight(newright.Get());
+			//if (w.GetLeftCorrection())
+				//w.SetValid(true);
 		}
 		if (newright || newleft)
 		{
-			project->ComputeWordFrontiers(path);
-			project->AlignWordCharacters(AlignConfig::AllChars, path);
+	// TODO
+			//project->ComputeWordFrontiers(wordid);
+			//project->AlignWordCharacters(AlignConfig::AllChars, wordid);
 		}
 
 		if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
 		{ // edit mode, display boxes
-			img.add_overlay_item(wordsOverlay, itemid, w.GetBBox(), w.GetText().CStr());
+			img.add_overlay_item(wordsOverlay, wordid, zone.GetPosition(), word.GetText().CStr());
 		}
 		else
 		{ // not in edit mode, display polygons
-			std::vector<crn::Point2DInt> li = w.GetFrontFrontier();
-			std::vector<crn::Point2DInt> wordbox = w.GetBackFrontier();
-			for(size_t i = li.size(); i > 0; --i)
-			{
-				wordbox.push_back(li[i-1]);
-			}
-			img.add_overlay_item(wordsOverlay, itemid, wordbox, w.GetText().CStr());
+			img.add_overlay_item(wordsOverlay, wordid, zone.GetContour(), word.GetText().CStr());
 		}
 
-		crn::String ov = wordsOverlayUn;
-		if (w.GetValid().IsTrue()) ov = wordsOverlayOk;
-		if (w.GetValid().IsFalse()) ov = wordsOverlayKo;
-		crn::Rect topbox(w.GetBBox());
+		auto ov = wordsOverlayUn;
+		//TODO if (w.GetValid().IsTrue()) ov = wordsOverlayOk;
+		//TODO if (w.GetValid().IsFalse()) ov = wordsOverlayKo;
+		auto topbox = zone.GetPosition();
 		topbox.SetHeight(topbox.GetHeight() / 4);
-		img.add_overlay_item(ov, itemid, topbox, w.GetText().CStr());
+		img.add_overlay_item(ov, wordid, topbox, word.GetText().CStr());
 	}
 }
 
@@ -1146,7 +1078,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		if (overlay_item_id.IsEmpty())
 			return;
 		// get path
-		const int linid = overlay_item_id.ToInt();
+		const auto linid = overlay_item_id.ToInt();
 		Gtk::TreeIter it(tv.get_selection()->get_selected());
 		if (view_depth == ViewDepth::Line)
 		{
@@ -1155,8 +1087,10 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		}
 		else if (view_depth != ViewDepth::Column) // iterator not on column
 			return;
-		const size_t colid = it->get_value(columns.index);
+		const auto colid = Id{it->get_value(columns.id).c_str()};
 		// set line bounds
+	// TODO
+#if 0
 		crn::SBlock b(project->GetDoc()->GetView(current_view_id));
 		crn::SVector cols(std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
 		crn::SVector lines(std::static_pointer_cast<crn::Vector>(cols->At(colid)));
@@ -1174,8 +1108,9 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), current_view_id, colid, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
 		project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected();
 		*/
+#endif
 		set_need_save();
-		display_line(current_view_id, colid, linid); // refresh
+		display_line(linid); // refresh
 	}
 	else if (overlay_id == wordsOverlay)
 	{
@@ -1183,19 +1118,20 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		if (overlay_item_id.IsEmpty())
 			return;
 		// get path
-		WordPath path(overlay_item_id);
+		auto path = Id{overlay_item_id};
 
-		GtkCRN::Image::OverlayItem &item(img.get_overlay_item(overlay_id, overlay_item_id));
-		GtkCRN::Image::Rectangle &rect = static_cast<GtkCRN::Image::Rectangle&>(item);
-		int nleft = rect.rect.GetLeft() ,nright = rect.rect.GetRight();
-		//int nleft = item.x1, nright = item.x2;
+		auto &item = img.get_overlay_item(overlay_id, overlay_item_id);
+		auto &rect = static_cast<GtkCRN::Image::Rectangle&>(item);
+		auto nleft = rect.rect.GetLeft() ,nright = rect.rect.GetRight();
 
 		if (nright - nleft < minwordwidth)
 			nright = nleft + minwordwidth;
+		// TODO
+#if 0
 		// need to update previous word?
 		if (path.word != 0)
 		{
-			WordPath pp(path);
+			Id pp(path);
 			pp.word -= 1;
 			ori::Word &w(project->GetStructure().GetWord(pp));
 			if (w.GetBBox().IsValid())
@@ -1208,7 +1144,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		// need to update next word?
 		if (path.word + 1 < project->GetStructure().GetViews()[path.view].GetColumns()[path.col].GetLines()[path.line].GetWords().size())
 		{
-			WordPath np(path);
+			Id np(path);
 			np.word += 1;
 			ori::Word &w(project->GetStructure().GetWord(np));
 			if (w.GetBBox().IsValid())
@@ -1218,6 +1154,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 			}
 			display_update_word(np, nright + 1, crn::Option<int>());
 		}
+#endif
 
 		// update bbox
 		display_update_word(path, nleft, nright);
@@ -1234,14 +1171,17 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 		{ // if it is a word, cycle through validation
 			try
 			{
-				WordPath path(it->second); // may throw
-				ori::Word &w(project->GetStructure().GetWord(path));
+				auto path = Id{it->second};
+				auto &w = current_view.GetWord(path);
+				// TODO
+				/*
 				if (w.GetValid().IsTrue())
 					w.SetValid(false);
 				else if (w.GetValid().IsFalse())
 					w.SetValid(crn::Prop3::Unknown);
 				else
 					w.SetValid(true);
+				*/
 				display_update_word(path);
 				set_need_save();
 				return; // modify just one
@@ -1251,29 +1191,16 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 		if (it->first == linesOverlay)
 		{ // if it is a line, pop a menu up
 			auto sit = tv.get_selection()->get_selected();
-			auto colid = sit->get_value(columns.index);
-			auto lineid = it->second.ToInt();
+			auto colid = sit->get_value(columns.id);
+			auto lineid = Id{it->second};
 			line_rem_connection.disconnect();
-			line_rem_connection = actions->get_action("remove-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_line), current_view_id, colid, lineid));
+			line_rem_connection = actions->get_action("remove-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_line), lineid));
 			line_add_point_connection.disconnect();
-			line_add_point_connection = actions->get_action("add-point-to-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::add_point_to_line), current_view_id, colid, lineid, x_on_image, y_on_image));
+			line_add_point_connection = actions->get_action("add-point-to-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::add_point_to_line), lineid, x_on_image, y_on_image));
 			line_rem_point_connection.disconnect();
-			line_rem_point_connection = actions->get_action("rem-point-from-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_point_from_line), current_view_id, colid, lineid, x_on_image, y_on_image));
+			line_rem_point_connection = actions->get_action("rem-point-from-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_point_from_line), lineid, x_on_image, y_on_image));
 			dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/LinePopup"))->popup(mouse_button, time);
 		}
-	}
-}
-
-void GUI::reload_tei()
-{
-	if (project)
-	{
-		project->ReloadTEI();
-		GtkCRN::ProgressWindow pw(_("Loading…"), this, true);
-		size_t i = pw.add_progress_bar(_("Page"));
-		pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-		store = pw.run<Glib::RefPtr<Gtk::TreeStore> >(sigc::bind(sigc::mem_fun(this, &GUI::fill_tree), pw.get_crn_progress(i)));
-		tv.set_model(store);
 	}
 }
 
@@ -1283,6 +1210,8 @@ void GUI::align_selection()
 	{
 		aligndial.hide();
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
+	// TODO
+#if 0
 		switch (view_depth)
 		{
 			case ViewDepth::Page:
@@ -1322,6 +1251,7 @@ void GUI::align_selection()
 				}
 				break;
 		}
+#endif
 		tree_selection_changed(false); // update display
 	}
 	else
@@ -1333,6 +1263,8 @@ void GUI::align_all()
 	if (aligndial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		aligndial.hide();
+	// TODO
+#if 0
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t iv = pw.add_progress_bar(_("View"));
 		pw.get_crn_progress(iv)->SetType(crn::Progress::Type::ABSOLUTE);
@@ -1341,6 +1273,7 @@ void GUI::align_all()
 		size_t il = pw.add_progress_bar(_("Line"));
 		pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
 		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignAll), aligndial.get_config(), pw.get_crn_progress(iv), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
+#endif
 		set_need_save();
 		tree_selection_changed(false); // update display
 	}
@@ -1350,13 +1283,16 @@ void GUI::align_all()
 
 void GUI::validate()
 {
+	// TODO
+#if 0
 	validation_win = std::make_unique<Validation>(*this, *project, Glib::RefPtr<Gtk::RadioAction>::cast_dynamic(actions->get_action("validation-batch"))->get_active(), true, std::bind(std::mem_fn(&GUI::set_need_save), this), std::bind(std::mem_fn(&GUI::tree_selection_changed), this, false));
 	validation_win->show();
+#endif
 }
 
 void GUI::set_need_save()
 {
-	if (project)
+	if (doc)
 	{
 		need_save = true;
 		set_win_title();
@@ -1365,12 +1301,15 @@ void GUI::set_need_save()
 
 void GUI::save_project()
 {
-	if (project)
+	if (doc)
 	{
+	// TODO
+#if 0
 		GtkCRN::ProgressWindow pw(_("Saving…"), this, true);
 		size_t i = pw.add_progress_bar("");
 		pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
 		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::Save), pw.get_crn_progress(i)));
+#endif
 		need_save = false;
 		set_win_title();
 	}
@@ -1405,6 +1344,8 @@ void GUI::change_font()
 
 void GUI::stats()
 {
+	// TODO
+#if 0
 	Gtk::FileChooserDialog fdial(*this, _("Export statistics to…"), Gtk::FILE_CHOOSER_ACTION_SAVE);
 	fdial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
 	fdial.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
@@ -1428,10 +1369,13 @@ void GUI::stats()
 	if ((ext != "ods") && (ext != "Ods") && (ext != "ODS"))
 		fname += ".ods";
 	project->ExportStats(fname);
+#endif
 }
 
 void GUI::clear_sig()
 {
+	// TODO
+#if 0
 	Gtk::MessageDialog msg(*this, _("Are you sure you wish to flush the images' signatures?"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
 	if (msg.run() == Gtk::RESPONSE_YES)
 	{
@@ -1441,17 +1385,21 @@ void GUI::clear_sig()
 		pwin.get_crn_progress(id)->SetType(crn::Progress::Type::PERCENT);
 		pwin.run(sigc::bind(sigc::mem_fun(*project, &Project::ClearSignatures), pwin.get_crn_progress(id)));
 	}
+#endif
 }
 
 
 void GUI::propagate_validation()
 {
+	// TODO
+#if 0
 	GtkCRN::ProgressWindow pwin(_("Propagating validation…"), this, true);
 	size_t id = pwin.add_progress_bar("");
 	pwin.get_crn_progress(id)->SetType(crn::Progress::Type::PERCENT);
 	pwin.run(sigc::bind(sigc::mem_fun(*project, &Project::PropagateValidation), pwin.get_crn_progress(id)));
 	set_need_save();
 	tree_selection_changed(false); // update display
+#endif
 }
 
 void GUI::manage_entities()
@@ -1463,59 +1411,11 @@ void GUI::manage_entities()
 		EntityManager::Reload();
 }
 
-void GUI::export_tei_alignment()
-{
-	Gtk::FileChooserDialog dialog(_("Please choose a file name for the TEI export."), Gtk::FILE_CHOOSER_ACTION_SAVE);
-	dialog.set_current_name("alignment.xml");
-	dialog.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
-	dialog.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
-	std::vector<int> altbut;
-	altbut.push_back(Gtk::RESPONSE_ACCEPT);
-	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	dialog.set_alternative_button_order_from_array(altbut);
-	dialog.set_default_response(Gtk::RESPONSE_ACCEPT);
-
-	if (dialog.run() == Gtk::RESPONSE_ACCEPT)
-	{
-		dialog.hide();
-		crn::xml::Document new_doc;
-		new_doc.PushBackComment("Oriflamms TEI alignment");
-		crn::xml::Element root(new_doc.PushBackElement("TEI"));
-		crn::xml::Element root1(root.PushBackElement("facsimile"));
-		const std::vector<ori::View> &views = project->GetStructure().GetViews();
-		for (size_t i = 0; i < views.size(); ++i)
-		{
-			crn::xml::Element root2(root1.PushBackElement("surface"));
-			crn::xml::Element e(root2.PushBackElement("graphic"));
-			e.SetAttribute("url",views[i].GetImageName());
-			const std::vector<ori::Column> &columns = views[i].GetColumns();
-			for (size_t j=0; j<columns.size(); j++)
-			{
-				const std::vector<ori::Line> &lines = columns[j].GetLines();
-				for (size_t k=0; k<lines.size(); k++)
-				{
-					const std::vector<ori::Word> &words = lines[k].GetWords();
-					for (size_t l=0; l<words.size(); l++)
-					{
-						crn::xml::Element el(root2.PushBackElement("zone"));
-						el.SetAttribute("start", "#" + words[l].GetId());
-						const crn::Rect &box = words[l].GetBBox();
-						el.SetAttribute("ulx", box.GetLeft());
-						el.SetAttribute("uly", box.GetTop());
-						el.SetAttribute("lrx", box.GetRight());
-						el.SetAttribute("lry", box.GetBottom());
-					}
-				}
-			}
-		}
-		new_doc.Save(dialog.get_filename().c_str());
-	}
-}
-
 void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 {
+	// TODO
+#if 0
 	panel->clear();
-
 	crn::String wstring(entry->get_text().c_str());
 	if (wstring.IsNotEmpty())
 		for (size_t v = 0; v < project->GetNbViews(); ++v)
@@ -1618,12 +1518,12 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 							if (oriword.GetValid().IsFalse())
 							{
 								// add to reject list
-								panel->add_element(wpb, panel->label_ko, WordPath(v, c, l, w), pos);
+								panel->add_element(wpb, panel->label_ko, Id(v, c, l, w), pos);
 							}
 							else if (oriword.GetValid().IsTrue())
-								panel->add_element(wpb, panel->label_ok, WordPath(v, c, l, w), pos);
+								panel->add_element(wpb, panel->label_ok, Id(v, c, l, w), pos);
 							else
-								panel->add_element(wpb, panel->label_unknown, WordPath(v, c, l, w), pos);
+								panel->add_element(wpb, panel->label_unknown, Id(v, c, l, w), pos);
 
 							if (pos + wstring.Length() < text.Size())
 								pos = text.Find(wstring, pos + wstring.Length());
@@ -1636,6 +1536,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 			} // for each column
 		} // for each view
 	panel->full_refresh();
+#endif
 }
 
 void GUI::find_string()
@@ -1654,11 +1555,14 @@ void GUI::find_string()
 	hb->pack_start(*bt, false, true, 0);
 	dialog.get_vbox()->pack_start(*hb, false, true, 0);
 
+	// TODO
+#if 0
 	ori::ValidationPanel *panel = Gtk::manage(new ori::ValidationPanel(*project, _("Found"), project->GetDoc()->GetFilenames(), false));
 	dialog.get_vbox()->pack_start(*panel, true, true, 2);
 
 	bt->signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &GUI::display_search), entry, panel));
 	entry->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::display_search), entry, panel));
+#endif
 	dialog.run();
 }
 

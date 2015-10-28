@@ -4,6 +4,7 @@
  * \author Yann LEYDIER
  */
 
+#if 0
 #include <OriProject.h>
 #include <OriLines.h>
 #include <CRNMath/CRNLinearInterpolation.h>
@@ -1525,4 +1526,5 @@ std::vector<TextSignature> Project::getSignature(const Word &w) const
 	}
 	return sig;
 }
+#endif
 

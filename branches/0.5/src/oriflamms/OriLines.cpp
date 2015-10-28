@@ -48,13 +48,13 @@ struct EMask
 			nx += dir;
 			if (nx < 0)
 			{
-				nx = x;
+				nx = int(x);
 				dir = -dir;
 				nchange += 1;
 			}
 			else if (nx >= mask.GetWidth())
 			{
-				nx = x;
+				nx = int(x);
 				dir = -dir;
 				nchange += 1;
 			}
@@ -702,6 +702,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 
 	// Columns
 	//std::vector<Rect> thumbzones(detectColumns(ig, view.GetColumns().size()));
+#if 0
 	std::vector<Rect> thumbzones(detectColumns(*b.GetGray(), view.GetColumns().size()));
 	for (Rect &r : thumbzones)
 	{
@@ -1116,6 +1117,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 	}
 
 	return cols;
+#endif
 }
 
 template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, double maxdist)

@@ -1,3 +1,12 @@
+/* Copyright 2015 Université Paris Descartes
+ * 
+ * file: OriDocument.h
+ * \author Yann LEYDIER
+ */
+
+#ifndef OriDocument_HEADER
+#define OriDocument_HEADER
+
 #include <CRNStringUTF8.h>
 #include <CRNIO/CRNPath.h>
 #include <CRNGeometry/CRNRect.h>
@@ -175,6 +184,8 @@ namespace ori
 			View& operator=(View&&) = default;
 			~View();
 
+			const crn::Path& GetImageName() const noexcept;
+
 			const std::vector<Id>& GetPages() const noexcept;
 			const Page& GetPage(const Id &id) const;
 			Page& GetPage(const Id &id);
@@ -210,6 +221,8 @@ namespace ori
 			Document& operator=(const Document&) = delete;
 			Document& operator=(Document&&) = default;
 
+			const crn::StringUTF8& GetName() const noexcept { return name; }
+			const crn::Path& GetBase() const noexcept { return base; }
 			const crn::StringUTF8& ErrorReport() const noexcept { return report; }
 
 			const ElementPosition& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
@@ -229,4 +242,6 @@ namespace ori
 	};
 
 }
+
+#endif
 

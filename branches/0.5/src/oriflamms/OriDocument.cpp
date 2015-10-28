@@ -1,5 +1,11 @@
+/* Copyright 2015 Université Paris Descartes
+ * 
+ * file: OriDocument.cpp
+ * \author Yann LEYDIER
+ */
+
 #include <oriflamms_config.h>
-#include "test.h"
+#include <OriDocument.h>
 #include <CRNIO/CRNIO.h>
 #include <CRNi18n.h>
 
@@ -21,6 +27,7 @@ const auto IMGDIR = "img"_p;
 const auto LINKDIR = "links"_p;
 const auto ZONEDIR = "zones"_p;
 const auto ONTODIR = "ontologies"_p;
+const auto ORIDIR = "oriflamms"_p;
 
 //////////////////////////////////////////////////////////////////////////////////
 // Utils
@@ -178,13 +185,14 @@ View::View() = default;
 
 View::~View() = default;
 
+const crn::Path& View::GetImageName() const noexcept { return pimpl->imagename; }
 const std::vector<Id>& View::GetPages() const noexcept { return pimpl->pageorder; }
 
 const Page& View::GetPage(const Id &id) const
 {
 	auto it = pimpl->pages.find(id);
 	if (it == pimpl->pages.end())
-		throw crn::ExceptionNotFound(_("Invalid page id."));
+		throw crn::ExceptionNotFound(_("Invalid page id: ") + id);
 	return it->second;
 }
 
@@ -192,7 +200,7 @@ Page& View::GetPage(const Id &id)
 {
 	auto it = pimpl->pages.find(id);
 	if (it == pimpl->pages.end())
-		throw crn::ExceptionNotFound(_("Invalid page id."));
+		throw crn::ExceptionNotFound(_("Invalid page id: ") + id);
 	return it->second;
 }
 
@@ -200,7 +208,7 @@ const Column& View::GetColumn(const Id &id) const
 {
 	auto it = pimpl->columns.find(id);
 	if (it == pimpl->columns.end())
-		throw crn::ExceptionNotFound(_("Invalid column id."));
+		throw crn::ExceptionNotFound(_("Invalid column id: ") + id);
 	return it->second;
 }
 
@@ -208,7 +216,7 @@ Column& View::GetColumn(const Id &id)
 {
 	auto it = pimpl->columns.find(id);
 	if (it == pimpl->columns.end())
-		throw crn::ExceptionNotFound(_("Invalid column id."));
+		throw crn::ExceptionNotFound(_("Invalid column id: ") + id);
 	return it->second;
 }
 
@@ -216,7 +224,7 @@ const Line& View::GetLine(const Id &id) const
 {
 	auto it = pimpl->lines.find(id);
 	if (it == pimpl->lines.end())
-		throw crn::ExceptionNotFound(_("Invalid line id."));
+		throw crn::ExceptionNotFound(_("Invalid line id: ") + id);
 	return it->second;
 }
 
@@ -224,7 +232,7 @@ Line& View::GetLine(const Id &id)
 {
 	auto it = pimpl->lines.find(id);
 	if (it == pimpl->lines.end())
-		throw crn::ExceptionNotFound(_("Invalid line id."));
+		throw crn::ExceptionNotFound(_("Invalid line id: ") + id);
 	return it->second;
 }
 
@@ -232,7 +240,7 @@ const Word& View::GetWord(const Id &id) const
 {
 	auto it = pimpl->words.find(id);
 	if (it == pimpl->words.end())
-		throw crn::ExceptionNotFound(_("Invalid word id."));
+		throw crn::ExceptionNotFound(_("Invalid word id: ") + id);
 	return it->second;
 }
 
@@ -240,7 +248,7 @@ Word& View::GetWord(const Id &id)
 {
 	auto it = pimpl->words.find(id);
 	if (it == pimpl->words.end())
-		throw crn::ExceptionNotFound(_("Invalid word id."));
+		throw crn::ExceptionNotFound(_("Invalid word id: ") + id);
 	return it->second;
 }
 
@@ -248,7 +256,7 @@ const Character& View::GetCharacter(const Id &id) const
 {
 	auto it = pimpl->characters.find(id);
 	if (it == pimpl->characters.end())
-		throw crn::ExceptionNotFound(_("Invalid character id."));
+		throw crn::ExceptionNotFound(_("Invalid character id: ") + id);
 	return it->second;
 }
 
@@ -256,7 +264,7 @@ Character& View::GetCharacter(const Id &id)
 {
 	auto it = pimpl->characters.find(id);
 	if (it == pimpl->characters.end())
-		throw crn::ExceptionNotFound(_("Invalid character id."));
+		throw crn::ExceptionNotFound(_("Invalid character id: ") + id);
 	return it->second;
 }
 
@@ -264,7 +272,7 @@ const Zone& View::GetZone(const Id &id) const
 {
 	auto it = pimpl->zones.find(id);
 	if (it == pimpl->zones.end())
-		throw crn::ExceptionNotFound(_("Invalid zone id."));
+		throw crn::ExceptionNotFound(_("Invalid zone id: ") + id);
 	return it->second;
 }
 
@@ -272,7 +280,7 @@ Zone& View::GetZone(const Id &id)
 {
 	auto it = pimpl->zones.find(id);
 	if (it == pimpl->zones.end())
-		throw crn::ExceptionNotFound(_("Invalid zone id."));
+		throw crn::ExceptionNotFound(_("Invalid zone id: ") + id);
 	return it->second;
 }
 
@@ -368,6 +376,8 @@ View::Impl::Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 
 	
 	// read if it exists ONTODIR/projname_*.xml for character classes
 	// TODO
+
+	// read or create oriflamms file
 }
 
 View::Impl::~Impl()
@@ -661,6 +671,12 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += "\n";
 	}
 	
+	// create oriflamms directory if needed
+	if (!crn::IO::Access(base / ORIDIR, crn::IO::EXISTS))
+	{
+		crn::IO::Mkdir(base / ORIDIR);
+	}
+
 	// read all files
 	for (const auto &id : views)
 	{
@@ -687,25 +703,41 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 						for (const auto &cid : word.GetCharacters())
 							positions.emplace(wid, ElementPosition{id, p.first, cid, lid, wid});
 
-						const auto &wzone = v.GetZone(word.GetZone());
-						lbox |= wzone.GetPosition();
+						if (word.GetZone().IsNotEmpty())
+						{
+							auto &wzone = v.GetZone(word.GetZone());
+							if (wzone.GetPosition().IsValid() && wzone.GetContour().empty())
+							{
+								// TODO compute contour
+							}
+							lbox |= wzone.GetPosition();
+						}
 					} // words
 
-					auto &lzone = v.GetZone(line.GetZone());
-					if (!lzone.GetPosition().IsValid() && lbox.IsValid())
-						lzone.SetPosition(lbox);
-					cbox |= lzone.GetPosition();
+					if (line.GetZone().IsNotEmpty())
+					{
+						auto &lzone = v.GetZone(line.GetZone());
+						if (!lzone.GetPosition().IsValid() && lbox.IsValid())
+							lzone.SetPosition(lbox);
+						cbox |= lzone.GetPosition();
+					}
 				} // lines
 
-				auto &czone = v.GetZone(col.GetZone());
-				if (!czone.GetPosition().IsValid() && cbox.IsValid())
-					czone.SetPosition(cbox);
-				pbox |= czone.GetPosition();
+				if (col.GetZone().IsNotEmpty())
+				{
+					auto &czone = v.GetZone(col.GetZone());
+					if (!czone.GetPosition().IsValid() && cbox.IsValid())
+						czone.SetPosition(cbox);
+					pbox |= czone.GetPosition();
+				}
 			} // columns
 
-			auto &pzone = v.GetZone(p.second.GetZone());
-			if (!pzone.GetPosition().IsValid() && pbox.IsValid())
-				pzone.SetPosition(pbox);
+			if (p.second.GetZone().IsNotEmpty())
+			{
+				auto &pzone = v.GetZone(p.second.GetZone());
+				if (!pzone.GetPosition().IsValid() && pbox.IsValid())
+					pzone.SetPosition(pbox);
+			}
 		} // pages
 	}
 }
@@ -736,7 +768,7 @@ View Document::GetView(const Id &id)
 
 
 
-
+#if 0
 int main(int argc, char *argv[])
 {
 	try
@@ -750,4 +782,5 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
+#endif
 

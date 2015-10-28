@@ -10,8 +10,7 @@
 #include <oriflamms_config.h>
 #include <gtkmm.h>
 #include <CRNUtils/CRNProgress.h>
-#include <OriStruct.h>
-#include <OriProject.h>
+#include <OriDocument.h>
 
 namespace ori
 {
@@ -21,23 +20,24 @@ namespace ori
 		public:
 			struct ElementId
 			{
-				ElementId(const WordPath &wp, size_t p = 0): path(wp), pos(p) {}
-				WordPath path;
+				ElementId(const Id &wid, size_t p = 0): id(wid), pos(p) {}
+				Id id;
 				size_t pos;
 				inline bool operator<(const ElementId &other) const
 				{
-					if (path < other.path) return true;
-					else if (path == other.path) return pos < other.pos;
+					if (id < other.id) return true;
+					else if (id == other.id) return pos < other.pos;
 					else return false;
 				}
 			};
 			using ElementCluster = std::map<ElementId, Glib::RefPtr<Gdk::Pixbuf>>;
 			using ElementList = std::map<crn::StringUTF8, ElementCluster>;
 
+#if 0
 			ValidationPanel(Project &pro, const crn::StringUTF8 &name, const std::vector<crn::Path> &imagenames, bool active_m);
 			virtual ~ValidationPanel() override { if (tipthread) tipthread->join(); }
 
-			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const WordPath &p, size_t pos = 0);
+			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &p, size_t pos = 0);
 			/*! \brief Erases all elements */
 			void clear()
 			{
@@ -93,7 +93,7 @@ namespace ori
 			Gtk::Window tipwin;
 			Gtk::Label tiplab;
 			Gtk::Image tipimg;
-			WordPath tipword;
+			Id tipword;
 			Glib::RefPtr<Gdk::Pixbuf> tippb;
 			Glib::Dispatcher tipsig;
 			Glib::Thread *tipthread;
@@ -112,6 +112,7 @@ namespace ori
 			sigc::signal<void, ElementList> removed;
 			Project &project;
 			bool active_mouse;
+#endif
 
 	};
 }

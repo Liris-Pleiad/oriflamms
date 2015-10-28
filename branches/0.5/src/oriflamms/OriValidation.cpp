@@ -4,6 +4,8 @@
  * \author Yann LEYDIER
  */
 
+#if 0
+
 #include <OriValidation.h>
 #include <GtkCRNProgressWindow.h>
 #ifdef CRN_PF_MSVC
@@ -546,4 +548,6 @@ void Validation::conclude_word()
 	okwords.clear();
 	kowords.clear();
 }
+
+#endif
 

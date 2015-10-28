@@ -4,13 +4,16 @@
  * \author Yann LEYDIER
  */
 
+#if 0
 #include <OriValidationPanel.h>
 #include <GtkCRNProgressWindow.h>
 #include <CRNAI/CRNIterativeClustering.h>
 #include <CRNi18n.h>
 #include <fstream>
 #include <iostream>
+
 using namespace ori;
+
 const crn::StringUTF8 ValidationPanel::label_ok("zzz1");
 const crn::StringUTF8 ValidationPanel::label_ko("ko");
 const crn::StringUTF8 ValidationPanel::label_unknown("0");
@@ -509,4 +512,4 @@ void ValidationPanel::set_color(Cairo::RefPtr<Cairo::Context> &cc, const crn::St
 	}
 
 }
-
+#endif 
