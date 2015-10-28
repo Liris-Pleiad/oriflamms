@@ -146,7 +146,6 @@ Project::Project(const crn::Path &fname):
 	xdoc.Load(doc->GetBasename() / "structure.xml"); // may throw
 	load_db(); // may throw
 
-#if 0
 	// test espaces
 	{
 		auto outx = crn::xml::Document{};
@@ -173,6 +172,8 @@ Project::Project(const crn::Path &fname):
 				cel.SetAttribute("id", c.GetId());
 				cel.SetAttribute("num", c.GetNumber());				
 
+				if (c.GetLines().size() != col->Size())
+					continue;
 				for (auto lnum : crn::Range(*col))
 				{
 					auto line = std::static_pointer_cast<GraphicalLine>(col->At(lnum));
@@ -209,7 +210,15 @@ Project::Project(const crn::Path &fname):
 					int startx = bx, starty = by, endx = bx, endy = by, area = 0;
 					for (auto x = bx; x <= ex; ++x)
 					{
+						if (bx > x)
+							continue;
+						if (x - bx >= ibw.GetWidth())
+							continue;
 						const auto y = line->At(x);
+						if (by > y)
+							continue;
+						if (y - by >= ibw.GetHeight())
+							continue;
 						if (ibw.At(x - bx, y - by) /*&& ibw.At(x - bx, y - by + 1) && ibw.At(x - bx, y - by - 1)*/)
 						{
 							img2.At(x, y) = {255, 255, 255};
@@ -320,7 +329,6 @@ Project::Project(const crn::Path &fname):
 		}
 		outx.Save("spaces.xml"_p);
 	}
-#endif
 
 }
 
