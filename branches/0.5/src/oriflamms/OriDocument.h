@@ -174,6 +174,7 @@ namespace ori
 		friend class View;
 	};
 
+	class GraphicalLine;
 	class View
 	{
 		public:
@@ -184,19 +185,36 @@ namespace ori
 			View& operator=(View&&) = default;
 			~View();
 
+			/*! \brief Full path of the image */
 			const crn::Path& GetImageName() const noexcept;
 
+			/*! \brief Returns the ordered list of pages' id */
 			const std::vector<Id>& GetPages() const noexcept;
 			const Page& GetPage(const Id &id) const;
 			Page& GetPage(const Id &id);
+
 			const Column& GetColumn(const Id &id) const;
 			Column& GetColumn(const Id &id);
+			/*! \brief Returns all median lines of a column */
+			const std::vector<GraphicalLine>& GetGraphicalLines(const Id &id) const;
+
 			const Line& GetLine(const Id &id) const;
 			Line& GetLine(const Id &id);
+			/*! \brief Returns the median line of a text line */
+			const GraphicalLine& GetGraphicalLine(const Id &id) const;
+			/*! \brief Returns the median line of a text line */
+			GraphicalLine& GetGraphicalLine(const Id &id);
+
 			const Word& GetWord(const Id &id) const;
 			Word& GetWord(const Id &id);
+			/*! \brief Checks if a word was validated or rejected by the user */
+			const crn::Prop3& IsValid(const Id &id) const;
+			/*! \brief Sets if a word was validated or rejected by the user */
+			void SetValid(const Id &id, const crn::Prop3 &val);
+
 			const Character& GetCharacter(const Id &id) const;
 			Character& GetCharacter(const Id &id);
+
 			const Zone& GetZone(const Id &id) const;
 			Zone& GetZone(const Id &id);
 

@@ -14,7 +14,7 @@
 #include <CRNImage/CRNDifferential.h>
 #include <CRNImage/CRNImageGray.h>
 #include <CRNImage/CRNImageBW.h>
-#include <OriStruct.h>
+#include <OriDocument.h>
 #include <CRNMath/CRNMatrixComplex.h>
 #include <CRNAI/CRN2Means.h>
 #include <numeric>
@@ -304,88 +304,6 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 	}
 	return thumbzones;
 }
-
-#if 0
-static std::vector<Rect> detectColumns(const ImageIntGray &ydiff, size_t ncols)
-{
-	auto ig2 = ydiff;
-	Abs(ig2);
-	ig2.Negative();
-	// projection of line gradients
-	auto vp = VerticalProjection(Fisher(ig2));
-	ig2 = ImageIntGray{}; // free memory
-
-	// check number of modes for each Y in the histogram
-	const size_t max = vp.Max();
-	auto modesh = std::vector<size_t>();
-	for (size_t y = 0; y < max; ++y)
-	{
-		int t1 = 0, t2 = 0;
-		for (size_t x = 0; x < vp.Size() - 1; ++x)
-		{
-			bool in1 = vp.GetBin(x) > y;
-			bool in2 = vp.GetBin(x + 1) > y;
-			if (!in1 && in2)
-			{
-				t1 += 1; // entering the data
-			}
-			else if (in1 && !in2)
-			{
-				t2 += 1; // leaving the data
-			}
-		}
-		int nmodes = Max(t1, t2);
-		if (nmodes == ncols)
-			modesh.push_back(y);
-	}
-
-	if (modesh.empty())
-	{ // white page
-		auto thumbzones = std::vector<Rect>{};
-		int bx = 0;
-		const int w = int(ydiff.GetWidth()) / int(ncols);
-		const int h = int(ydiff.GetHeight()) - 1;
-		for (size_t tmp = 0; tmp < ncols; ++tmp)
-		{ // cut the page regularly
-			thumbzones.emplace_back(bx, 0, bx + w - 1, h);
-			bx += w;
-		}
-		return thumbzones;
-	}
-
-	//std::cout << "************** " << nmodes << std::endl;
-
-	bool in = false;
-	auto th = modesh[modesh.size() / 2]; // median Y for the correct number of modes/columns
-	//std::cout << th << std::endl;
-	int bx = 0;
-	auto thumbzones = std::vector<Rect>{};
-	for (size_t x = 0; x < vp.Size(); ++x)
-	{
-		if (in)
-		{
-			if (vp.GetBin(x) <= th)
-			{
-				thumbzones.emplace_back(bx, 0, int(x) - 1, int(ydiff.GetHeight()) - 1);
-				in = false;
-			}
-		}
-		else
-		{
-			if (vp.GetBin(x) > th)
-			{
-				bx = int(x);
-				in = true;
-			}
-		}
-	}
-	if (in)
-	{
-		thumbzones.emplace_back(bx, 0, int(ydiff.GetWidth()) - 1, int(ydiff.GetHeight()) - 1);
-	}
-	return thumbzones;
-}
-#endif
 
 static int lumdiff(const ImageGray &ig, int cx, int cy, int dx, int dy, const ImageGray &mask)
 {
@@ -702,6 +620,7 @@ SVector ori::DetectLines(Block &b, const View &view)
 
 	// Columns
 	//std::vector<Rect> thumbzones(detectColumns(ig, view.GetColumns().size()));
+	// TODO
 #if 0
 	std::vector<Rect> thumbzones(detectColumns(*b.GetGray(), view.GetColumns().size()));
 	for (Rect &r : thumbzones)

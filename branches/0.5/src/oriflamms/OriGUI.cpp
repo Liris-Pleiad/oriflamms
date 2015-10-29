@@ -1023,46 +1023,48 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	try { img.remove_overlay_item(wordsOverlayKo, itemid); } catch (...) { }
 
 	const auto &word = current_view.GetWord(wordid);
-	if (word.GetZone().IsNotEmpty())
+	if (word.GetZone().IsEmpty())
+		return;
+	auto &zone = current_view.GetZone(word.GetZone());
+	if (!zone.GetPosition().IsValid())
+		return;
+	if (newleft)
 	{
-		auto &zone = current_view.GetZone(word.GetZone());
-		if (newleft)
-		{
-	// TODO
-			//zone.SetLeft(newleft.Get());
-			//if (w.GetRightCorrection())
-				//w.SetValid(true);
-		}
-		if (newright)
-		{
-	// TODO
-			//zone.SetRight(newright.Get());
-			//if (w.GetLeftCorrection())
-				//w.SetValid(true);
-		}
-		if (newright || newleft)
-		{
-	// TODO
-			//project->ComputeWordFrontiers(wordid);
-			//project->AlignWordCharacters(AlignConfig::AllChars, wordid);
-		}
-
-		if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
-		{ // edit mode, display boxes
-			img.add_overlay_item(wordsOverlay, wordid, zone.GetPosition(), word.GetText().CStr());
-		}
-		else
-		{ // not in edit mode, display polygons
-			img.add_overlay_item(wordsOverlay, wordid, zone.GetContour(), word.GetText().CStr());
-		}
-
-		auto ov = wordsOverlayUn;
-		//TODO if (w.GetValid().IsTrue()) ov = wordsOverlayOk;
-		//TODO if (w.GetValid().IsFalse()) ov = wordsOverlayKo;
-		auto topbox = zone.GetPosition();
-		topbox.SetHeight(topbox.GetHeight() / 4);
-		img.add_overlay_item(ov, wordid, topbox, word.GetText().CStr());
+		// TODO
+		//zone.SetLeft(newleft.Get());
+		//if (w.GetRightCorrection())
+		//w.SetValid(true);
 	}
+	if (newright)
+	{
+		// TODO
+		//zone.SetRight(newright.Get());
+		//if (w.GetLeftCorrection())
+		//w.SetValid(true);
+	}
+	if (newright || newleft)
+	{
+		// TODO
+		//project->ComputeWordFrontiers(wordid);
+		//project->AlignWordCharacters(AlignConfig::AllChars, wordid);
+	}
+
+	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
+	{ // edit mode, display boxes
+		img.add_overlay_item(wordsOverlay, wordid, zone.GetPosition(), word.GetText().CStr());
+	}
+	else
+	{ // not in edit mode, display polygons
+		img.add_overlay_item(wordsOverlay, wordid, zone.GetContour(), word.GetText().CStr());
+	}
+
+	auto ov = wordsOverlayUn;
+	const auto &valid = current_view.IsValid(wordid);
+	if (valid.IsTrue()) ov = wordsOverlayOk;
+	if (valid.IsFalse()) ov = wordsOverlayKo;
+	auto topbox = zone.GetPosition();
+	topbox.SetHeight(topbox.GetHeight() / 4);
+	img.add_overlay_item(ov, wordid, topbox, word.GetText().CStr());
 }
 
 void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, GtkCRN::Image::MouseMode mm)
@@ -1089,7 +1091,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 			return;
 		const auto colid = Id{it->get_value(columns.id).c_str()};
 		// set line bounds
-	// TODO
+		// TODO
 #if 0
 		crn::SBlock b(project->GetDoc()->GetView(current_view_id));
 		crn::SVector cols(std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
@@ -1175,13 +1177,13 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 				auto &w = current_view.GetWord(path);
 				// TODO
 				/*
-				if (w.GetValid().IsTrue())
-					w.SetValid(false);
-				else if (w.GetValid().IsFalse())
-					w.SetValid(crn::Prop3::Unknown);
-				else
-					w.SetValid(true);
-				*/
+					 if (w.GetValid().IsTrue())
+					 w.SetValid(false);
+					 else if (w.GetValid().IsFalse())
+					 w.SetValid(crn::Prop3::Unknown);
+					 else
+					 w.SetValid(true);
+					 */
 				display_update_word(path);
 				set_need_save();
 				return; // modify just one
@@ -1210,7 +1212,7 @@ void GUI::align_selection()
 	{
 		aligndial.hide();
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
-	// TODO
+		// TODO
 #if 0
 		switch (view_depth)
 		{
@@ -1263,7 +1265,7 @@ void GUI::align_all()
 	if (aligndial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		aligndial.hide();
-	// TODO
+		// TODO
 #if 0
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t iv = pw.add_progress_bar(_("View"));
@@ -1303,7 +1305,7 @@ void GUI::save_project()
 {
 	if (doc)
 	{
-	// TODO
+		// TODO
 #if 0
 		GtkCRN::ProgressWindow pw(_("Saving…"), this, true);
 		size_t i = pw.add_progress_bar("");
@@ -1436,7 +1438,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 						while (pos != text.NPos())
 						{
 							//if (oriword.GetCharacterFrontiers().empty())
-								//continue;
+							//continue;
 							if (!oriword.IsAligned())
 								break;
 

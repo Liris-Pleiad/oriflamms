@@ -29,6 +29,10 @@ namespace ori
 		public:
 			/*! \brief Constructor */
 			GraphicalLine(const crn::SLinearInterpolation &lin, size_t lineheight);
+			GraphicalLine(const GraphicalLine&) = delete;
+			GraphicalLine(GraphicalLine&&) = default;
+			GraphicalLine& operator=(const GraphicalLine&) = delete;
+			GraphicalLine& operator=(GraphicalLine&&) = default;
 			virtual ~GraphicalLine() override {}
 
 			/*! \brief This is a Serializable object */

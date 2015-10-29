@@ -7,6 +7,7 @@
 #include <oriflamms_config.h>
 #include <OriDocument.h>
 #include <CRNIO/CRNIO.h>
+#include <OriLines.h>
 #include <CRNi18n.h>
 
 #include <iostream>
@@ -151,7 +152,7 @@ const std::vector<Id>& Line::GetWords() const
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-// View
+// View::Impl
 //////////////////////////////////////////////////////////////////////////////////
 struct View::Impl
 {
@@ -162,6 +163,8 @@ struct View::Impl
 	void readZoneWElements(crn::xml::Element &el);
 	void readZoneCElements(crn::xml::Element &el);
 	void readLinkElements(crn::xml::Element &el);
+	void load();
+	void save();
 
 	Id id;
 	crn::SBlock img;
@@ -179,110 +182,12 @@ struct View::Impl
 	crn::xml::Document czones;
 	crn::xml::Document links;
 	std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
+
+	crn::Path datapath;
+	std::unordered_map<Id, crn::Prop3> validation;
+	std::unordered_map<Id, std::vector<GraphicalLine>> medlines; // column Id
+	std::unordered_map<Id, std::pair<Id, size_t>> line_links;
 };
-
-View::View() = default;
-
-View::~View() = default;
-
-const crn::Path& View::GetImageName() const noexcept { return pimpl->imagename; }
-const std::vector<Id>& View::GetPages() const noexcept { return pimpl->pageorder; }
-
-const Page& View::GetPage(const Id &id) const
-{
-	auto it = pimpl->pages.find(id);
-	if (it == pimpl->pages.end())
-		throw crn::ExceptionNotFound(_("Invalid page id: ") + id);
-	return it->second;
-}
-
-Page& View::GetPage(const Id &id)
-{
-	auto it = pimpl->pages.find(id);
-	if (it == pimpl->pages.end())
-		throw crn::ExceptionNotFound(_("Invalid page id: ") + id);
-	return it->second;
-}
-
-const Column& View::GetColumn(const Id &id) const
-{
-	auto it = pimpl->columns.find(id);
-	if (it == pimpl->columns.end())
-		throw crn::ExceptionNotFound(_("Invalid column id: ") + id);
-	return it->second;
-}
-
-Column& View::GetColumn(const Id &id)
-{
-	auto it = pimpl->columns.find(id);
-	if (it == pimpl->columns.end())
-		throw crn::ExceptionNotFound(_("Invalid column id: ") + id);
-	return it->second;
-}
-
-const Line& View::GetLine(const Id &id) const
-{
-	auto it = pimpl->lines.find(id);
-	if (it == pimpl->lines.end())
-		throw crn::ExceptionNotFound(_("Invalid line id: ") + id);
-	return it->second;
-}
-
-Line& View::GetLine(const Id &id)
-{
-	auto it = pimpl->lines.find(id);
-	if (it == pimpl->lines.end())
-		throw crn::ExceptionNotFound(_("Invalid line id: ") + id);
-	return it->second;
-}
-
-const Word& View::GetWord(const Id &id) const
-{
-	auto it = pimpl->words.find(id);
-	if (it == pimpl->words.end())
-		throw crn::ExceptionNotFound(_("Invalid word id: ") + id);
-	return it->second;
-}
-
-Word& View::GetWord(const Id &id)
-{
-	auto it = pimpl->words.find(id);
-	if (it == pimpl->words.end())
-		throw crn::ExceptionNotFound(_("Invalid word id: ") + id);
-	return it->second;
-}
-
-const Character& View::GetCharacter(const Id &id) const
-{
-	auto it = pimpl->characters.find(id);
-	if (it == pimpl->characters.end())
-		throw crn::ExceptionNotFound(_("Invalid character id: ") + id);
-	return it->second;
-}
-
-Character& View::GetCharacter(const Id &id)
-{
-	auto it = pimpl->characters.find(id);
-	if (it == pimpl->characters.end())
-		throw crn::ExceptionNotFound(_("Invalid character id: ") + id);
-	return it->second;
-}
-
-const Zone& View::GetZone(const Id &id) const
-{
-	auto it = pimpl->zones.find(id);
-	if (it == pimpl->zones.end())
-		throw crn::ExceptionNotFound(_("Invalid zone id: ") + id);
-	return it->second;
-}
-
-Zone& View::GetZone(const Id &id)
-{
-	auto it = pimpl->zones.find(id);
-	if (it == pimpl->zones.end())
-		throw crn::ExceptionNotFound(_("Invalid zone id: ") + id);
-	return it->second;
-}
 
 View::Impl::Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 &projname):
 	id(surfid)
@@ -378,6 +283,24 @@ View::Impl::Impl(const Id &surfid, const crn::Path &base, const crn::StringUTF8 
 	// TODO
 
 	// read or create oriflamms file
+	datapath = base / ORIDIR / projname + "_" + crn::Path{id} + "-oridata.xml";
+	if (crn::IO::Access(datapath, crn::IO::EXISTS))
+	{
+		load();
+	}
+	else
+	{ // create file
+		for (const auto &p : words)
+			validation.emplace(p.first, crn::Prop3::Unknown);
+		for (const auto &p : columns)
+		{
+			medlines[p.first]; // create empty list
+			auto cnt = size_t(0);
+			for (const auto &lid : p.second.GetLines())
+				line_links.emplace(lid, std::make_pair(p.first, cnt++));
+		}
+		save();
+	}
 }
 
 View::Impl::~Impl()
@@ -386,6 +309,7 @@ View::Impl::~Impl()
 	if (czones)
 		czones.Save();
 	links.Save();
+	save();
 }
 
 static crn::StringUTF8 allTextInElement(crn::xml::Element &el)
@@ -592,6 +516,294 @@ void View::Impl::readLinkElements(crn::xml::Element &el)
 		} // links
 		grel = grel.GetNextSiblingElement("linkGrp");
 	} // link groups
+}
+
+void View::Impl::load()
+{
+	// open file
+	auto doc = crn::xml::Document{datapath};
+	auto root = doc.GetRoot();
+	if (root.GetName() != "OriData")
+		throw crn::ExceptionInvalidArgument{_("Not an Oriflamms data file: ") + crn::StringUTF8(datapath)};
+	// read validation
+	auto var = root.GetFirstChildElement("validation");
+	if (!var)
+		throw crn::ExceptionNotFound{_("No validation element in ") + crn::StringUTF8(datapath)};
+	for (auto el = var.BeginElement(); el != var.EndElement(); ++el)
+		validation.emplace(el.GetAttribute<Id>("id", false), el.GetAttribute<int>("ok", false));
+	// read medlines
+	var = root.GetFirstChildElement("medlines");
+	if (!var)
+		throw crn::ExceptionNotFound{_("No medlines element in ") + crn::StringUTF8(datapath)};
+	for (auto cel = var.BeginElement(); cel != var.EndElement(); ++cel)
+	{
+		const auto colid = cel.GetAttribute<Id>("id", false);
+		for (auto el = cel.BeginElement(); el != cel.EndElement(); ++el)
+		{
+			medlines[colid].emplace_back(el);
+		}
+	}
+	// read line_links
+	var = root.GetFirstChildElement("lineLinks");
+	if (!var)
+		throw crn::ExceptionNotFound{_("No lineLinks element in ") + crn::StringUTF8(datapath)};
+	for (auto el = var.BeginElement(); el != var.EndElement(); ++el)
+		line_links.emplace(el.GetAttribute<Id>("id", false), std::make_pair(el.GetAttribute<Id>("col", false), el.GetAttribute<int>("n", false)));
+}
+
+void View::Impl::save()
+{
+	// create document
+	auto doc = crn::xml::Document{};
+	doc.PushBackComment("oriflamms data file");
+	auto root = doc.PushBackElement("OriData");
+	// save validation
+	auto var = root.PushBackElement("validation");
+	for (const auto &p : validation)
+	{
+		auto el = var.PushBackElement("v");
+		el.SetAttribute("id", p.first);
+		el.SetAttribute("ok", p.second.GetValue());
+	}
+	// save medlines
+	var = root.PushBackElement("medlines");
+	for (const auto &c : medlines)
+	{
+		auto col = var.PushBackElement("column");
+		col.SetAttribute("id", c.first);
+		for (const auto &l : c.second)
+		{
+			l.Serialize(col);
+		}
+	}
+	// save line_lines
+	var = root.PushBackElement("lineLinks");
+	for (const auto &l : line_links)
+	{
+		auto el = var.PushBackElement("ll");
+		el.SetAttribute("id", l.first);
+		el.SetAttribute("col", l.second.first);
+		el.SetAttribute("n", l.second.second);
+	}
+	// save file
+	doc.Save(datapath);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// View
+//////////////////////////////////////////////////////////////////////////////////
+View::View() = default;
+
+View::~View() = default;
+
+const crn::Path& View::GetImageName() const noexcept { return pimpl->imagename; }
+const std::vector<Id>& View::GetPages() const noexcept { return pimpl->pageorder; }
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const Page& View::GetPage(const Id &id) const
+{
+	auto it = pimpl->pages.find(id);
+	if (it == pimpl->pages.end())
+		throw crn::ExceptionNotFound{_("Invalid page id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+Page& View::GetPage(const Id &id)
+{
+	auto it = pimpl->pages.find(id);
+	if (it == pimpl->pages.end())
+		throw crn::ExceptionNotFound{_("Invalid page id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const Column& View::GetColumn(const Id &id) const
+{
+	auto it = pimpl->columns.find(id);
+	if (it == pimpl->columns.end())
+		throw crn::ExceptionNotFound{_("Invalid column id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+Column& View::GetColumn(const Id &id)
+{
+	auto it = pimpl->columns.find(id);
+	if (it == pimpl->columns.end())
+		throw crn::ExceptionNotFound{_("Invalid column id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of a column
+ * \return all graphical lines of the column
+ */
+const std::vector<GraphicalLine>& View::GetGraphicalLines(const Id &id) const
+{
+	auto it = pimpl->medlines.find(id);
+	if (it == pimpl->medlines.end())
+		throw crn::ExceptionNotFound{_("Invalid column id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const Line& View::GetLine(const Id &id) const
+{
+	auto it = pimpl->lines.find(id);
+	if (it == pimpl->lines.end())
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+Line& View::GetLine(const Id &id)
+{
+	auto it = pimpl->lines.find(id);
+	if (it == pimpl->lines.end())
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \throws	crn::ExceptionDomain	no graphical line associated to the text line
+ * \param[in]	id	the id of a line
+ * \return the medline of the line
+ */
+const GraphicalLine& View::GetGraphicalLine(const Id &id) const
+{
+	auto it = pimpl->line_links.find(id);
+	if (it == pimpl->line_links.end())
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+
+	if (it->second.second >= pimpl->medlines[it->second.first].size())
+		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + id};
+
+	return pimpl->medlines[it->second.first][it->second.second];
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \throws	crn::ExceptionDomain	no graphical line associated to the text line
+ * \param[in]	id	the id of a line
+ * \return the medline of the line
+ */
+GraphicalLine& View::GetGraphicalLine(const Id &id)
+{
+	auto it = pimpl->line_links.find(id);
+	if (it == pimpl->line_links.end())
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+
+	if (it->second.second >= pimpl->medlines[it->second.first].size())
+		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + id};
+
+	return pimpl->medlines[it->second.first][it->second.second];
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const Word& View::GetWord(const Id &id) const
+{
+	auto it = pimpl->words.find(id);
+	if (it == pimpl->words.end())
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+Word& View::GetWord(const Id &id)
+{
+	auto it = pimpl->words.find(id);
+	if (it == pimpl->words.end())
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of a word
+ * \returns the validation state of the word
+ */
+const crn::Prop3& View::IsValid(const Id &id) const
+{
+	const auto it = pimpl->validation.find(id);
+	if (it == pimpl->validation.end())
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of a word
+ * \param[in]	val	the validation state of the word
+ */
+void View::SetValid(const Id &id, const crn::Prop3 &val)
+{
+	auto it = pimpl->validation.find(id);
+	if (it == pimpl->validation.end())
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+	it->second = val;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const Character& View::GetCharacter(const Id &id) const
+{
+	auto it = pimpl->characters.find(id);
+	if (it == pimpl->characters.end())
+		throw crn::ExceptionNotFound{_("Invalid character id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+Character& View::GetCharacter(const Id &id)
+{
+	auto it = pimpl->characters.find(id);
+	if (it == pimpl->characters.end())
+		throw crn::ExceptionNotFound{_("Invalid character id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const Zone& View::GetZone(const Id &id) const
+{
+	auto it = pimpl->zones.find(id);
+	if (it == pimpl->zones.end())
+		throw crn::ExceptionNotFound{_("Invalid zone id: ") + id};
+	return it->second;
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+Zone& View::GetZone(const Id &id)
+{
+	auto it = pimpl->zones.find(id);
+	if (it == pimpl->zones.end())
+		throw crn::ExceptionNotFound{_("Invalid zone id: ") + id};
+	return it->second;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
