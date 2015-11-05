@@ -71,6 +71,7 @@ namespace ori
 		friend class View;
 	};
 
+	class Document;
 	class Character
 	{
 		public:
@@ -89,6 +90,7 @@ namespace ori
 			crn::StringUTF8 text;
 		
 		friend class View;
+		friend class Document;
 	};
 
 	class Word
@@ -111,6 +113,7 @@ namespace ori
 			crn::StringUTF8 text;
 		
 		friend class View;
+		friend class Document;
 	};
 
 	class Line
@@ -131,6 +134,7 @@ namespace ori
 			Id zone;
 		
 		friend class View;
+		friend class Document;
 	};
 
 	class Column
@@ -151,9 +155,9 @@ namespace ori
 			Id zone;
 		
 		friend class View;
+		friend class Document;
 	};
 
-	class Document;
 	class Page
 	{
 		public:
@@ -172,6 +176,7 @@ namespace ori
 			Id zone;
 		
 		friend class View;
+		friend class Document;
 	};
 
 	class GraphicalLine;
@@ -248,11 +253,25 @@ namespace ori
 			const std::vector<Id>& GetViews() const noexcept { return views; }
 			View GetView(const Id &id);
 
+			struct ViewStructure
+			{
+				std::unordered_map<Id, Page> pages;
+				std::vector<Id> pageorder;
+				std::unordered_map<Id, Column> columns;
+				std::unordered_map<Id, Line> lines;
+				std::unordered_map<Id, Word> words;
+				std::unordered_map<Id, Character> characters;
+			};
+
 		private:
+			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, std::multimap<int, Id> &milestones);
+			void readTextCElements(crn::xml::Element &el, ElementPosition &pos);
+
 			using ViewRef = std::weak_ptr<View::Impl>;
-			std::unordered_map<Id, ViewRef> view_refs; // wear references to pages
+			std::unordered_map<Id, ViewRef> view_refs; // weak references to views
 			std::unordered_map<Id, ElementPosition> positions;
 			std::vector<Id> views; // views in order of the document
+			std::unordered_map<Id, ViewStructure> view_struct;
 
 			crn::Path base;
 			crn::StringUTF8 name;
