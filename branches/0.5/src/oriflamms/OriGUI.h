@@ -26,7 +26,6 @@ namespace ori
 
 		private:
 			void load_project();
-			void import_project();
 			void setup_window();
 			void set_win_title();
 			void add_line();

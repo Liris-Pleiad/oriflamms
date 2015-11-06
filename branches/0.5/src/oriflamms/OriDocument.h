@@ -222,11 +222,18 @@ namespace ori
 
 			const Zone& GetZone(const Id &id) const;
 			Zone& GetZone(const Id &id);
+			/*! \brief Sets the bounding box of an element */
+			void SetPosition(const Id &id, const crn::Rect &r, bool compute_contour);
+			/*! \brief Sets the contour of an element */
+			void SetContour(const Id &id, const std::vector<crn::Point2DInt> &c, bool set_position);
+			/*! \brief Computes a curve from a vertical line */
+			std::vector<crn::Point2DInt> ComputeFrontier(size_t x, size_t y1, size_t y2) const;
 
 		private:
 			struct Impl;
 
 			View(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
+			const crn::ImageGray& getWeight() const;
 
 			std::shared_ptr<Impl> pimpl;
 			

@@ -60,7 +60,6 @@ GUI::GUI():
 
 	// File menu
 	actions->add(Gtk::Action::create("load-project", Gtk::Stock::OPEN, _("_Open project"), _("Open project")), sigc::mem_fun(this, &GUI::load_project));
-	actions->add(Gtk::Action::create("import-project", Gtk::Stock::CONVERT, _("_Import project"), _("Import project")), sigc::mem_fun(this, &GUI::import_project));
 	actions->add(Gtk::Action::create("save-project", Gtk::Stock::SAVE, _("_Save project"), _("Save project")), sigc::mem_fun(this, &GUI::save_project));
 
 	// Display menu
@@ -122,7 +121,6 @@ GUI::GUI():
 		"	<menubar name='MenuBar'>"
 		"		<menu action='app-file-menu'>"
 		"			<menuitem action='load-project'/>"
-		"			<menuitem action='import-project'/>"
 		"			<menuitem action='save-project'/>"
 		"			<separator/>"
 		"			<menuitem action='app-quit'/>"
@@ -463,76 +461,6 @@ void GUI::load_project()
 	}
 }
 
-void GUI::import_project()
-{
-	//TODO
-#if 0
-	// select project file
-	Gtk::FileChooserDialog impfile(*this, _("Please select a project file to import"), Gtk::FILE_CHOOSER_ACTION_OPEN);
-	impfile.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
-	impfile.add_button(Gtk::Stock::OK, Gtk::RESPONSE_ACCEPT);
-	std::vector<int> altbut;
-	altbut.push_back(Gtk::RESPONSE_ACCEPT);
-	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	impfile.set_alternative_button_order_from_array(altbut);
-	impfile.set_default_response(Gtk::RESPONSE_ACCEPT);
-	if (impfile.run() != Gtk::RESPONSE_ACCEPT)
-		return;
-	impfile.hide();
-
-	// create project
-	crn::Path opname(impfile.get_filename().c_str());
-	try
-	{
-		crn::xml::Document opfile(opname); // may throw
-		//crn::Path datadir(opfile.GetRoot().GetAttribute<crn::StringUTF8>("basename", false)); // may throw
-		crn::Path datadir(opname + "_data");
-		crn::xml::Document oxfile(datadir + crn::Path::Separator() + crn::Path("structure.xml")); // may throw
-		crn::Path oteipath(oxfile.GetRoot().GetAttribute<crn::StringUTF8>("teipath", false)); // may throw
-		NewProject dial(*this, opname.GetFilename().CStr(), oteipath.GetFilename().CStr());
-		if (dial.run() != Gtk::RESPONSE_ACCEPT)
-			return;
-		dial.hide();
-		// create data directory
-		crn::Path newdatadir = crn::Document::GetDefaultDirName() + crn::Path::Separator() + dial.GetName() + "_data";
-		crn::IO::Mkdir(newdatadir); // may throw
-		// copy project file
-		crn::xml::Element root(opfile.GetRoot());
-		root.SetAttribute("basename", newdatadir);
-		for (crn::xml::Element el = root.BeginElement(); el != root.EndElement(); ++el)
-		{
-			if (el.GetName() == "View")
-			{
-				crn::Path img(el.GetAttribute<crn::StringUTF8>("fname", false)); // may throw
-				el.SetAttribute("fname", dial.GetImages() + crn::Path::Separator() + img.GetFilename());
-			}
-		}
-		opfile.Save(crn::Document::GetDefaultDirName() + crn::Path::Separator() + dial.GetName());
-		// copy tei description file
-		root = oxfile.GetRoot();
-		root.SetAttribute("teipath", dial.GetXML());
-		oxfile.Save(newdatadir + crn::Path::Separator() + "structure.xml");
-		// copy view files
-		crn::IO::Directory viewdir(datadir);
-		for (const crn::Path &viewfile : viewdir.GetFiles())
-		{
-			crn::Path fname(viewfile.GetFilename());
-			if (fname == "structure.xml")
-				continue;
-			crn::xml::Document vdoc(viewfile); // should not throw
-			root = vdoc.GetRoot(); // should not throw
-			crn::Path imgname(root.GetAttribute<crn::StringUTF8>("name", false)); // should not throw
-			root.SetAttribute("name", dial.GetImages() + crn::Path::Separator() + imgname.GetFilename());
-			vdoc.Save(newdatadir + crn::Path::Separator() + fname);
-		}
-	}
-	catch (crn::Exception &ex)
-	{
-		show_exception(ex, false);
-	}
-#endif
-}
-
 void GUI::setup_window()
 {
 	actions->get_action("align-menu")->set_sensitive(doc != nullptr);
@@ -708,127 +636,81 @@ Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 
 	prog->SetMaxCount(int(doc->GetViews().size()));
 	for (const auto &vid : doc->GetViews())
-	{
+	{ // display view
 		auto view = doc->GetView(vid);
 		auto vit = newstore->append();
 		vit->set_value(columns.id, Glib::ustring{vid.CStr()});
-		vit->set_value(columns.name, Glib::ustring(view.GetImageName().CStr()));
+		vit->set_value(columns.name, Glib::ustring(view.GetImageName().GetBase().CStr()));
+		auto xnum = crn::StringUTF8(int(view.GetPages().size())).CStr() + Glib::ustring(" ") + _("page(s)");
+		vit->set_value(columns.xml, xnum);
 
 		for (const auto &pid : view.GetPages())
-		{
+		{ // display page
 			auto pit = newstore->append(vit->children());
 			pit->set_value(columns.id, Glib::ustring{pid.CStr()});
+			auto name = Glib::ustring(_("Page"));
+			name += " ";
+			name += pid.CStr();
+			pit->set_value(columns.name, name);
 			const auto &p = view.GetPage(pid);
+			xnum = crn::StringUTF8(int(p.GetColumns().size())).CStr() + Glib::ustring(" ") + _("column(s)");
+			pit->set_value(columns.xml, xnum);
+
 			for (const auto &cid : p.GetColumns())
-			{
+			{ // display column
 				auto cit = newstore->append(pit->children());
 				cit->set_value(columns.id, Glib::ustring{cid.CStr()});
+				name = _("Column");
+				name += " ";
+				name += cid.CStr();
+				cit->set_value(columns.name, name);
 				const auto &c = view.GetColumn(cid);
-				auto ctxt = ""_s;
+				const auto xlines = c.GetLines().size();
+				xnum = crn::StringUTF8(int(xlines)).CStr() + Glib::ustring(" ") + _("line(s)");
+				cit->set_value(columns.xml, xnum);
+				const auto ilines = view.GetGraphicalLines(cid).size();
+				xnum = crn::StringUTF8(int(ilines)).CStr() + Glib::ustring(" ") + _("line(s)");
+				cit->set_value(columns.image, xnum);
+				if (xlines != ilines)
+					cit->set_value(columns.error, Pango::STYLE_ITALIC);
+
+				auto ctxt = Glib::ustring("");
 				for (const auto &lid : c.GetLines())
-				{
+				{ // display line
 					auto lit = newstore->append(cit->children());
 					lit->set_value(columns.id, Glib::ustring{lid.CStr()});
+					name = _("Line");
+					name += " ";
+					name += lid.CStr();
+					lit->set_value(columns.name, name);
 					const auto &l = view.GetLine(lid);
-					auto ltxt = ""_s;
-					for (const auto &wid : l.GetWords())
-						ltxt += view.GetWord(wid).GetText() + " ";
-					lit->set_value(columns.text, Glib::ustring{ltxt.CStr()});
+					xnum = crn::StringUTF8(int(l.GetWords().size())).CStr() + Glib::ustring(" ") + _("word(s)");
+					lit->set_value(columns.xml, xnum);
 
-					ctxt += ltxt + "\n";
-				} // lines
-				cit->set_value(columns.text, Glib::ustring{ctxt.CStr()});
-			} // columns
-		} // pages
-	// TODO
-#if 0
-		size_t xcol = v.page.GetColumns().size();
-		crn::SVector ilines(std::static_pointer_cast<crn::Vector>(v.image->GetUserData(Project::LinesKey)));
-		size_t icol = ilines->Size();
-		vit->set_value(columns.error, xcol != icol ? Pango::STYLE_ITALIC : Pango::STYLE_NORMAL);
-		crn::StringUTF8 s = xcol;
-		s += " ";
-		s += _("column(s)");
-		vit->set_value(columns.xml, Glib::ustring(s.CStr()));
-		s = icol;
-		s += " ";
-		s += _("column(s)");
-		vit->set_value(columns.image, Glib::ustring(s.CStr()));
-		for (size_t col = 0; col < crn::Max(xcol, icol); ++col)
-		{
-			Glib::ustring coltext;
-			Gtk::TreeIter cit = newstore->append(vit->children());
-			s = _("Column");
-			s += " ";
-			s += col + 1;
-			cit->set_value(columns.name, Glib::ustring(s.CStr()));
-			cit->set_value(columns.index, col);
-			size_t xnlines = 0, inlines = 0;
-			if (col < xcol)
-			{
-				xnlines = v.page.GetColumns()[col].GetLines().size();
-				s = xnlines;
-				s += " ";
-				s += _("line(s)");
-				cit->set_value(columns.xml, Glib::ustring(s.CStr()));
-				for (size_t lin = 0; lin < v.page.GetColumns()[col].GetLines().size(); ++lin)
-				{
-					const ori::Line &l(v.page.GetColumns()[col].GetLines()[lin]);
-					Gtk::TreeIter lit = newstore->append(cit->children());
-					s = _("Line");
-					s += " ";
-					s += lin + 1;
-					lit->set_value(columns.name, Glib::ustring(s.CStr()));
-					lit->set_value(columns.index, lin);
-					s = l.GetWords().size();
-					s += " ";
-					s += _("word(s)");
-					lit->set_value(columns.xml, Glib::ustring(s.CStr()));
-					s = "";
-					for (size_t wor = 0; wor < l.GetWords().size(); ++wor)
-					{
-						const ori::Word &w(l.GetWords()[wor]);
-						s += w.GetText().CStr();
-						s += " ";
-					}
-					auto escape = Glib::ustring{};
-					escape.reserve(s.Size() * 2);
+					// get text and remove html elements
+					auto s = ""_s;
+					for (const auto &wid : l.GetWords())
+						s += view.GetWord(wid).GetText() + " ";
+					auto ltxt = Glib::ustring{};
+					ltxt.reserve(s.Size() * 2);
 					for (size_t tmp = 0; tmp < s.Size(); ++tmp)
 					{
 						if (s[tmp] == '&')
-							escape += "&amp;";
+							ltxt += "&amp;";
 						else if (s[tmp] == '<')
-							escape += "&lt;";
+							ltxt += "&lt;";
 						else if (s[tmp] == '>')
-							escape += "&gt;";
+							ltxt += "&gt;";
 						else
-							escape += s[tmp];
+							ltxt += s[tmp];
 					}
-					lit->set_value(columns.text, escape);
-					coltext += escape + "⏎\n";
-				}
-				cit->set_value(columns.text, coltext);
-			}
-			else
-				cit->set_value(columns.error, Pango::STYLE_ITALIC);
-			if (col < icol)
-			{
-				crn::SVector c(std::static_pointer_cast<crn::Vector>(ilines->At(col)));
-				inlines = c->Size();
-				s = inlines;
-				s += " ";
-				s += _("line(s)");
-				cit->set_value(columns.image, Glib::ustring(s.CStr()));
-			}
-			else
-				cit->set_value(columns.error, Pango::STYLE_ITALIC);
-			if (inlines != xnlines)
-			{
-				cit->set_value(columns.error, Pango::STYLE_ITALIC);
-				vit->set_value(columns.error, Pango::STYLE_ITALIC);
-			}
-		}
-#endif
+					lit->set_value(columns.text, ltxt);
+
+					ctxt += ltxt + "\n";
+				} // lines
+				cit->set_value(columns.text, ctxt);
+			} // columns
+		} // pages
 		prog->Advance();
 	} // views
 	return newstore;
@@ -869,11 +751,13 @@ void GUI::tree_selection_changed(bool focus)
 		case 0:
 			// view
 			tv.expand_row(Gtk::TreePath(it), false);
+			for (const auto &row : it->children())
+				tv.expand_row(Gtk::TreePath(row), false);
 			view_depth = ViewDepth::View;
 			break;
 		case 1:
 			// page
-			tv.expand_row(Gtk::TreePath(it), false);
+			tv.expand_row(Gtk::TreePath(tv.get_selection()->get_selected()), false);
 			view_depth = ViewDepth::Page;
 			break;
 		case 2:
@@ -882,6 +766,8 @@ void GUI::tree_selection_changed(bool focus)
 				it = tv.get_selection()->get_selected();
 				auto colid = Id{it->get_value(columns.id).c_str()};
 				const auto &column = current_view.GetColumn(colid);
+				auto fx = 0;
+				auto fy = 0;
 				for (const auto &lid : column.GetLines())
 				{
 					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
@@ -890,20 +776,30 @@ void GUI::tree_selection_changed(bool focus)
 						display_words(lid);
 					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
 						display_characters(lid);
+					if (!fx && !fy)
+					{
+						try
+						{
+							const auto lzoneid = current_view.GetLine(lid).GetZone();
+							const auto &r = current_view.GetZone(lzoneid).GetPosition();
+							fx = r.GetCenterX();
+							fy = r.GetTop();
+						}
+						catch (...) {}
+					}
 				}
-	// TODO
-#if 0
-				crn::SCBlock b(project->GetDoc()->GetView(viewid));
-				crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
-				if (cols->Size() <= colid)
-					break; // XXX do something else?
-				crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
-				if (!lines->IsEmpty() && focus)
+				// set focus
+				if (!fx || !fy)
 				{
-					SCGraphicalLine l(std::static_pointer_cast<const GraphicalLine>(lines->Front()));
-					img.focus_on((l->GetFront().X + l->GetBack().X) / 2, l->GetFront().Y);
+					const auto &glines = current_view.GetGraphicalLines(colid);
+					if (!glines.empty())
+					{
+						fx = (glines.front().GetFront().X + glines.front().GetBack().X) / 2;
+						fy = glines.front().GetFront().Y;
+					}
 				}
-#endif
+				img.focus_on(fx, fy);
+
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
 					img.set_selection_type(GtkCRN::Image::Overlay::Line);
 
@@ -915,15 +811,25 @@ void GUI::tree_selection_changed(bool focus)
 				// line
 				it = tv.get_selection()->get_selected();
 				auto linid = Id{it->get_value(columns.id).c_str()};
-	// TODO
-#if 0
-				crn::SCBlock b(project->GetDoc()->GetView(viewid));
-				crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
-				crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
-				SCGraphicalLine l(std::static_pointer_cast<const GraphicalLine>(lines->At(linid)));
-				if (focus)
-					img.focus_on((l->GetFront().X + l->GetBack().X) / 2, l->GetFront().Y);
-#endif
+				// set focus
+				auto ok = true;
+				try
+				{
+					const auto lzoneid = current_view.GetLine(linid).GetZone();
+					const auto &r = current_view.GetZone(lzoneid).GetPosition();
+					img.focus_on(r.GetCenterX(), r.GetTop());
+				}
+				catch (...) { ok = false; }
+				if (!ok)
+				{
+					try
+					{
+						const auto &gl = current_view.GetGraphicalLine(linid);
+						img.focus_on((gl.GetFront().X + gl.GetBack().X) / 2, gl.GetFront().Y);
+					}
+					catch (...) { }
+				}
+
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
 					display_line(linid);
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
@@ -965,17 +871,15 @@ void GUI::edit_overlays()
 
 void GUI::display_line(const Id &linid)
 {
-	// TODO
-#if 0
-	crn::SCBlock b(project->GetDoc()->GetView(viewid));
-	crn::SCVector cols(std::static_pointer_cast<const crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
-	crn::SCVector lines(std::static_pointer_cast<const crn::Vector>(cols->At(colid)));
-	SCGraphicalLine l(std::static_pointer_cast<const GraphicalLine>(lines->At(linid)));
-	std::vector<crn::Point2DInt> pts;
-	for (const crn::Point2DDouble &p : l->GetMidline())
-		pts.push_back(crn::Point2DInt{int(p.X), int(p.Y)});
-	img.add_overlay_item(linesOverlay, linid, pts);
-#endif
+	try
+	{
+		const auto &gl = current_view.GetGraphicalLine(linid);
+		auto pts = std::vector<crn::Point2DInt>{};
+		for (const auto &p : gl.GetMidline())
+			pts.emplace_back(int(p.X), int(p.Y));
+		img.add_overlay_item(linesOverlay, linid, pts);
+	}
+	catch (...) { }
 }
 
 void GUI::display_words(const Id &linid)
@@ -1055,6 +959,7 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	}
 	else
 	{ // not in edit mode, display polygons
+		std::cout << zone.GetContour().front().X << ", " << zone.GetContour().front().Y << std::endl;
 		img.add_overlay_item(wordsOverlay, wordid, zone.GetContour(), word.GetText().CStr());
 	}
 
