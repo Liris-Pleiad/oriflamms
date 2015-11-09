@@ -1,4 +1,4 @@
-/* Copyright 2014-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2014-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriTEIImporter.h
  * \author ZHAO Xiaojuan, Yann LEYDIER
@@ -13,8 +13,16 @@
 
 namespace ori
 {
+	class ExceptionTEISelection: public crn::Exception
+	{
+		public:
+			explicit ExceptionTEISelection() noexcept {}
+			explicit ExceptionTEISelection(const crn::StringUTF8 &msg) noexcept: crn::Exception(msg) {}
+			explicit ExceptionTEISelection(const char *msg) noexcept: crn::Exception(msg) {}
+	};
+	
 	/*! \brief Node to create a tree of XML element paths */
-	class TEISelectionNode: public crn::Object
+	class TEISelectionNode: public crn::ComplexObject
 	{
 		public:
 			TEISelectionNode(crn::StringUTF8 n): name(n) { }

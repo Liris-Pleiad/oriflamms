@@ -10,6 +10,7 @@
 #include <OriLines.h>
 #include <CRNAI/CRNPathFinding.h>
 #include <CRNImage/CRNDifferential.h>
+#include <OriTEIImporter.h>
 #include <CRNi18n.h>
 
 #include <iostream>
@@ -217,6 +218,18 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	if (!el)
 		throw crn::ExceptionNotFound(projname + "_" + id + "-links.xml: " + _("no ab element."));
 	readLinkElements(el);
+	if (link_groups.find(SURFACELINKS) == link_groups.end())
+		throw crn::ExceptionNotFound(projname + "_" + id + "-links.xml: " + _("no linkGrp element for the surfaces."));
+	if (link_groups.find(PAGELINKS) == link_groups.end())
+		link_groups.emplace(PAGELINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", PAGELINKS);
+	if (link_groups.find(COLUMNLINKS) == link_groups.end())
+		link_groups.emplace(COLUMNLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", COLUMNLINKS);
+	if (link_groups.find(LINELINKS) == link_groups.end())
+		link_groups.emplace(LINELINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", LINELINKS);
+	if (link_groups.find(WORDLINKS) == link_groups.end())
+		link_groups.emplace(WORDLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", WORDLINKS);
+	if (link_groups.find(CHARLINKS) == link_groups.end())
+		link_groups.emplace(CHARLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", CHARLINKS);
 	
 	// read if it exists ONTODIR/??? for character classes
 	// TODO
@@ -641,6 +654,7 @@ Zone& View::GetZone(const Id &id)
  */
 void View::SetPosition(const Id &id, const crn::Rect &r, bool compute_contour)
 {
+	// TODO
 	auto zone = (Zone*)nullptr;
 	auto wit = pimpl->struc.words.find(id);
 	if (wit != pimpl->struc.words.end())
@@ -672,6 +686,7 @@ void View::SetPosition(const Id &id, const crn::Rect &r, bool compute_contour)
  */
 void View::SetContour(const Id &id, const std::vector<crn::Point2DInt> &c, bool set_position)
 {
+	// TODO
 }
 
 struct stepcost
@@ -744,6 +759,15 @@ const crn::ImageGray& View::getWeight() const
 	return *pimpl->weight;
 }
 
+Id View::addZone(Id id_base, crn::xml::Element &elem)
+{
+	while (pimpl->zones.find(id_base) != pimpl->zones.end())
+		id_base += "+";
+	pimpl->zones.emplace(id_base, elem);
+	elem.SetAttribute("xml:id", id_base);
+	return id_base;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Document
 //////////////////////////////////////////////////////////////////////////////////
@@ -756,6 +780,21 @@ const crn::ImageGray& View::getWeight() const
 Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 	base(dirpath)
 {
+	// create oriflamms directory if needed
+	if (!crn::IO::Access(base / ORIDIR, crn::IO::EXISTS))
+	{
+		crn::IO::Mkdir(base / ORIDIR);
+	}
+	auto teiselection = TEISelectionNode{"TEI"};
+	try
+	{
+		teiselection.Load(base / ORIDIR / "tei_selection.xml");
+	}
+	catch (std::exception &ex)
+	{
+		throw ExceptionTEISelection(ex.what());
+	}
+
 	// get base name
 	const auto txtdir = crn::IO::Directory{base / TEXTDIR};
 	auto dir = crn::IO::Directory{txtdir};
@@ -779,7 +818,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		auto doc = crn::xml::Document{base / TEXTDIR / name + "-w.xml"_p};
 		auto root = doc.GetRoot();
 		auto pos = ElementPosition{};
-		readTextWElements(root, pos, milestones);
+		readTextWElements(root, pos, teiselection, milestones);
 	}
 	catch (std::exception &ex)
 	{
@@ -813,7 +852,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		auto doc = crn::xml::Document{base / TEXTDIR / name + "-c.xml"_p};
 		auto root = doc.GetRoot();
 		auto pos = ElementPosition{};
-		readTextCElements(root, pos);
+		readTextCElements(root, pos, teiselection);
 	}
 	catch (std::exception &ex)
 	{
@@ -823,12 +862,6 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += "\n";
 	}
 	
-	// create oriflamms directory if needed
-	if (!crn::IO::Access(base / ORIDIR, crn::IO::EXISTS))
-	{
-		crn::IO::Mkdir(base / ORIDIR);
-	}
-
 	// read all files
 	for (const auto &id : views)
 	{
@@ -837,64 +870,146 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		for (auto &p : v.pimpl->struc.pages)
 		{ // for each page
 			positions.emplace(p.first, id);
+
+			if (p.second.GetZone().IsEmpty())
+			{
+				// add zone to XML
+				auto root = v.pimpl->zonesdoc.GetRoot();
+				auto el = root.GetFirstChildElement("facsimile");
+				el = el.GetFirstChildElement("surface");
+				el = el.PushBackElement("zone");
+				el.SetAttribute("type", "page");
+				const auto &pbox = v.pimpl->img->GetAbsoluteBBox();
+				el.SetAttribute("ulx", pbox.GetLeft());
+				el.SetAttribute("uly", pbox.GetTop());
+				el.SetAttribute("lrx", pbox.GetRight());
+				el.SetAttribute("lry", pbox.GetBottom());
+				// add zone to page
+				p.second.zone = v.addZone("zone-" + p.first, el);
+				// add link
+				auto linkit = v.pimpl->link_groups.find(PAGELINKS);
+				el = linkit->second.PushBackElement("link");
+				el.SetAttribute("target", "txt:" + p.first + " img:" + p.second.zone);
+			}
+			auto &pzone = v.GetZone(p.second.GetZone());
+
 			auto pbox = crn::Rect{};
 			for (auto &cid : p.second.GetColumns())
 			{
 				positions.emplace(cid, ElementPosition{id, p.first});
+
+				auto &col = v.GetColumn(cid);
+				if (col.GetZone().IsEmpty())
+				{
+					// add zone to XML
+					auto el = pzone.el.PushBackElement("zone");
+					el.SetAttribute("type", "column");
+					// add zone to page
+					col.zone = v.addZone("zone-" + cid, el);
+					// add link
+					auto linkit = v.pimpl->link_groups.find(COLUMNLINKS);
+					el = linkit->second.PushBackElement("link");
+					el.SetAttribute("target", "txt:" + cid + " img:" + col.zone);
+				}
+				auto &czone = v.GetZone(col.GetZone());
+
 				auto cbox = crn::Rect{};
-				const auto &col = v.GetColumn(cid);
 				for (auto &lid : col.GetLines())
 				{
 					positions.emplace(lid, ElementPosition{id, p.first, cid});
+
+					auto &line = v.GetLine(lid);
+					if (line.GetZone().IsEmpty())
+					{
+						// add zone to XML
+						auto el = czone.el.PushBackElement("zone");
+						el.SetAttribute("type", "line");
+						// add zone to page
+						line.zone = v.addZone("zone-" + lid, el);
+						// add link
+						auto linkit = v.pimpl->link_groups.find(LINELINKS);
+						el = linkit->second.PushBackElement("link");
+						el.SetAttribute("target", "txt:" + lid + " img:" + line.zone);
+					}
+					auto &lzone = v.GetZone(line.GetZone());
+
 					auto lbox = crn::Rect{};
-					const auto &line = v.GetLine(lid);
 					for (auto &wid : line.GetWords())
 					{
 						positions.emplace(wid, ElementPosition{id, p.first, cid, lid});
-						const auto &word = v.GetWord(wid);
+
+						auto &word = v.GetWord(wid);
+						if (word.GetZone().IsEmpty())
+						{
+							// add zone to XML
+							auto el = lzone.el.PushBackElement("zone");
+							el.SetAttribute("type", "word");
+							// add zone to page
+							word.zone = v.addZone("zone-" + wid, el);
+							// add link
+							auto linkit = v.pimpl->link_groups.find(WORDLINKS);
+							el = linkit->second.PushBackElement("link");
+							el.SetAttribute("target", "txt:" + wid + " img:" + word.zone);
+						}
+						auto &wzone = v.GetZone(word.GetZone());
+
 						for (const auto &cid : word.GetCharacters())
+						{
 							positions.emplace(wid, ElementPosition{id, p.first, cid, lid, wid});
 
-						if (word.GetZone().IsNotEmpty())
-						{
-							auto &wzone = v.GetZone(word.GetZone());
-							const auto &wpos = wzone.GetPosition();
-							if (wpos.IsValid() && wzone.GetContour().empty())
+							auto &cha = v.GetCharacter(cid);
+							if (cha.GetZone().IsEmpty())
 							{
-								// compute contour
-								auto contour = v.ComputeFrontier(wpos.GetLeft(), wpos.GetTop(), wpos.GetBottom());
-								auto contour2 = v.ComputeFrontier(wpos.GetRight(), wpos.GetTop(), wpos.GetBottom());
-								std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
-								wzone.SetContour(contour);
+								// add zone to XML
+								auto el = wzone.el.PushBackElement("zone");
+								el.SetAttribute("type", "character");
+								// add zone to page
+								cha.zone = v.addZone("zone-" + cid, el);
+								// add link
+								auto linkit = v.pimpl->link_groups.find(CHARLINKS);
+								el = linkit->second.PushBackElement("link");
+								el.SetAttribute("target", "txt:" + cid + " img:" + cha.zone);
 							}
-							lbox |= wpos;
+							else
+							{
+								auto &czone = v.GetZone(cha.GetZone());
+								const auto &cpos = czone.GetPosition();
+								if (cpos.IsValid() && czone.GetContour().empty())
+								{
+									// compute contour
+									auto contour = v.ComputeFrontier(cpos.GetLeft(), cpos.GetTop(), cpos.GetBottom());
+									auto contour2 = v.ComputeFrontier(cpos.GetRight(), cpos.GetTop(), cpos.GetBottom());
+									std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
+									czone.SetContour(contour);
+								}
+							}
 						}
+
+						const auto &wpos = wzone.GetPosition();
+						if (wpos.IsValid() && wzone.GetContour().empty())
+						{
+							// compute contour
+							auto contour = v.ComputeFrontier(wpos.GetLeft(), wpos.GetTop(), wpos.GetBottom());
+							auto contour2 = v.ComputeFrontier(wpos.GetRight(), wpos.GetTop(), wpos.GetBottom());
+							std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
+							wzone.SetContour(contour);
+						}
+						lbox |= wpos;
+						
 					} // words
 
-					if (line.GetZone().IsNotEmpty())
-					{
-						auto &lzone = v.GetZone(line.GetZone());
-						if (!lzone.GetPosition().IsValid() && lbox.IsValid())
-							lzone.SetPosition(lbox);
-						cbox |= lzone.GetPosition();
-					}
+					if (!lzone.GetPosition().IsValid() && lbox.IsValid())
+						lzone.SetPosition(lbox);
+					cbox |= lzone.GetPosition();
 				} // lines
 
-				if (col.GetZone().IsNotEmpty())
-				{
-					auto &czone = v.GetZone(col.GetZone());
-					if (!czone.GetPosition().IsValid() && cbox.IsValid())
-						czone.SetPosition(cbox);
-					pbox |= czone.GetPosition();
-				}
+				if (!czone.GetPosition().IsValid() && cbox.IsValid())
+					czone.SetPosition(cbox);
+				pbox |= czone.GetPosition();
 			} // columns
 
-			if (p.second.GetZone().IsNotEmpty())
-			{
-				auto &pzone = v.GetZone(p.second.GetZone());
-				if (!pzone.GetPosition().IsValid() && pbox.IsValid())
-					pzone.SetPosition(pbox);
-			}
+			if (!pzone.GetPosition().IsValid() && pbox.IsValid())
+				pzone.SetPosition(pbox);
 		} // pages
 	}
 }
@@ -918,7 +1033,7 @@ View Document::GetView(const Id &id)
 	return View(v);
 }
 
-static crn::StringUTF8 allTextInElement(crn::xml::Element &el)
+static crn::StringUTF8 allTextInElement(crn::xml::Element &el, const TEISelectionNode& teisel)
 {
 	auto txt = ""_s;
 	for (auto n = el.BeginNode(); n != el.EndNode(); ++n)
@@ -930,142 +1045,162 @@ static crn::StringUTF8 allTextInElement(crn::xml::Element &el)
 		else if (n.IsElement())
 		{
 			auto sel = n.AsElement();
-			txt += allTextInElement(sel);
+			const auto elname = sel.GetName();
+			for (const TEISelectionNode &cnode : teisel.GetChildren())
+				if (cnode.GetName() == elname)
+				{
+					txt += allTextInElement(sel, cnode);
+					break;
+				}
 		}
 	}
 	return txt;
 }
 
-void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, std::multimap<int, Id> &milestones)
+void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones)
 {
-	const auto elname = el.GetName();
-	const auto elid = el.GetAttribute<Id>("xml:id", true);
-	if (elname == "milestone")
-	{
-		if (el.GetAttribute<crn::StringUTF8>("unit", true) == "surface")
-		{
-			if (elid.IsEmpty())
-				throw crn::ExceptionNotFound(name + "-w: "_s + _("milestone without an id."));
-			milestones.emplace(el.GetAttribute<int>("n", true), elid);
-			pos.view = elid;
-		}
-	}
-	else if (elname == "pb")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-w: "_s + _("page without an id."));
-		view_struct[pos.view].pages.emplace(elid, Page{});
-		view_struct[pos.view].pageorder.push_back(elid);
-		pos.page = elid;
-	}
-	else if (elname == "cb")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-w: "_s + _("column without an id."));
-		view_struct[pos.view].columns.emplace(elid, Column{});
-		view_struct[pos.view].pages[pos.page].columns.push_back(elid);
-		pos.column = elid;
-	}
-	else if (elname == "lb")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-w: "_s + _("line without an id."));
-		view_struct[pos.view].lines.emplace(elid, Line{});
-		view_struct[pos.view].columns[pos.column].lines.push_back(elid);
-		pos.line = elid;
-		// TODO rejets
-	}
-	else if ((elname == "w") || (elname == "pc"))
-	{
-		if (!el.GetFirstChildElement("seg"))
-		{
-			if (elid.IsEmpty())
-				throw crn::ExceptionNotFound(name + "-w: "_s + _("word or pc without an id."));
-			view_struct[pos.view].words.emplace(elid, Word{});
-			view_struct[pos.view].words[elid].text = allTextInElement(el);
-			view_struct[pos.view].lines[pos.line].left.push_back(elid); // TODO rejets
-		}
-	}
-	else if (elname == "seg")
-	{
-		const auto type = el.GetAttribute<crn::StringUTF8>("type", true);
-		if (type == "wp" || type == "deleted")
-		{
-			if (elid.IsEmpty())
-				throw crn::ExceptionNotFound(name + "-w: "_s + _("seg without an id."));
-			view_struct[pos.view].words.emplace(elid, Word{});
-			view_struct[pos.view].words[elid].text = allTextInElement(el);
-			view_struct[pos.view].lines[pos.line].left.push_back(elid); // TODO rejets
-		}
-	}
-	else if (elname == "supplied" || elname == "corr")
-		return;
 	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
-		readTextWElements(sel, pos, milestones);
+	{
+		const auto elname = sel.GetName();
+		for (const TEISelectionNode &cnode : teisel.GetChildren())
+			if (cnode.GetName() == elname)
+			{
+				const auto elid = sel.GetAttribute<Id>("xml:id", true);
+				if (elname == "milestone")
+				{
+					if (sel.GetAttribute<crn::StringUTF8>("unit", true) == "surface")
+					{
+						if (elid.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-w: "_s + _("milestone without an id."));
+						milestones.emplace(sel.GetAttribute<int>("n", true), elid);
+						pos.view = elid;
+					}
+				}
+				else if (elname == "pb")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-w: "_s + _("page without an id."));
+					view_struct[pos.view].pages.emplace(elid, Page{});
+					view_struct[pos.view].pageorder.push_back(elid);
+					pos.page = elid;
+				}
+				else if (elname == "cb")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-w: "_s + _("column without an id."));
+					view_struct[pos.view].columns.emplace(elid, Column{});
+					view_struct[pos.view].pages[pos.page].columns.push_back(elid);
+					pos.column = elid;
+				}
+				else if (elname == "lb")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-w: "_s + _("line without an id."));
+					view_struct[pos.view].lines.emplace(elid, Line{});
+					view_struct[pos.view].columns[pos.column].lines.push_back(elid);
+					pos.line = elid;
+					// TODO rejets
+				}
+				else if ((elname == "w") || (elname == "pc"))
+				{
+					if (!sel.GetFirstChildElement("seg"))
+					{
+						if (elid.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-w: "_s + _("word or pc without an id."));
+						view_struct[pos.view].words.emplace(elid, Word{});
+						view_struct[pos.view].words[elid].text = allTextInElement(sel, cnode);
+						view_struct[pos.view].lines[pos.line].left.push_back(elid); // TODO rejets
+					}
+				}
+				else if (elname == "seg")
+				{
+					const auto type = sel.GetAttribute<crn::StringUTF8>("type", true);
+					if (type == "wp" || type == "deleted")
+					{
+						if (elid.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-w: "_s + _("seg without an id."));
+						view_struct[pos.view].words.emplace(elid, Word{});
+						view_struct[pos.view].words[elid].text = allTextInElement(sel, cnode);
+						view_struct[pos.view].lines[pos.line].left.push_back(elid); // TODO rejets
+					}
+				}
+
+				readTextWElements(sel, pos, cnode, milestones);
+				break;
+			}
+	}
 }
 
-void Document::readTextCElements(crn::xml::Element &el, ElementPosition &pos)
+void Document::readTextCElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel)
 {
-	const auto elname = el.GetName();
-	const auto elid = el.GetAttribute<Id>("xml:id", true);
-	if (elname == "milestone")
-	{
-		if (el.GetAttribute<crn::StringUTF8>("unit", true) == "surface")
-		{
-			if (elid.IsEmpty())
-				throw crn::ExceptionNotFound(name + "-c: "_s + _("milestone without an id."));
-			pos.view = elid;
-		}
-	}
-	else if (elname == "pb")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-c: "_s + _("page without an id."));
-		pos.page = elid;
-	}
-	else if (elname == "cb")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-c: "_s + _("column without an id."));
-		pos.column = elid;
-	}
-	else if (elname == "lb")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-c: "_s + _("line without an id."));
-		pos.line = elid;
-		// TODO rejets
-	}
-	else if ((elname == "w") || (elname == "pc"))
-	{
-		if (!el.GetFirstChildElement("seg"))
-		{
-			if (elid.IsEmpty())
-				throw crn::ExceptionNotFound(name + "-c: "_s + _("word or pc without an id."));
-			pos.word = elid;
-		}
-	}
-	else if (elname == "seg")
-	{
-		const auto type = el.GetAttribute<crn::StringUTF8>("type", true);
-		if (type == "wp" || type == "deleted")
-		{
-			if (elid.IsEmpty())
-				throw crn::ExceptionNotFound(name + "-c: "_s + _("seg without an id."));
-			pos.word = elid;
-		}
-	}
-	else if (elname == "c")
-	{
-		if (elid.IsEmpty())
-			throw crn::ExceptionNotFound(name + "-c: "_s + _("character without an id."));
-		view_struct[pos.view].characters.emplace(elid, Character{});
-		view_struct[pos.view].characters[elid].text = allTextInElement(el);
-		view_struct[pos.view].words[pos.word].characters.push_back(elid);
-	}
-	else if (elname == "supplied" || elname == "corr")
-		return;
 	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
-		readTextCElements(sel, pos);
+	{
+		const auto elname = sel.GetName();
+		for (const TEISelectionNode &cnode : teisel.GetChildren())
+		{
+			if (cnode.GetName() == elname)
+			{
+				const auto elid = sel.GetAttribute<Id>("xml:id", true);
+				if (elname == "milestone")
+				{
+					if (sel.GetAttribute<crn::StringUTF8>("unit", true) == "surface")
+					{
+						if (elid.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-c: "_s + _("milestone without an id."));
+						pos.view = elid;
+					}
+				}
+				else if (elname == "pb")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-c: "_s + _("page without an id."));
+					pos.page = elid;
+				}
+				else if (elname == "cb")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-c: "_s + _("column without an id."));
+					pos.column = elid;
+				}
+				else if (elname == "lb")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-c: "_s + _("line without an id."));
+					pos.line = elid;
+					// TODO rejets
+				}
+				else if ((elname == "w") || (elname == "pc"))
+				{
+					if (!sel.GetFirstChildElement("seg"))
+					{
+						if (elid.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-c: "_s + _("word or pc without an id."));
+						pos.word = elid;
+					}
+				}
+				else if (elname == "seg")
+				{
+					const auto type = sel.GetAttribute<crn::StringUTF8>("type", true);
+					if (type == "wp" || type == "deleted")
+					{
+						if (elid.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-c: "_s + _("seg without an id."));
+						pos.word = elid;
+					}
+				}
+				else if (elname == "c")
+				{
+					if (elid.IsEmpty())
+						throw crn::ExceptionNotFound(name + "-c: "_s + _("character without an id."));
+					view_struct[pos.view].characters.emplace(elid, Character{});
+					view_struct[pos.view].characters[elid].text = allTextInElement(sel, cnode);
+					view_struct[pos.view].words[pos.word].characters.push_back(elid);
+				}
+
+				readTextCElements(sel, pos, cnode);
+				break;
+			}
+		}
+	}
 }
 

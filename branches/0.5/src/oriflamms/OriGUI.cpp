@@ -332,6 +332,37 @@ void GUI::load_project()
 				GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
 			}
 		}
+		catch (ExceptionTEISelection &ex)
+		{
+			auto dir = crn::IO::Directory(dial.get_current_folder().c_str() / "texts"_p);
+			for (const auto fname : dir.GetFiles())
+				if (fname.EndsWith("-c.xml"))
+				{
+					TEIImporter impdial{fname, *this};
+					if (impdial.run() == Gtk::RESPONSE_ACCEPT)
+					{
+						impdial.hide();
+						impdial.export_selected_elements().Save(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p);
+						try
+						{
+							doc = std::make_unique<Document>(dial.get_current_folder().c_str());
+							const auto &error = doc->ErrorReport();
+							if (error.IsNotEmpty())
+							{
+								GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
+							}
+						}
+						catch (crn::Exception &ex)
+						{
+							GtkCRN::App::show_exception(ex, false);
+						}
+					}
+					else
+					{
+						GtkCRN::App::show_exception(ex, false);
+					}
+				}
+		}
 		catch (crn::Exception &ex)
 		{
 			doc.reset();
@@ -897,18 +928,18 @@ void GUI::display_characters(const Id &linid)
 	for (const auto &wid : line.GetWords())
 	{
 		const auto &word = current_view.GetWord(wid);
-		if (word.GetZone().IsEmpty())
+		if (!current_view.GetZone(word.GetZone()).GetPosition().IsValid())
 			continue;
 		for (const auto &cid : word.GetCharacters())
 		{
 			const auto &character = current_view.GetCharacter(cid);
 			const auto &zid = character.GetZone();
-			if (zid.IsEmpty())
-				continue;
 			auto ov = wordsOverlayUn;
 			// TODO change color if validated? wordsOverlayOk wordsOverlayKo
 			const auto &zone = current_view.GetZone(zid);
 			auto topbox = zone.GetPosition();
+			if (!topbox.IsValid())
+				continue;
 			topbox.SetHeight(topbox.GetHeight() / 4);
 			img.add_overlay_item(ov, cid, topbox, character.GetText().CStr());
 			img.add_overlay_item(charOverlay, cid, zone.GetContour());

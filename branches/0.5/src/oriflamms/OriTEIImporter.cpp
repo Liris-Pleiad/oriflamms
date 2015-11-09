@@ -127,8 +127,8 @@ TEIImporter::TEIImporter(const crn::Path &path, Gtk::Window &parent):
 
 void TEIImporter::fill_tree(crn::xml::Node &nd, Gtk::TreeModel::Row &row, std::set<Gtk::TreePath> &toexpand, std::set<Gtk::TreePath> &tocollapse)
 {
-	static const auto keyelems = std::set<Glib::ustring>{ "pb", "cb", "lb", "w", "pc" };
-	static const auto okelems = std::set<Glib::ustring>{ "abbr", "sic", "hi", "orig", "lem", "am" };
+	static const auto keyelems = std::set<Glib::ustring>{ "pb", "cb", "lb", "w", "pc", "seg", "milestone", "c", "g" };
+	static const auto okelems = std::set<Glib::ustring>{ "abbr", "sic", "hi", "orig", "lem", "am", "del" };
 	static const auto koelems = std::set<Glib::ustring>{ "expan", "corr", "supplied", "reg", "rdg", "note", "teiHeader" };
 
 	if (nd.IsText())

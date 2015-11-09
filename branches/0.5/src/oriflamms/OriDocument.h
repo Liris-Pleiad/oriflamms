@@ -48,6 +48,7 @@ namespace ori
 	};
 
 	class View;
+	class Document;
 	class Zone
 	{
 		public:
@@ -69,9 +70,9 @@ namespace ori
 			crn::xml::Element el;
 		
 		friend class View;
+		friend class Document;
 	};
 
-	class Document;
 	class Character
 	{
 		public:
@@ -234,12 +235,14 @@ namespace ori
 
 			View(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
 			const crn::ImageGray& getWeight() const;
+			Id addZone(Id id_base, crn::xml::Element &elem);
 
 			std::shared_ptr<Impl> pimpl;
 			
 		friend class Document;
 	};
 
+	class TEISelectionNode;
 	class Document
 	{
 		public:
@@ -271,8 +274,8 @@ namespace ori
 			};
 
 		private:
-			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, std::multimap<int, Id> &milestones);
-			void readTextCElements(crn::xml::Element &el, ElementPosition &pos);
+			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones);
+			void readTextCElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel);
 
 			using ViewRef = std::weak_ptr<View::Impl>;
 			std::unordered_map<Id, ViewRef> view_refs; // weak references to views
