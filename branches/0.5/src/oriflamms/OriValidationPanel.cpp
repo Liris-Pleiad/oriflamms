@@ -1,10 +1,9 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriValidationPanel.h
  * \author Yann LEYDIER
  */
 
-#if 0
 #include <OriValidationPanel.h>
 #include <GtkCRNProgressWindow.h>
 #include <CRNAI/CRNIterativeClustering.h>
@@ -13,6 +12,7 @@
 #include <iostream>
 
 using namespace ori;
+using namespace crn::literals;
 
 const crn::StringUTF8 ValidationPanel::label_ok("zzz1");
 const crn::StringUTF8 ValidationPanel::label_ko("ko");
@@ -25,7 +25,7 @@ const crn::StringUTF8 ValidationPanel::label_revalidated("zzz0");
  * \param[in]	imagenames	the list of the image file name for each view
  * \param[in]	active_m	shall the mouse clicks be processed or ignored?
  */
-ValidationPanel::ValidationPanel(Project & pro, const crn::StringUTF8 &name, const std::vector<crn::Path> &imagenames, bool active_m):
+ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m):
 	title(name),
 	nelem(0),
 	Gtk::Frame(name.CStr()),
@@ -34,10 +34,9 @@ ValidationPanel::ValidationPanel(Project & pro, const crn::StringUTF8 &name, con
 	marking(false),
 	locked(false),
 	modified(false),
-	project(pro),
+	doc(docu),
 	active_mouse(active_m),
 	tipwin(Gtk::WINDOW_POPUP),
-	tipword(0, 0, 0, 0),
 	tipthread(nullptr)
 {
 	Gtk::HBox *hbox(Gtk::manage(new Gtk::HBox));
@@ -77,8 +76,6 @@ ValidationPanel::ValidationPanel(Project & pro, const crn::StringUTF8 &name, con
 	signal_query_tooltip().connect(sigc::mem_fun(this, &ValidationPanel::tooltip));
 	signal_hide().connect(sigc::mem_fun(tipwin, &Gtk::Widget::hide));
 
-	std::transform(imagenames.begin(), imagenames.end(), std::back_inserter(images), std::mem_fun_ref(&crn::Path::GetFilename));
-
 	show_all();
 }
 
@@ -88,7 +85,7 @@ ValidationPanel::ValidationPanel(Project & pro, const crn::StringUTF8 &name, con
  * \param[in]	p	the path of the word containing the element
  * \param[in]	pos	the position of the element in the word
  */
-void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const WordPath &p, size_t pos)
+void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &p, size_t pos)
 {
 	elements[cluster].emplace(ElementId{p, pos}, pb);
 	nelem += 1;
@@ -351,29 +348,17 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 					pos.X + w.second->get_width(), pos.Y + offset + w.second->get_height());
 			if (bbox.Contains(x, y + offset))
 			{
-				if (w.first.path != tipword)
+				if (w.first.id != tipword)
 				{
-					tipword = w.first.path;
+					tipword = w.first.id;
 
+					const auto &wordpath = doc.GetPosition(tipword);
 					crn::StringUTF8 msg;
-					msg += _("Image");
-					msg += " ";
-					if (w.first.path.view < images.size())
-						msg += images[w.first.path.view];
-					else
-						msg += w.first.path.view + 1;
-					msg += "\n";
-					msg += _("Column");
-					msg += " ";
-					msg += w.first.path.col + 1;
-					msg += "\n";
-					msg += _("Line");
-					msg += " ";
-					msg += w.first.path.line + 1;
-					msg += "\n";
-					msg += _("Word");
-					msg += " ";
-					msg += w.first.path.word + 1;
+					msg += _("View") + " "_s + wordpath.view + "\n";
+					msg += _("Page") + " "_s + wordpath.page + "\n";
+					msg += _("Column") + " "_s += wordpath.column + "\n";
+					msg += _("Line") + " "_s + wordpath.line + "\n";
+					msg += _("Word") + " "_s + wordpath.word;
 					tiplab.set_text(msg.CStr());
 
 					tipimg.set(Gtk::Stock::REFRESH, Gtk::ICON_SIZE_DIALOG);
@@ -402,83 +387,93 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 
 void ValidationPanel::load_tooltip_img()
 {
-	Word &oriword(project.GetStructure().GetWord(tipword));
-	crn::Rect bbox = oriword.GetBBox();
-	Glib::RefPtr<Gdk::Pixbuf> pb = Gdk::Pixbuf::create_from_file(project.GetDoc()->GetFilenames()[tipword.view].CStr());
+	const auto &oriview = doc.GetView(doc.GetPosition(tipword).view);
+	const auto &oriword = oriview.GetWord(tipword);
+	const auto &orizone = oriview.GetZone(oriword.GetZone());
+	const auto &bbox = orizone.GetPosition();
+	if (!bbox.IsValid())
+		return;
+	auto pb = Gdk::Pixbuf::create_from_file(oriview.GetImageName().CStr());
 	tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, bbox.GetWidth()+40, bbox.GetHeight());
 	pb->copy_area(bbox.GetLeft()-20, bbox.GetTop(), bbox.GetWidth()+40, bbox.GetHeight(), tippb, 0, 0);
 	//if (!tippb->get_has_alpha())
 		//tippb = tippb->add_alpha(true, 255, 255, 255);
 	guint8* pixs = tippb->get_pixels();
-	std::vector<crn::Point2DInt> fronfrontier = oriword.GetFrontFrontier();
-	std::vector<crn::Point2DInt> backfrontier = oriword.GetBackFrontier();
-	const int rowstride = tippb->get_rowstride();
-	const int channels = tippb->get_n_channels();
+	const auto &contour = orizone.GetContour();
+	auto frontier = size_t(2);
+	for (; frontier < contour.size() - 1; ++frontier)
+	{
+		const auto y = contour[frontier].Y;
+		if ((contour[frontier - 1].Y == y) && (contour[frontier - 2].Y < y) && (contour[frontier + 1].Y < y))
+			break;
+	}
+	const auto rowstride = tippb->get_rowstride();
+	const auto channels = tippb->get_n_channels();
 
-	for(size_t j = 0; j < tippb->get_height(); ++ j)
-		for(size_t i = 0; i < fronfrontier.size() - 1; ++ i)
+	for (auto j = size_t(0); j < tippb->get_height(); ++j)
+		for (auto i = size_t(0); i < frontier - 1; ++i)
 		{
-			double x1 = double(fronfrontier[i].X - oriword.GetBBox().GetLeft()+20);
-			double y1 = double(fronfrontier[i].Y - oriword.GetBBox().GetTop());
-			double x2 = double(fronfrontier[i + 1].X - oriword.GetBBox().GetLeft()+20);
-			double y2 = double(fronfrontier[i + 1].Y - oriword.GetBBox().GetTop());
-			if(j == y2)
+			auto x1 = contour[i].X - bbox.GetLeft() + 20;
+			auto y1 = contour[i].Y - bbox.GetTop();
+			auto x2 = contour[i + 1].X - bbox.GetLeft() + 20;
+			auto y2 = contour[i + 1].Y - bbox.GetTop();
+			if (j == y2)
 			{
 				//pixs[(int(x2) * channels + j * rowstride) + 3] = 128;
-				pixs[(int(x2) * channels + j * rowstride) + 0] = 255;
-				pixs[(int(x2) * channels + j * rowstride) + 1] = 0;
-				pixs[(int(x2) * channels + j * rowstride) + 2] = 0;
+				pixs[x2 * channels + j * rowstride + 0] = 255;
+				pixs[x2 * channels + j * rowstride + 1] = 0;
+				pixs[x2 * channels + j * rowstride + 2] = 0;
 				break;
 			}
-			if(j == y1)
+			if (j == y1)
 			{
 				//pixs[(int(x1) * channels + j * rowstride) + 3] = 128;
-				pixs[(int(x1) * channels + j * rowstride) + 0] = 255;
-				pixs[(int(x1) * channels + j * rowstride) + 1] = 0;
-				pixs[(int(x1) * channels + j * rowstride) + 2] = 0;
+				pixs[x1 * channels + j * rowstride + 0] = 255;
+				pixs[x1 * channels + j * rowstride + 1] = 0;
+				pixs[x1 * channels + j * rowstride + 2] = 0;
 				break;
 			}
-			if( j < y2 && j > y1)
+			if (j < y2 && j > y1)
 			{
-				int x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+				auto x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
 				//pixs[(x * channels + j * rowstride) + 3] = 128;
-				pixs[(x * channels + j * rowstride) + 0] = 255;
-				pixs[(x * channels + j * rowstride) + 1] = 0;
-				pixs[(x * channels + j * rowstride) + 2] = 0;
+				pixs[x * channels + j * rowstride + 0] = 255;
+				pixs[x * channels + j * rowstride + 1] = 0;
+				pixs[x * channels + j * rowstride + 2] = 0;
 				break;
 			}
 
 		}
-	for(size_t j = 0; j < tippb->get_height(); ++ j)
-		for(size_t i = 0; i < backfrontier.size() - 1; ++ i)
+	for (auto j = size_t(0); j < tippb->get_height(); ++j)
+		for (auto i = frontier; i < contour.size() - 1; ++i)
 		{
-			double x1 = double(backfrontier[i].X - oriword.GetBBox().GetLeft()+20);
-			double y1 = double(backfrontier[i].Y - oriword.GetBBox().GetTop());
-			double x2 = double(backfrontier[i + 1].X - oriword.GetBBox().GetLeft()+20);
-			double y2 = double(backfrontier[i + 1].Y - oriword.GetBBox().GetTop());
-			if(j == y2)
+			auto x1 = contour[i].X - bbox.GetLeft() + 20;
+			auto y1 = contour[i].Y - bbox.GetTop();
+			auto x2 = contour[i + 1].X - bbox.GetLeft() + 20;
+			auto y2 = contour[i + 1].Y - bbox.GetTop();
+			if (j == y2)
 			{
 				//pixs[(int(x2) * channels + j * rowstride) + 3] = 128;
-				pixs[(int(x2) * channels + j * rowstride) + 0] = 255;
-				pixs[(int(x2) * channels + j * rowstride) + 1] = 0;
-				pixs[(int(x2) * channels + j * rowstride) + 2] = 0;
+				pixs[x2 * channels + j * rowstride + 0] = 255;
+				pixs[x2 * channels + j * rowstride + 1] = 0;
+				pixs[x2 * channels + j * rowstride + 2] = 0;
 				break;
 			}
-			if(j == y1)
+			if (j == y1)
 			{
 				//pixs[(int(x1) * channels + j * rowstride) + 3] = 128;
-				pixs[(int(x1) * channels + j * rowstride) + 0] = 255;
-				pixs[(int(x1) * channels + j * rowstride) + 1] = 0;
-				pixs[(int(x1) * channels + j * rowstride) + 2] = 0;
+				pixs[x1 * channels + j * rowstride + 0] = 255;
+				pixs[x1 * channels + j * rowstride + 1] = 0;
+				pixs[x1 * channels + j * rowstride + 2] = 0;
 				break;
 			}
 			if( j < y2 && j > y1)
 			{
-				int x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+				auto x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
 				//pixs[(x * channels + j * rowstride) + 3] = 128;
-				pixs[(x * channels + j * rowstride) + 0] = 255;
-				pixs[(x * channels + j * rowstride) + 1] = 0;
-				pixs[(x * channels + j * rowstride) + 2] = 0;
+				pixs[x * channels + j * rowstride + 0] = 255;
+				pixs[x * channels + j * rowstride + 1] = 0;
+				pixs[x * channels + j * rowstride + 2] = 0;
 				break;
 			}
 		}
@@ -512,4 +507,4 @@ void ValidationPanel::set_color(Cairo::RefPtr<Cairo::Context> &cc, const crn::St
 	}
 
 }
-#endif 
+

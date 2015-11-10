@@ -199,11 +199,13 @@ namespace ori
 			const Page& GetPage(const Id &id) const;
 			Page& GetPage(const Id &id);
 
+			const std::unordered_map<Id, Column>& GetColumns() const;
 			const Column& GetColumn(const Id &id) const;
 			Column& GetColumn(const Id &id);
 			/*! \brief Returns all median lines of a column */
 			const std::vector<GraphicalLine>& GetGraphicalLines(const Id &id) const;
 
+			const std::unordered_map<Id, Line>& GetLines() const;
 			const Line& GetLine(const Id &id) const;
 			Line& GetLine(const Id &id);
 			/*! \brief Returns the median line of a text line */
@@ -211,6 +213,7 @@ namespace ori
 			/*! \brief Returns the median line of a text line */
 			GraphicalLine& GetGraphicalLine(const Id &id);
 
+			const std::unordered_map<Id, Word>& GetWords() const;
 			const Word& GetWord(const Id &id) const;
 			Word& GetWord(const Id &id);
 			/*! \brief Checks if a word was validated or rejected by the user */
@@ -218,6 +221,7 @@ namespace ori
 			/*! \brief Sets if a word was validated or rejected by the user */
 			void SetValid(const Id &id, const crn::Prop3 &val);
 
+			const std::unordered_map<Id, Character>& GetCharacters() const;
 			const Character& GetCharacter(const Id &id) const;
 			Character& GetCharacter(const Id &id);
 
@@ -229,6 +233,12 @@ namespace ori
 			void SetContour(const Id &id, const std::vector<crn::Point2DInt> &c, bool set_position);
 			/*! \brief Computes a curve from a vertical line */
 			std::vector<crn::Point2DInt> ComputeFrontier(size_t x, size_t y1, size_t y2) const;
+			/*! \brief Computes the contour of a zone from its bounding box */
+			void ComputeContour(const Id &zone_id);
+			/*! \brief Sets the left frontier of a word */
+			void UpdateLeftFrontier(const Id &id, int x);
+			/*! \brief Sets the right frontier of a word */
+			void UpdateRightFrontier(const Id &id, int x);
 
 		private:
 			struct Impl;

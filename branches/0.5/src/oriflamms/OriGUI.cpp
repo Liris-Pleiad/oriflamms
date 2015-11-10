@@ -965,22 +965,16 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 		return;
 	if (newleft)
 	{
-		// TODO
-		//zone.SetLeft(newleft.Get());
-		//if (w.GetRightCorrection())
-		//w.SetValid(true);
+		current_view.UpdateLeftFrontier(wordid, newleft.Get());
 	}
 	if (newright)
 	{
-		// TODO
-		//zone.SetRight(newright.Get());
-		//if (w.GetLeftCorrection())
-		//w.SetValid(true);
+		current_view.UpdateRightFrontier(wordid, newright.Get());
 	}
 	if (newright || newleft)
 	{
+		current_view.ComputeContour(word.GetZone());
 		// TODO
-		//project->ComputeWordFrontiers(wordid);
 		//project->AlignWordCharacters(AlignConfig::AllChars, wordid);
 	}
 
@@ -990,7 +984,6 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	}
 	else
 	{ // not in edit mode, display polygons
-		std::cout << zone.GetContour().front().X << ", " << zone.GetContour().front().Y << std::endl;
 		img.add_overlay_item(wordsOverlay, wordid, zone.GetContour(), word.GetText().CStr());
 	}
 
@@ -1015,7 +1008,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		// line modified
 		if (overlay_item_id.IsEmpty())
 			return;
-		// get path
+		// get id
 		const auto linid = overlay_item_id.ToInt();
 		Gtk::TreeIter it(tv.get_selection()->get_selected());
 		if (view_depth == ViewDepth::Line)
@@ -1055,47 +1048,47 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		// word modified
 		if (overlay_item_id.IsEmpty())
 			return;
-		// get path
-		auto path = Id{overlay_item_id};
+		// get id
+		const auto id = Id{overlay_item_id};
 
-		auto &item = img.get_overlay_item(overlay_id, overlay_item_id);
-		auto &rect = static_cast<GtkCRN::Image::Rectangle&>(item);
+		const auto &item = img.get_overlay_item(overlay_id, overlay_item_id);
+		const auto &rect = static_cast<const GtkCRN::Image::Rectangle&>(item);
 		auto nleft = rect.rect.GetLeft() ,nright = rect.rect.GetRight();
 
 		if (nright - nleft < minwordwidth)
 			nright = nleft + minwordwidth;
-		// TODO
-#if 0
+
+		const auto &path = doc->GetPosition(id);
+		const auto &line = current_view.GetLine(path.line).GetWords();
+		auto it = std::find(line.begin(), line.end(), id);
 		// need to update previous word?
-		if (path.word != 0)
+		if (it != line.begin());
 		{
-			Id pp(path);
-			pp.word -= 1;
-			ori::Word &w(project->GetStructure().GetWord(pp));
-			if (w.GetBBox().IsValid())
+			const auto &pp = *(it - 1);
+			const auto &pzone = current_view.GetZone(current_view.GetWord(pp).GetZone());
+			if (pzone.GetPosition().IsValid())
 			{
-				if (nleft < w.GetBBox().GetLeft() + minwordwidth)
-					nleft = w.GetBBox().GetLeft() + minwordwidth;
+				if (nleft < pzone.GetPosition().GetLeft() + minwordwidth)
+					nleft = pzone.GetPosition().GetLeft() + minwordwidth;
 			}
 			display_update_word(pp, crn::Option<int>(), nleft - 1);
 		}
 		// need to update next word?
-		if (path.word + 1 < project->GetStructure().GetViews()[path.view].GetColumns()[path.col].GetLines()[path.line].GetWords().size())
+		++it;
+		if (it != line.end())
 		{
-			Id np(path);
-			np.word += 1;
-			ori::Word &w(project->GetStructure().GetWord(np));
-			if (w.GetBBox().IsValid())
+			const auto &np = *it;
+			const auto &nzone = current_view.GetZone(current_view.GetWord(np).GetZone());
+			if (nzone.GetPosition().IsValid())
 			{
-				if (nright > w.GetBBox().GetRight() - minwordwidth)
-					nright = w.GetBBox().GetRight() - minwordwidth;
+				if (nright > nzone.GetPosition().GetRight() - minwordwidth)
+					nright = nzone.GetPosition().GetRight() - minwordwidth;
 			}
 			display_update_word(np, nright + 1, crn::Option<int>());
 		}
-#endif
 
 		// update bbox
-		display_update_word(path, nleft, nright);
+		display_update_word(id, nleft, nright);
 
 		set_need_save();
 	}
@@ -1109,18 +1102,16 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 		{ // if it is a word, cycle through validation
 			try
 			{
-				auto path = Id{it->second};
-				auto &w = current_view.GetWord(path);
-				// TODO
-				/*
-					 if (w.GetValid().IsTrue())
-					 w.SetValid(false);
-					 else if (w.GetValid().IsFalse())
-					 w.SetValid(crn::Prop3::Unknown);
-					 else
-					 w.SetValid(true);
-					 */
-				display_update_word(path);
+				auto id = Id{it->second};
+				auto &w = current_view.GetWord(id);
+				const auto &val = current_view.IsValid(id);
+				if (val.IsTrue())
+					current_view.SetValid(id, false);
+				else if (val.IsFalse())
+					current_view.SetValid(id, crn::Prop3::Unknown);
+				else
+					current_view.SetValid(id, true);
+				display_update_word(id);
 				set_need_save();
 				return; // modify just one
 			}
@@ -1351,15 +1342,70 @@ void GUI::manage_entities()
 
 void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 {
-	// TODO
-#if 0
 	panel->clear();
-	crn::String wstring(entry->get_text().c_str());
-	if (wstring.IsNotEmpty())
-		for (size_t v = 0; v < project->GetNbViews(); ++v)
-		{
-			Glib::RefPtr<Gdk::Pixbuf> pb = Gdk::Pixbuf::create_from_file(project->GetDoc()->GetFilenames()[v].CStr());
-			View &page(project->GetStructure().GetViews()[v]);
+	const auto str = crn::StringUTF8(entry->get_text().c_str());
+	if (str.IsNotEmpty())
+		for (const auto &vid : doc->GetViews())
+		{ // for each view
+			const auto view = doc->GetView(vid);
+			// load image
+			auto pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
+			for (const auto &w : view.GetWords())
+			{ // for each character
+				const auto &wzone = view.GetZone(w.second.GetZone());
+				if (!wzone.GetPosition().IsValid())
+					continue;
+				// look for searched string
+				const auto &text = w.second.GetText();
+				auto pos = text.Find(str);
+				while (pos != text.NPos())
+				{ // found
+					const auto &fczone = view.GetZone(w.second.GetCharacters()[pos]);
+					if (!fczone.GetPosition().IsValid())
+						continue;
+					const auto &bczone = view.GetZone(w.second.GetCharacters()[pos + str.Size() - 1]);
+					if (!bczone.GetPosition().IsValid())
+						continue;
+					// retrieve frontiers
+					auto fronfrontier = std::vector<crn::Point2DInt>{};
+					const auto &fcont = fczone.GetContour();
+					if (fcont.empty())
+					{
+						const auto &box = fczone.GetPosition();
+						fronfrontier.emplace_back(box.GetLeft(), box.GetTop());
+						fronfrontier.emplace_back(box.GetLeft(), box.GetBottom());
+					}
+					else
+					{
+						for (auto tmp : crn::Range(fcont))
+						{
+							if (fcont[tmp].Y > fcont[tmp + 1].Y)
+								break;
+							fronfrontier.push_back(fcont[tmp]);
+						}
+					}
+					auto backfrontier = std::vector<crn::Point2DInt>{};
+					const auto &bcont = bczone.GetContour();
+					if (bcont.empty())
+					{
+						const auto &box = bczone.GetPosition();
+						backfrontier.emplace_back(box.GetRight(), box.GetTop());
+						backfrontier.emplace_back(box.GetRight(), box.GetBottom());
+					}
+					else
+					{
+						auto tmp = size_t(0);
+						for (; tmp < bcont.size(); ++tmp)
+						{
+							if (bcont[tmp].Y > bcont[tmp + 1].Y)
+								break;
+						}
+						for (; tmp < bcont.size(); ++tmp)
+							backfrontier.push_back(bcont[tmp]);
+					}
+				}
+			}
+			/*
 			for (size_t c = 0; c < page.GetColumns().size(); ++c)
 			{
 				Column &col(page.GetColumns()[c]);
@@ -1472,9 +1518,9 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 					} // for each word
 				} // for each line
 			} // for each column
+		*/
 		} // for each view
 	panel->full_refresh();
-#endif
 }
 
 void GUI::find_string()
@@ -1494,13 +1540,12 @@ void GUI::find_string()
 	dialog.get_vbox()->pack_start(*hb, false, true, 0);
 
 	// TODO
-#if 0
-	ori::ValidationPanel *panel = Gtk::manage(new ori::ValidationPanel(*project, _("Found"), project->GetDoc()->GetFilenames(), false));
+	ori::ValidationPanel *panel = Gtk::manage(new ori::ValidationPanel(*doc, _("Found"), false));
 	dialog.get_vbox()->pack_start(*panel, true, true, 2);
 
 	bt->signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &GUI::display_search), entry, panel));
 	entry->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::display_search), entry, panel));
-#endif
+
 	dialog.run();
 }
 

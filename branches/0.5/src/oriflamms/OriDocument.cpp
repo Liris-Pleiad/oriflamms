@@ -180,7 +180,13 @@ struct View::Impl
 	std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
 
 	crn::Path datapath;
-	std::unordered_map<Id, crn::Prop3> validation; // word Id
+	struct WordValidation
+	{
+		WordValidation(crn::Prop3 val): ok(val) {}
+		crn::Prop3 ok;
+		int left_corr = 0, right_corr = 0;
+	};
+	std::unordered_map<Id, WordValidation> validation; // word Id
 	std::unordered_map<Id, std::vector<GraphicalLine>> medlines; // column Id
 	std::unordered_map<Id, std::pair<Id, size_t>> line_links; // line Id -> column Id + index
 };
@@ -370,7 +376,11 @@ void View::Impl::load()
 	if (!var)
 		throw crn::ExceptionNotFound{_("No validation element in ") + crn::StringUTF8(f)};
 	for (auto el = var.BeginElement(); el != var.EndElement(); ++el)
-		validation.emplace(el.GetAttribute<Id>("id", false), el.GetAttribute<int>("ok", false));
+	{
+		auto res = validation.emplace(el.GetAttribute<Id>("id", false), crn::Prop3{el.GetAttribute<int>("ok", false)});
+		res.first->second.left_corr = el.GetAttribute<int>("left", true);
+		res.first->second.right_corr = el.GetAttribute<int>("right", true);
+	}
 	// read medlines
 	var = root.GetFirstChildElement("medlines");
 	if (!var)
@@ -404,7 +414,9 @@ void View::Impl::save()
 	{
 		auto el = var.PushBackElement("v");
 		el.SetAttribute("id", p.first);
-		el.SetAttribute("ok", p.second.GetValue());
+		el.SetAttribute("ok", p.second.ok.GetValue());
+		el.SetAttribute("left", p.second.left_corr);
+		el.SetAttribute("right", p.second.right_corr);
 	}
 	// save medlines
 	var = root.PushBackElement("medlines");
@@ -462,6 +474,10 @@ Page& View::GetPage(const Id &id)
 	return it->second;
 }
 
+const std::unordered_map<Id, Column>& View::GetColumns() const
+{
+	return pimpl->struc.columns;
+}
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
@@ -497,6 +513,10 @@ const std::vector<GraphicalLine>& View::GetGraphicalLines(const Id &id) const
 	return it->second;
 }
 
+const std::unordered_map<Id, Line>& View::GetLines() const
+{
+	return pimpl->struc.lines;
+}
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
@@ -555,6 +575,10 @@ GraphicalLine& View::GetGraphicalLine(const Id &id)
 	return pimpl->medlines[it->second.first][it->second.second];
 }
 
+const std::unordered_map<Id, Word>& View::GetWords() const
+{
+	return pimpl->struc.words;
+}
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
@@ -587,7 +611,7 @@ const crn::Prop3& View::IsValid(const Id &id) const
 	const auto it = pimpl->validation.find(id);
 	if (it == pimpl->validation.end())
 		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
-	return it->second;
+	return it->second.ok;
 }
 
 /*! 
@@ -600,9 +624,13 @@ void View::SetValid(const Id &id, const crn::Prop3 &val)
 	auto it = pimpl->validation.find(id);
 	if (it == pimpl->validation.end())
 		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
-	it->second = val;
+	it->second.ok = val;
 }
 
+const std::unordered_map<Id, Character>& View::GetCharacters() const
+{
+	return pimpl->struc.characters;
+}
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
@@ -648,45 +676,74 @@ Zone& View::GetZone(const Id &id)
 }
 
 /*! Sets the bounding box of an element
+ * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	id	the id of the element
  * \param[in]	r	the bounding box
  * \param[in]	compute_contour	shall the contour be automatically set? (computes curves at left and right ends)
  */
 void View::SetPosition(const Id &id, const crn::Rect &r, bool compute_contour)
 {
-	// TODO
-	auto zone = (Zone*)nullptr;
+	auto zid = id;
 	auto wit = pimpl->struc.words.find(id);
 	if (wit != pimpl->struc.words.end())
 	{
-		auto zid = wit->second.GetZone();
+		zid = wit->second.GetZone();
 	}
 	else
 	{
 		auto cit = pimpl->struc.characters.find(id);
 		if (cit != pimpl->struc.characters.end())
 		{
-			const auto &zid = cit->second.GetZone();
-		}
-		else
-		{
-			auto zit = pimpl->zones.find(id);
-			if (zit != pimpl->zones.end())
-				zone = &zit->second;
+			zid = cit->second.GetZone();
 		}
 	}
-	if (!zone)
-		return;
+	auto zit = pimpl->zones.find(zid);
+	if (zit != pimpl->zones.end())
+	{
+		zit->second.SetPosition(r);
+		if (compute_contour)
+			ComputeContour(zid);
+	}
+	else
+		throw crn::ExceptionNotFound("View::SetPosition(): "_s + _("Invalid zone id: ") + id);
 }
 
 /*! Sets the contour of an element
+ * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	id	the id of the element
  * \param[in]	c	the contour
  * \param[in]	set_position	shall the bounding box be automatically set?
  */
 void View::SetContour(const Id &id, const std::vector<crn::Point2DInt> &c, bool set_position)
 {
-	// TODO
+	auto zid = id;
+	auto wit = pimpl->struc.words.find(id);
+	if (wit != pimpl->struc.words.end())
+	{
+		zid = wit->second.GetZone();
+	}
+	else
+	{
+		auto cit = pimpl->struc.characters.find(id);
+		if (cit != pimpl->struc.characters.end())
+		{
+			zid = cit->second.GetZone();
+		}
+	}
+	auto zit = pimpl->zones.find(zid);
+	if (zit != pimpl->zones.end())
+	{
+		zit->second.SetContour(c);
+		if (set_position)
+		{
+			auto r = crn::Rect{c.front()};
+			for (const auto p : c)
+				r |= p;
+			zit->second.SetPosition(r);
+		}
+	}
+	else
+		throw crn::ExceptionNotFound("View::SetContour(): "_s + _("Invalid zone id: ") + id);
 }
 
 struct stepcost
@@ -730,11 +787,85 @@ struct get_neighbors
 std::vector<crn::Point2DInt> View::ComputeFrontier(size_t x, size_t y1, size_t y2) const
 {
 	return SimplifyCurve(crn::AStar(
-			crn::Point2DInt(int(x), int(y1)),
-			crn::Point2DInt(int(x), int(y2)),
-			stepcost(getWeight(), int(x)),
-			heuristic(),
-			get_neighbors(pimpl->img->GetAbsoluteBBox())), 1);
+				crn::Point2DInt(int(x), int(y1)),
+				crn::Point2DInt(int(x), int(y2)),
+				stepcost(getWeight(), int(x)),
+				heuristic(),
+				get_neighbors(pimpl->img->GetAbsoluteBBox())), 1);
+}
+
+/*! Computes the contour of a zone from its bounding box
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	zone_id	the id of a zone
+ */
+void View::ComputeContour(const Id &zone_id)
+{
+	auto zit = pimpl->zones.find(zone_id);
+	if (zit == pimpl->zones.end())
+		throw crn::ExceptionNotFound("View::CumputeContour(): "_s + _("Invalid zone id: ") + zone_id);
+	const auto &r = zit->second.GetPosition();
+	auto contour = ComputeFrontier(r.GetLeft(), r.GetTop(), r.GetBottom());
+	auto contour2 = ComputeFrontier(r.GetRight(), r.GetTop(), r.GetBottom());
+	std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
+	zit->second.SetContour(contour);
+}
+
+/*! Sets the left frontier of a word
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \throws	crn::ExceptionUninitialized	the word's zone is currently unset
+ * \param[in]	id	the id of the word
+ * \param[in]	x	position of the new left frontier
+ */
+void View::UpdateLeftFrontier(const Id &id, int x)
+{
+	auto wit = pimpl->struc.words.find(id);
+	if (wit == pimpl->struc.words.end())
+		throw crn::ExceptionNotFound("View::UpdateLeftFrontier(): "_s + _("Invalid word id: ") + id);
+	const auto zid = wit->second.GetZone();
+	auto &zone = pimpl->zones.find(zid)->second;
+	auto r = zone.GetPosition();
+	if (r.IsValid())
+	{
+		if (r.GetLeft() == x)
+			return;
+		auto &val = pimpl->validation.find(id)->second;
+		val.left_corr += crn::Abs(r.GetLeft() - x);
+		r.SetLeft(x);
+		zone.SetPosition(r);
+		if (val.right_corr)
+			val.ok = TRUE;
+	}
+	else
+		throw crn::ExceptionUninitialized("View::UpdateLeftFrontier(): "_s + _("uninitialized zone: ") + zid);
+}
+
+/*! Sets the right frontier of a word
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \throws	crn::ExceptionUninitialized	the word's zone is currently unset
+ * \param[in]	id	the id of the word
+ * \param[in]	x	position of the new right frontier
+ */
+void View::UpdateRightFrontier(const Id &id, int x)
+{
+	auto wit = pimpl->struc.words.find(id);
+	if (wit == pimpl->struc.words.end())
+		throw crn::ExceptionNotFound("View::UpdateRightFrontier(): "_s + _("Invalid word id: ") + id);
+	const auto zid = wit->second.GetZone();
+	auto &zone = pimpl->zones.find(zid)->second;
+	auto r = zone.GetPosition();
+	if (r.IsValid())
+	{
+		if (r.GetRight() == x)
+			return;
+		auto &val = pimpl->validation.find(id)->second;
+		val.right_corr += crn::Abs(r.GetRight() - x);
+		r.SetRight(x);
+		zone.SetPosition(r);
+		if (val.left_corr)
+			val.ok = TRUE;
+	}
+	else
+		throw crn::ExceptionUninitialized("View::UpdateRightFrontier(): "_s + _("uninitialized zone: ") + zid);
 }
 
 const crn::ImageGray& View::getWeight() const
@@ -861,7 +992,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += ex.what();
 		report += "\n";
 	}
-	
+
 	// read all files
 	for (const auto &id : views)
 	{
@@ -995,7 +1126,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 							wzone.SetContour(contour);
 						}
 						lbox |= wpos;
-						
+
 					} // words
 
 					if (!lzone.GetPosition().IsValid() && lbox.IsValid())
