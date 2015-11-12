@@ -11,6 +11,8 @@
 #include <CRNAI/CRNPathFinding.h>
 #include <CRNImage/CRNDifferential.h>
 #include <OriTEIImporter.h>
+#include <OriViewImpl.h>
+
 #include <CRNi18n.h>
 
 #include <iostream>
@@ -158,39 +160,6 @@ const std::vector<Id>& Line::GetWords() const
 //////////////////////////////////////////////////////////////////////////////////
 // View::Impl
 //////////////////////////////////////////////////////////////////////////////////
-struct View::Impl
-{
-	Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &base, const crn::StringUTF8 &projname);
-	~Impl();
-	void readZoneWElements(crn::xml::Element &el);
-	void readLinkElements(crn::xml::Element &el);
-	void load();
-	void save();
-
-	Id id;
-	crn::SBlock img;
-	crn::Path imagename;
-	mutable crn::SImageGray weight;
-
-	Document::ViewStructure &struc;
-	std::unordered_map<Id, Zone> zones;
-
-	crn::xml::Document zonesdoc;
-	crn::xml::Document linksdoc;
-	std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
-
-	crn::Path datapath;
-	struct WordValidation
-	{
-		WordValidation(crn::Prop3 val): ok(val) {}
-		crn::Prop3 ok;
-		int left_corr = 0, right_corr = 0;
-	};
-	std::unordered_map<Id, WordValidation> validation; // word Id
-	std::unordered_map<Id, std::vector<GraphicalLine>> medlines; // column Id
-	std::unordered_map<Id, std::pair<Id, size_t>> line_links; // line Id -> column Id + index
-};
-
 View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &base, const crn::StringUTF8 &projname):
 	id(surfid),
 	struc(s)
@@ -208,8 +177,8 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	if (!grel)
 		throw crn::ExceptionNotFound(projname + "_" + id + "-zones.xml: " + _("no graphic element."));
 	imagename = base / IMGDIR / grel.GetAttribute<crn::StringUTF8>("url", false);
-	img = crn::Block::New(crn::NewImageFromFile(imagename));
-	readZoneWElements(el);
+	//img = crn::Block::New(crn::NewImageFromFile(imagename));
+	readZoneElements(el);
 
 	// read LINKDIR/projname_id-links.xml for boxes
 	linksdoc = crn::xml::Document{base / LINKDIR / projname + "_" + crn::Path{id} + "-links.xml"};
@@ -270,7 +239,7 @@ View::Impl::~Impl()
 	save();
 }
 
-void View::Impl::readZoneWElements(crn::xml::Element &el)
+void View::Impl::readZoneElements(crn::xml::Element &el)
 {
 	if (el.GetName() == "zone")
 	{
@@ -278,7 +247,7 @@ void View::Impl::readZoneWElements(crn::xml::Element &el)
 		zones.emplace(id, Zone{el});
 	}
 	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
-		readZoneWElements(sel);
+		readZoneElements(sel);
 }
 
 void View::Impl::readLinkElements(crn::xml::Element &el)
@@ -300,9 +269,7 @@ void View::Impl::readLinkElements(crn::xml::Element &el)
 				if (target.StartsWith("txt:"))
 					txtid = target.SubString(4, 0);
 				else if (target.StartsWith("img:"))
-				{
 					zoneid = target.SubString(4, 0);
-				}
 				else
 					throw crn::ExceptionInvalidArgument(id + "-links: " + _("invalid target base."));
 			}
@@ -450,6 +417,15 @@ View::View() = default;
 View::~View() = default;
 
 const crn::Path& View::GetImageName() const noexcept { return pimpl->imagename; }
+
+/*! Gets the image */
+crn::Block& View::GetBlock() const
+{
+	if (!pimpl->img)
+		pimpl->img = crn::Block::New(crn::NewImageFromFile(pimpl->imagename));
+	return *pimpl->img;
+}
+
 const std::vector<Id>& View::GetPages() const noexcept { return pimpl->struc.pageorder; }
 
 /*! 
@@ -513,6 +489,45 @@ const std::vector<GraphicalLine>& View::GetGraphicalLines(const Id &id) const
 	return it->second;
 }
 
+/*! Adds a median line to a column
+ * \param[in]	pts	the median line
+ * \param[in]	id	the id of a column
+ */
+void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &id)
+{
+	auto &col = pimpl->medlines[id];
+	// estimate line height
+	auto lh = std::vector<size_t>{};
+	for (const auto &l : col)
+		lh.push_back(l.GetLineHeight());
+	auto h = size_t(10); // XXX stupid default value
+	if (!lh.empty())
+	{
+		std::sort(lh.begin(), lh.end());
+		h = lh[lh.size() / 2];
+	}
+	// add line
+	col.emplace_back(std::make_shared<crn::LinearInterpolation>(pts.begin(), pts.end()), h);
+	std::sort(col.begin(), col.end(), 
+			[](const GraphicalLine &l1, const GraphicalLine &l2)
+			{
+				return l1.GetFront().Y < l2.GetFront().Y;
+			});
+}
+
+/*! Removes a median line from a column
+ * \throws	crn::ExceptionDomain	index > number of lines
+ * \param[in]	id	the id of a column
+ * \param[in]	index	the number of the line
+ */
+void View::RemoveGraphicalLine(const Id &id, size_t index)
+{
+	auto &col = pimpl->medlines[id];
+	if (index > col.size())
+		throw crn::ExceptionDomain("View::RemoveGraphicalLine(): "_s + _("index is greater than the number of lines."));
+	col.erase(col.begin() + index);
+}
+
 const std::unordered_map<Id, Line>& View::GetLines() const
 {
 	return pimpl->struc.lines;
@@ -573,6 +588,19 @@ GraphicalLine& View::GetGraphicalLine(const Id &id)
 		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + id};
 
 	return pimpl->medlines[it->second.first][it->second.second];
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of a line
+ * \return	the median line's index
+ */
+size_t View::GetGraphicalLineIndex(const Id &id) const
+{
+	auto it = pimpl->line_links.find(id);
+	if (it == pimpl->line_links.end())
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+	return it->second.second;
 }
 
 const std::unordered_map<Id, Word>& View::GetWords() const
@@ -791,7 +819,7 @@ std::vector<crn::Point2DInt> View::ComputeFrontier(size_t x, size_t y1, size_t y
 				crn::Point2DInt(int(x), int(y2)),
 				stepcost(getWeight(), int(x)),
 				heuristic(),
-				get_neighbors(pimpl->img->GetAbsoluteBBox())), 1);
+				get_neighbors(GetBlock().GetAbsoluteBBox())), 1);
 }
 
 /*! Computes the contour of a zone from its bounding box
@@ -879,11 +907,11 @@ const crn::ImageGray& View::getWeight() const
 		}
 		catch (...)
 		{
-			auto diff = crn::Differential::NewGaussian(*pimpl->img->GetRGB(), crn::Differential::RGBProjection::ABSMAX, 0);
+			auto diff = crn::Differential::NewGaussian(*GetBlock().GetRGB(), crn::Differential::RGBProjection::ABSMAX, 0);
 			diff.Diffuse(5);
 			pimpl->weight = std::make_shared<crn::ImageGray>(crn::Downgrade<crn::ImageGray>(diff.MakeLaplacian()));
 			for (auto tmp : Range(*pimpl->weight))
-				pimpl->weight->At(tmp) = uint8_t(pimpl->weight->At(tmp) / 2 + 127 - pimpl->img->GetGray()->At(tmp) / 2);
+				pimpl->weight->At(tmp) = uint8_t(pimpl->weight->At(tmp) / 2 + 127 - GetBlock().GetGray()->At(tmp) / 2);
 			pimpl->weight->SavePNG(wname);
 		}
 	}
@@ -997,6 +1025,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 	for (const auto &id : views)
 	{
 		auto v = GetView(id);
+		auto need_lines = false;
 		// index and compute boxes if needed
 		for (auto &p : v.pimpl->struc.pages)
 		{ // for each page
@@ -1010,7 +1039,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 				el = el.GetFirstChildElement("surface");
 				el = el.PushBackElement("zone");
 				el.SetAttribute("type", "page");
-				const auto &pbox = v.pimpl->img->GetAbsoluteBBox();
+				const auto &pbox = v.GetBlock().GetAbsoluteBBox();
 				el.SetAttribute("ulx", pbox.GetLeft());
 				el.SetAttribute("uly", pbox.GetTop());
 				el.SetAttribute("lrx", pbox.GetRight());
@@ -1026,7 +1055,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 
 			auto pbox = crn::Rect{};
 			for (auto &cid : p.second.GetColumns())
-			{
+			{ // columns
 				positions.emplace(cid, ElementPosition{id, p.first});
 
 				auto &col = v.GetColumn(cid);
@@ -1046,7 +1075,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 
 				auto cbox = crn::Rect{};
 				for (auto &lid : col.GetLines())
-				{
+				{ // lines
 					positions.emplace(lid, ElementPosition{id, p.first, cid});
 
 					auto &line = v.GetLine(lid);
@@ -1065,8 +1094,9 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 					auto &lzone = v.GetZone(line.GetZone());
 
 					auto lbox = crn::Rect{};
+					auto medianline = std::vector<crn::Point2DInt>{};
 					for (auto &wid : line.GetWords())
-					{
+					{ // words
 						positions.emplace(wid, ElementPosition{id, p.first, cid, lid});
 
 						auto &word = v.GetWord(wid);
@@ -1085,7 +1115,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 						auto &wzone = v.GetZone(word.GetZone());
 
 						for (const auto &cid : word.GetCharacters())
-						{
+						{ // characters
 							positions.emplace(wid, ElementPosition{id, p.first, cid, lid, wid});
 
 							auto &cha = v.GetCharacter(cid);
@@ -1117,31 +1147,65 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 						}
 
 						const auto &wpos = wzone.GetPosition();
-						if (wpos.IsValid() && wzone.GetContour().empty())
+						if (wpos.IsValid())
 						{
-							// compute contour
-							auto contour = v.ComputeFrontier(wpos.GetLeft(), wpos.GetTop(), wpos.GetBottom());
-							auto contour2 = v.ComputeFrontier(wpos.GetRight(), wpos.GetTop(), wpos.GetBottom());
-							std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
-							wzone.SetContour(contour);
+							if (medianline.empty())
+								medianline.emplace_back(wpos.GetLeft(), wpos.GetCenterY());
+							medianline.emplace_back(wpos.GetRight(), wpos.GetCenterY());
+							if (wzone.GetContour().empty())
+							{ // compute contour
+								auto contour = v.ComputeFrontier(wpos.GetLeft(), wpos.GetTop(), wpos.GetBottom());
+								auto contour2 = v.ComputeFrontier(wpos.GetRight(), wpos.GetTop(), wpos.GetBottom());
+								std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
+								wzone.SetContour(contour);
+							}
 						}
 						lbox |= wpos;
-
 					} // words
 
 					if (!lzone.GetPosition().IsValid() && lbox.IsValid())
 						lzone.SetPosition(lbox);
+					
+					if (!medianline.empty())
+					{
+						try
+						{
+							auto &gl = v.GetGraphicalLine(lid);
+							if (gl.GetMidline().empty())
+								gl.SetMidline(medianline);
+						}
+						catch (...)
+						{
+							v.pimpl->medlines[cid].emplace_back(std::make_shared<crn::LinearInterpolation>(medianline.begin(), medianline.end()), lbox.GetHeight());
+							v.pimpl->line_links.emplace(lid, std::make_pair(cid, v.pimpl->medlines[cid].size() - 1));
+						}
+					}
+
 					cbox |= lzone.GetPosition();
 				} // lines
 
-				if (!czone.GetPosition().IsValid() && cbox.IsValid())
-					czone.SetPosition(cbox);
+				if (!czone.GetPosition().IsValid())
+				{
+					if (cbox.IsValid())
+						czone.SetPosition(cbox);
+					else
+					{ // need to compute median lines from scratch
+						if (v.GetGraphicalLines(cid).empty())
+							need_lines = true;
+					}
+				}
 				pbox |= czone.GetPosition();
 			} // columns
 
-			if (!pzone.GetPosition().IsValid() && pbox.IsValid())
-				pzone.SetPosition(pbox);
+			if (!pzone.GetPosition().IsValid())
+			{
+				if (pbox.IsValid())
+					pzone.SetPosition(pbox);
+			}
+
 		} // pages
+		if (need_lines)
+			v.detectLines();
 	}
 }
 

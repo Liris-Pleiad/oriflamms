@@ -79,9 +79,7 @@ namespace ori
 			sigc::connection line_rem_connection;
 			sigc::connection line_add_point_connection;
 			sigc::connection line_rem_point_connection;
-#if 0
 			std::unique_ptr<Validation> validation_win;
-#endif
 			AlignDialog aligndial;
 
 			std::unique_ptr<Document> doc;

@@ -16,9 +16,6 @@
 
 namespace ori
 {
-	class View;
-	/*! \brief Detect lines and columns on an image */
-	crn::SVector DetectLines(crn::Block &b, const View &view);
 	/*! \brief Reduces the number of points in a curve */
 	std::vector<crn::Point2DInt> SimplifyCurve(const std::vector<crn::Point2DInt> &line, double maxdist);
 	/*! \brief Reduces the number of points in a curve */

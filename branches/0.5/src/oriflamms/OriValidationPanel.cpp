@@ -358,7 +358,7 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 					msg += _("Page") + " "_s + wordpath.page + "\n";
 					msg += _("Column") + " "_s += wordpath.column + "\n";
 					msg += _("Line") + " "_s + wordpath.line + "\n";
-					msg += _("Word") + " "_s + wordpath.word;
+					msg += _("Word") + " "_s + tipword;
 					tiplab.set_text(msg.CStr());
 
 					tipimg.set(Gtk::Stock::REFRESH, Gtk::ICON_SIZE_DIALOG);
@@ -445,12 +445,12 @@ void ValidationPanel::load_tooltip_img()
 
 		}
 	for (auto j = size_t(0); j < tippb->get_height(); ++j)
-		for (auto i = frontier; i < contour.size() - 1; ++i)
+		for (auto i = frontier + 1; i < contour.size(); ++i)
 		{
 			auto x1 = contour[i].X - bbox.GetLeft() + 20;
 			auto y1 = contour[i].Y - bbox.GetTop();
-			auto x2 = contour[i + 1].X - bbox.GetLeft() + 20;
-			auto y2 = contour[i + 1].Y - bbox.GetTop();
+			auto x2 = contour[i - 1].X - bbox.GetLeft() + 20;
+			auto y2 = contour[i - 1].Y - bbox.GetTop();
 			if (j == y2)
 			{
 				//pixs[(int(x2) * channels + j * rowstride) + 3] = 128;

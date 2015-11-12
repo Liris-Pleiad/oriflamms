@@ -16,6 +16,7 @@
 #include <OriTEIImporter.h>
 #include <OriEntityDialog.h>
 #include <OriStruct.h>
+#include <CRNUtils/CRNAtScopeExit.h>
 #include <gtkmm/accelmap.h>
 
 using namespace ori;
@@ -338,7 +339,9 @@ void GUI::load_project()
 			for (const auto fname : dir.GetFiles())
 				if (fname.EndsWith("-c.xml"))
 				{
-					TEIImporter impdial{fname, *this};
+					auto fname2 = fname;
+					fname2[fname2.Size() - 5] = 'w';
+					TEIImporter impdial{fname, fname2, *this};
 					if (impdial.run() == Gtk::RESPONSE_ACCEPT)
 					{
 						impdial.hide();
@@ -539,101 +542,62 @@ void GUI::add_line()
 			plist.push_back(pts.second);
 			plist.push_back(pts.first);
 		}
-		// TODO
-#if 0
-		// get column data
-		auto b = doc->GetView(current_view_id);
-		auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
 		auto it = tv.get_selection()->get_selected();
-		size_t colid = it->get_value(columns.index);
-		auto lines = std::static_pointer_cast<crn::Vector>(cols->At(colid));
-		// find where to place the new line
-		auto lh = size_t(0);
-		auto pos = std::numeric_limits<size_t>::max();
-		for (auto lnum : crn::Range(*lines))
-		{
-			auto l = std::static_pointer_cast<GraphicalLine>(lines->At(lnum));
-			lh = l->GetLineHeight();
-			if (l->GetFront().Y > plist.front().Y)
-			{
-				pos = lnum;
-				break;
-			}
-		}
-		// add the line
-		if (lh == 0)
-		{
-			// TODO ask for line height
-			lh = 10; // XXX
-		}
-		if (pos == std::numeric_limits<size_t>::max())
-			lines->PushBack(std::make_shared<GraphicalLine>(std::make_shared<crn::LinearInterpolation>(plist.begin(), plist.end()), lh));
-		else
-			lines->Insert(std::make_shared<GraphicalLine>(std::make_shared<crn::LinearInterpolation>(plist.begin(), plist.end()), lh), pos);
+		auto colid = Id{it->get_value(columns.id).c_str()};
+		current_view.AddGraphicalLine(plist, colid);
+
+#if 0
+		// TODO
 		// clear column alignment
 		project->ClearAlignment(current_view_id, colid);
+#endif
 		// update display
-		auto s = int(lines->Size()) + " "_s;
+		auto s = int(current_view.GetGraphicalLines(colid).size()) + " "_s;
 		s += _("line(s)");
 		it->set_value(columns.image, Glib::ustring(s.CStr()));
 		img.clear_selection();
 		tree_selection_changed(false);
-#endif
 	}
 	catch (...) { }
 }
 
 void GUI::rem_line(const Id &l)
 {
-	// TODO
+	const auto colid = doc->GetPosition(l).column;
+	current_view.RemoveGraphicalLine(colid, current_view.GetGraphicalLineIndex(l));
 #if 0
-	// remove line
-	auto b = project->GetDoc()->GetView(v);
-	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
-	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
-	lines->Remove(l);
+	// TODO
 	// clear column alignment
 	project->ClearAlignment(v, c);
+#endif
 	// update display
-	auto s = int(lines->Size()) + " "_s;
+	auto s = int(current_view.GetGraphicalLines(colid).size()) + " "_s;
 	s += _("line(s)");
 	auto it = tv.get_selection()->get_selected(); // XXX this expects the removed line to be on the selected view!
 	it->set_value(columns.image, Glib::ustring(s.CStr()));
 	img.clear_selection();
 	tree_selection_changed(false);
-#endif
 }
 
 void GUI::add_point_to_line(const Id &l, int x, int y)
 {
-	// TODO
-#if 0
-	auto b = project->GetDoc()->GetView(v);
-	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
-	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
-	auto line = std::static_pointer_cast<GraphicalLine>(lines->At(l));
+	auto &line = current_view.GetGraphicalLine(l);
 	auto pts = std::vector<crn::Point2DInt>{};
-	for (const auto &p : line->GetMidline()) // get a copy of the points
+	for (const auto &p : line.GetMidline()) // get a copy of the points
 		pts.emplace_back(int(p.X), int(p.Y));
 	auto newpt = crn::Point2DInt(x, y);
 	auto it = std::upper_bound(pts.begin(), pts.end(), newpt, [](const crn::Point2DInt &p1, const crn::Point2DInt &p2){ return p1.X < p2.X; });
 	pts.insert(it, newpt);
-	line->SetMidline(pts);
+	line.SetMidline(pts);
 	set_need_save();
-	display_line(v, c, l); // refresh
-#endif
+	display_line(l); // refresh
 }
 
 void GUI::rem_point_from_line(const Id &l, int x, int y)
 {
-	// TODO
-#if 0
-	auto b = project->GetDoc()->GetView(v);
-	auto cols = std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey));
-	auto lines = std::static_pointer_cast<crn::Vector>(cols->At(c));
-	auto line = std::static_pointer_cast<GraphicalLine>(lines->At(l));
+	auto &line = current_view.GetGraphicalLine(l);
 	auto pts = std::vector<crn::Point2DInt>{};
-	for (const auto &p : line->GetMidline()) // get a copy of the points
+	for (const auto &p : line.GetMidline()) // get a copy of the points
 		pts.emplace_back(int(p.X), int(p.Y));
 	if (pts.size() <= 2)
 	{
@@ -651,10 +615,9 @@ void GUI::rem_point_from_line(const Id &l, int x, int y)
 		}
 	}
 	pts.erase(rit);
-	line->SetMidline(pts);
+	line.SetMidline(pts);
 	set_need_save();
-	display_line(v, c, l); // refresh
-#endif
+	display_line(l); // refresh
 }
 
 Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
@@ -1009,7 +972,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		if (overlay_item_id.IsEmpty())
 			return;
 		// get id
-		const auto linid = overlay_item_id.ToInt();
+		const auto linid = Id{overlay_item_id};
 		Gtk::TreeIter it(tv.get_selection()->get_selected());
 		if (view_depth == ViewDepth::Line)
 		{
@@ -1020,25 +983,18 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 			return;
 		const auto colid = Id{it->get_value(columns.id).c_str()};
 		// set line bounds
-		// TODO
-#if 0
-		crn::SBlock b(project->GetDoc()->GetView(current_view_id));
-		crn::SVector cols(std::static_pointer_cast<crn::Vector>(b->GetUserData(ori::Project::LinesKey)));
-		crn::SVector lines(std::static_pointer_cast<crn::Vector>(cols->At(colid)));
-		SGraphicalLine l(std::static_pointer_cast<GraphicalLine>(lines->At(linid)));
+		auto &l = current_view.GetGraphicalLine(linid);
 		GtkCRN::Image::OverlayItem &item(img.get_overlay_item(overlay_id, overlay_item_id));
-
 		GtkCRN::Image::Polygon &po = static_cast<GtkCRN::Image::Polygon&>(item);
-		l->SetMidline(po.points);
-
-		/*
+		l.SetMidline(po.points);
+#if 0
+		// TODO
 		// realign
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t i = pw.add_progress_bar("");
 		pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
 		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), current_view_id, colid, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
 		project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected();
-		*/
 #endif
 		set_need_save();
 		display_line(linid); // refresh
@@ -1212,11 +1168,11 @@ void GUI::align_all()
 
 void GUI::validate()
 {
-	// TODO
-#if 0
-	validation_win = std::make_unique<Validation>(*this, *project, Glib::RefPtr<Gtk::RadioAction>::cast_dynamic(actions->get_action("validation-batch"))->get_active(), true, std::bind(std::mem_fn(&GUI::set_need_save), this), std::bind(std::mem_fn(&GUI::tree_selection_changed), this, false));
+	validation_win = std::make_unique<Validation>(*this, *doc, 
+			Glib::RefPtr<Gtk::RadioAction>::cast_dynamic(actions->get_action("validation-batch"))->get_active(), 
+			true, std::bind(std::mem_fn(&GUI::set_need_save), this), 
+			std::bind(std::mem_fn(&GUI::tree_selection_changed), this, false));
 	validation_win->show();
-#endif
 }
 
 void GUI::set_need_save()
@@ -1269,8 +1225,6 @@ void GUI::change_font()
 	}
 }
 
-
-
 void GUI::stats()
 {
 	// TODO
@@ -1317,7 +1271,6 @@ void GUI::clear_sig()
 #endif
 }
 
-
 void GUI::propagate_validation()
 {
 	// TODO
@@ -1360,10 +1313,19 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 				auto pos = text.Find(str);
 				while (pos != text.NPos())
 				{ // found
-					const auto &fczone = view.GetZone(w.second.GetCharacters()[pos]);
+					auto at_exit = [&pos, &text, &str]()
+							{
+								if (pos + str.Size() < text.Size())
+									pos = text.Find(str, pos + str.Size());
+								else
+									pos = crn::String::NPos();
+							};
+					AtScopeExit(at_exit); // find next occurrence before looping
+
+					const auto &fczone = view.GetZone(view.GetCharacter(w.second.GetCharacters()[pos]).GetZone());
 					if (!fczone.GetPosition().IsValid())
 						continue;
-					const auto &bczone = view.GetZone(w.second.GetCharacters()[pos + str.Size() - 1]);
+					const auto &bczone = view.GetZone(view.GetCharacter(w.second.GetCharacters()[pos + str.Size() - 1]).GetZone());
 					if (!bczone.GetPosition().IsValid())
 						continue;
 					// retrieve frontiers
@@ -1403,122 +1365,83 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 						for (; tmp < bcont.size(); ++tmp)
 							backfrontier.push_back(bcont[tmp]);
 					}
+					// create image of the string
+					const auto min_y = fronfrontier.front().Y;
+					const auto max_y = fronfrontier.back().Y;
+
+					auto min_x = fronfrontier.front().X;
+					for (const auto &p : fronfrontier)
+						if (p.X < min_x)
+							min_x = p.X;
+
+					auto max_x = backfrontier.front().X;
+					for (const auto &p : backfrontier)
+						if (p.X > max_x)
+							max_x = p.X;
+					if (max_x - min_x == 0)
+						break;
+
+					const auto &bbox = wzone.GetPosition();
+					auto wpb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, bbox.GetHeight());
+					pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, bbox.GetHeight(), wpb, 0, 0);
+
+					if (!wpb->get_has_alpha())
+						wpb = wpb->add_alpha(true, 255, 255, 255);
+					auto* pixs = wpb->get_pixels();
+					const auto rowstrides = wpb->get_rowstride();
+					const auto channels = wpb->get_n_channels();
+
+					for (auto j = size_t(0); j < wpb->get_height(); ++j)
+					{
+						auto x = 0;
+						for (auto i = size_t(0); i < fronfrontier.size() - 1; ++i)
+						{
+							const auto x1 = fronfrontier[i].X - min_x;
+							const auto y1 = fronfrontier[i].Y - min_y;
+							const auto x2 = fronfrontier[i + 1].X - min_x;
+							const auto y2 = fronfrontier[i + 1].Y - min_y;
+
+							if (j == y2)
+								x = x2;
+							if (j == y1)
+								x = x1;
+							if ((j < y2) && (j > y1))
+								x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+						}
+						for (auto k = 0; k <= crn::Min(x, wpb->get_width() - 1); ++k)
+							pixs[k * channels + j * rowstrides + 3] = 0;
+
+						auto xx = 0;
+						for (auto i = size_t(0); i < backfrontier.size() - 1; ++i)
+						{
+							const auto x1 = backfrontier[i].X - min_x;
+							const auto y1 = backfrontier[i].Y - min_y;
+							const auto x2 = backfrontier[i + 1].X - min_x;
+							const auto y2 = backfrontier[i + 1].Y - min_y;
+
+							if (j == y2)
+								xx = x2;
+							if (j == y1)
+								xx = x1;
+							if ((j < y2) && (j > y1))
+								xx = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+						}
+						for (auto k = crn::Max(xx, 0); k < wpb->get_width(); ++k)
+							pixs[k * channels + j * rowstrides + 3] = 0;
+					}
+
+					if (view.IsValid(w.first).IsFalse())
+					{
+						// add to reject list
+						panel->add_element(wpb, panel->label_ko, w.first, pos);
+					}
+					else if (view.IsValid(w.first).IsTrue())
+						panel->add_element(wpb, panel->label_ok, w.first, pos);
+					else
+						panel->add_element(wpb, panel->label_unknown, w.first, pos);
+
 				}
 			}
-			/*
-			for (size_t c = 0; c < page.GetColumns().size(); ++c)
-			{
-				Column &col(page.GetColumns()[c]);
-				for (size_t l = 0; l < col.GetLines().size(); ++l)
-				{
-					Line &line(col.GetLines()[l]);
-					for (size_t w = 0; w < line.GetWords().size(); ++w)
-					{
-						Word &oriword(line.GetWords()[w]);
-						crn::String text(oriword.GetText().CStr());
-						size_t pos = text.Find(wstring);
-						while (pos != text.NPos())
-						{
-							//if (oriword.GetCharacterFrontiers().empty())
-							//continue;
-							if (!oriword.IsAligned())
-								break;
-
-							// create small image (not using subpixbuf since it keeps a reference to the original image)
-							std::vector<crn::Point2DInt> fronfrontier(oriword.GetCharacterFront(pos));
-							std::vector<crn::Point2DInt> backfrontier(oriword.GetCharacterBack(pos + wstring.Length() - 1));
-
-							int max_x = backfrontier[0].X;
-							int min_x = fronfrontier[0].X;
-
-							int min_y = fronfrontier[0].Y;
-							int max_y = fronfrontier.back().Y;
-
-							for (size_t i = 0; i < backfrontier.size(); ++i)
-							{
-								if(backfrontier[i].X > max_x)
-									max_x = backfrontier[i].X;
-							}
-							for (size_t i = 0; i < fronfrontier.size(); ++i)
-							{
-								if(fronfrontier[i].X < min_x)
-									min_x = fronfrontier[i].X;
-							}
-							if(max_x -min_x == 0)
-								break;
-							crn::Rect bbox(oriword.GetBBox());
-							Glib::RefPtr<Gdk::Pixbuf> wpb(Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, bbox.GetHeight()));
-
-							pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, bbox.GetHeight(), wpb, 0, 0);
-
-							if(!wpb->get_has_alpha())
-								wpb = wpb->add_alpha(true, 255, 255, 255);
-							guint8* pixs = wpb->get_pixels();
-							int rowstrides = wpb->get_rowstride();
-							int channels = wpb->get_n_channels();
-
-							for(size_t j = 0; j < wpb->get_height(); ++ j)
-							{
-								int x = 0;
-								for(size_t i = 0; i < fronfrontier.size() - 1; ++ i)
-								{
-									double x1 = double(fronfrontier[i].X - min_x);
-									double y1 = double(fronfrontier[i].Y - min_y);
-									double x2 = double(fronfrontier[i + 1].X - min_x);
-									double y2 = double(fronfrontier[i + 1].Y - min_y);
-
-									if (double(j) == y2)
-										x = int(x2);
-
-									if (double(j) == y1)
-										x = int(x1);
-
-									if ((double(j) < y2) && (double(j) > y1))
-										x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
-								}
-								for (int k = 0; k <= crn::Min(x, wpb->get_width() - 1); ++k)
-									pixs[(k * channels + j * rowstrides )+3] = 0;
-
-								int xx = 0;
-								for(size_t i = 0; i < backfrontier.size() - 1; ++ i)
-								{
-									double x1 = double(backfrontier[i].X - oriword.GetBBox().GetLeft());
-									double y1 = double(backfrontier[i].Y - oriword.GetBBox().GetTop());
-									double x2 = double(backfrontier[i + 1].X - oriword.GetBBox().GetLeft());
-									double y2 = double(backfrontier[i + 1].Y - oriword.GetBBox().GetTop());
-									if (double(j) == y2)
-										xx = int(x2);
-
-									if (double(j) == y1)
-										xx = int(x1);
-
-									if ((double(j) < y2) && (double(j) > y1))
-										xx = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
-
-								}
-								for (int k = crn::Max(xx, 0); k < wpb->get_width(); ++k)
-									pixs[(k * channels + j * rowstrides )+3] = 0;
-							}
-							if (oriword.GetValid().IsFalse())
-							{
-								// add to reject list
-								panel->add_element(wpb, panel->label_ko, Id(v, c, l, w), pos);
-							}
-							else if (oriword.GetValid().IsTrue())
-								panel->add_element(wpb, panel->label_ok, Id(v, c, l, w), pos);
-							else
-								panel->add_element(wpb, panel->label_unknown, Id(v, c, l, w), pos);
-
-							if (pos + wstring.Length() < text.Size())
-								pos = text.Find(wstring, pos + wstring.Length());
-							else
-								pos = crn::String::NPos();
-						} // found text
-
-					} // for each word
-				} // for each line
-			} // for each column
-		*/
 		} // for each view
 	panel->full_refresh();
 }
@@ -1539,7 +1462,6 @@ void GUI::find_string()
 	hb->pack_start(*bt, false, true, 0);
 	dialog.get_vbox()->pack_start(*hb, false, true, 0);
 
-	// TODO
 	ori::ValidationPanel *panel = Gtk::manage(new ori::ValidationPanel(*doc, _("Found"), false));
 	dialog.get_vbox()->pack_start(*panel, true, true, 2);
 

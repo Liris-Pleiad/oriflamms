@@ -193,6 +193,8 @@ namespace ori
 
 			/*! \brief Full path of the image */
 			const crn::Path& GetImageName() const noexcept;
+			/*! \brief Gets the image */
+			crn::Block& GetBlock() const;
 
 			/*! \brief Returns the ordered list of pages' id */
 			const std::vector<Id>& GetPages() const noexcept;
@@ -204,6 +206,10 @@ namespace ori
 			Column& GetColumn(const Id &id);
 			/*! \brief Returns all median lines of a column */
 			const std::vector<GraphicalLine>& GetGraphicalLines(const Id &id) const;
+			/*! \brief Adds a median line to a column */
+			void AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &id);
+			/*! \brief Removes a median line from a column */
+			void RemoveGraphicalLine(const Id &id, size_t index);
 
 			const std::unordered_map<Id, Line>& GetLines() const;
 			const Line& GetLine(const Id &id) const;
@@ -212,6 +218,8 @@ namespace ori
 			const GraphicalLine& GetGraphicalLine(const Id &id) const;
 			/*! \brief Returns the median line of a text line */
 			GraphicalLine& GetGraphicalLine(const Id &id);
+			/*! \brief Returns the median line's index of a text line */
+			size_t GetGraphicalLineIndex(const Id &id) const;
 
 			const std::unordered_map<Id, Word>& GetWords() const;
 			const Word& GetWord(const Id &id) const;
@@ -246,6 +254,7 @@ namespace ori
 			View(const std::shared_ptr<Impl> &ptr):pimpl(ptr) { }
 			const crn::ImageGray& getWeight() const;
 			Id addZone(Id id_base, crn::xml::Element &elem);
+			void detectLines();
 
 			std::shared_ptr<Impl> pimpl;
 			

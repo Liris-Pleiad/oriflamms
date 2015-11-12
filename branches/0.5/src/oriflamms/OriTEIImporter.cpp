@@ -63,10 +63,11 @@ crn::xml::Element TEISelectionNode::serialize(crn::xml::Element &parent) const
 /////////////////////////////////////////////////////////////////////
 
 /*!
- * \param[in]	path	path to an XML TEI file
+ * \param[in]	path1	path to an XML TEI file
+ * \param[in]	path2	path to an XML TEI file
  * \param[in]	parent	the parent window
  */
-TEIImporter::TEIImporter(const crn::Path &path, Gtk::Window &parent):
+TEIImporter::TEIImporter(const crn::Path &path1, const crn::Path &path2, Gtk::Window &parent):
 	Gtk::Dialog(_("Node selection"), parent, true)
 {
 	resize(100,600);
@@ -100,7 +101,7 @@ TEIImporter::TEIImporter(const crn::Path &path, Gtk::Window &parent):
 	Gtk::CellRendererToggle* renderer = dynamic_cast<Gtk::CellRendererToggle*>(view.get_column_cell_renderer(0));
 	renderer->signal_toggled().connect(sigc::mem_fun(this, &TEIImporter::on_row_checked));
 
-	xdoc = EntityManager::ExpandXML(path); // may throw
+	auto xdoc = EntityManager::ExpandXML(path1); // may throw
 	auto root = xdoc->GetRoot();
 
 	auto row = *treestore->append();
@@ -109,6 +110,12 @@ TEIImporter::TEIImporter(const crn::Path &path, Gtk::Window &parent):
 	auto tocollapse = std::set<Gtk::TreePath>{};
 	for (auto n = root.BeginNode(); n != root.EndNode(); ++n)
 		fill_tree(n, row, toexpand, tocollapse);
+
+	xdoc = EntityManager::ExpandXML(path2); // may throw
+	root = xdoc->GetRoot();
+	for (auto n = root.BeginNode(); n != root.EndNode(); ++n)
+		fill_tree(n, row, toexpand, tocollapse);
+
 	// expand to selected rows
 	for (const auto &p : toexpand)
 	{

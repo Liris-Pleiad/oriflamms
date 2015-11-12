@@ -58,7 +58,7 @@ namespace ori
 	class TEIImporter: public Gtk::Dialog
 	{
 		public:
-			TEIImporter(const crn::Path &path, Gtk::Window &parent);
+			TEIImporter(const crn::Path &path1, const crn::Path &path2, Gtk::Window &parent);
 			virtual ~TEIImporter(void) override {}
 
 			TEISelectionNode export_selected_elements() const;
@@ -78,7 +78,6 @@ namespace ori
 			};
 
 			recolumn column;
-			std::unique_ptr<crn::xml::Document> xdoc;
 
 			Gtk::ScrolledWindow scrollwin;
 			Gtk::TreeView view;

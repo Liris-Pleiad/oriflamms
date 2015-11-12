@@ -18,12 +18,10 @@ namespace ori
 	/*! \brief Word tabular validation */
 	class Validation: public Gtk::Window
 	{
-#if 0
-
 		public:
-			Validation(Gtk::Window &parent, Project &proj, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc);
+			Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc);
 			virtual ~Validation() override {}
-			std::map<crn::String, std::vector<WordPath> > get_words_path(){return words;}
+			const std::map<crn::StringUTF8, std::vector<Id>>& get_word_ids() { return words; }
 
 		private:
 			void update_words(crn::Progress *prog);
@@ -50,14 +48,13 @@ namespace ori
 			ValidationPanel okwords, kowords;
 
 			// attributes
-			Project &project;
-			std::map<crn::String, std::vector<WordPath> > words;
+			Document &doc;
+			std::map<crn::StringUTF8, std::vector<Id> > words;
 			bool firstrun;
-			std::set<WordPath> needconfirm;
+			std::set<Id> needconfirm;
 			bool needsave, batch, clustering;
 			std::function<void(void)> saveatclose;
 			std::function<void(void)> refreshatclose;
-#endif
 	};
 }
 
