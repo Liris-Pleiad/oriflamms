@@ -91,7 +91,7 @@ GUI::GUI():
 	// Alignment menu
 	actions->add(Gtk::Action::create("align-menu", _("_Alignment"), _("Alignment")));
 
-	actions->add(Gtk::Action::create("align-clear-sig", Gtk::Stock::CLEAR, _("_Clear signatures"), _("Clear signatures")), sigc::mem_fun(this, &GUI::clear_sig));
+	actions->add(Gtk::Action::create("align-clear-sig", Gtk::Stock::CLEAR, _("_Clear image signatures"), _("Clear image signatures")), sigc::mem_fun(this, &GUI::clear_sig));
 	actions->add(Gtk::Action::create("align-all", Gtk::StockID("gtk-crn-two-pages"), _("Align _all"), _("Align all")), sigc::mem_fun(this, &GUI::align_all));
 	actions->add(Gtk::Action::create("align-selection", Gtk::StockID("gtk-crn-block"), _("Align _selection"), _("Align selection")), sigc::mem_fun(this, &GUI::align_selection));
 
@@ -546,11 +546,8 @@ void GUI::add_line()
 		auto colid = Id{it->get_value(columns.id).c_str()};
 		current_view.AddGraphicalLine(plist, colid);
 
-#if 0
-		// TODO
 		// clear column alignment
-		project->ClearAlignment(current_view_id, colid);
-#endif
+		current_view.ClearAlignment(colid);
 		// update display
 		auto s = int(current_view.GetGraphicalLines(colid).size()) + " "_s;
 		s += _("line(s)");
@@ -565,11 +562,8 @@ void GUI::rem_line(const Id &l)
 {
 	const auto colid = doc->GetPosition(l).column;
 	current_view.RemoveGraphicalLine(colid, current_view.GetGraphicalLineIndex(l));
-#if 0
-	// TODO
 	// clear column alignment
-	project->ClearAlignment(v, c);
-#endif
+	current_view.ClearAlignment(colid);
 	// update display
 	auto s = int(current_view.GetGraphicalLines(colid).size()) + " "_s;
 	s += _("line(s)");
@@ -937,8 +931,7 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	if (newright || newleft)
 	{
 		current_view.ComputeContour(word.GetZone());
-		// TODO
-		//project->AlignWordCharacters(AlignConfig::AllChars, wordid);
+		current_view.AlignWordCharacters(AlignConfig::AllChars, doc->GetPosition(wordid).line, wordid);
 	}
 
 	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
@@ -987,15 +980,13 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		GtkCRN::Image::OverlayItem &item(img.get_overlay_item(overlay_id, overlay_item_id));
 		GtkCRN::Image::Polygon &po = static_cast<GtkCRN::Image::Polygon&>(item);
 		l.SetMidline(po.points);
-#if 0
-		// TODO
 		// realign
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t i = pw.add_progress_bar("");
 		pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), current_view_id, colid, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
-		project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected();
-#endif
+		pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::AllWords|AlignConfig::CharsAllWords, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
+		//project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected(); // TODO
+
 		set_need_save();
 		display_line(linid); // refresh
 	}
@@ -1095,18 +1086,19 @@ void GUI::align_selection()
 	{
 		aligndial.hide();
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
-		// TODO
-#if 0
 		switch (view_depth)
 		{
 			case ViewDepth::Page:
 				{
 					// page
-					size_t ic = pw.add_progress_bar(_("Column"));
+					Gtk::TreeIter it = tv.get_selection()->get_selected();
+					auto pageid = Id{it->get_value(columns.id).c_str()};
+
+					auto ic = pw.add_progress_bar(_("Column"));
 					pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
-					size_t il = pw.add_progress_bar(_("Line"));
+					auto il = pw.add_progress_bar(_("Line"));
 					pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
-					pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignView), aligndial.get_config(), current_view_id, pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
+					pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignPage), aligndial.get_config(), pageid, pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
 					set_need_save();
 				}
 				break;
@@ -1114,11 +1106,11 @@ void GUI::align_selection()
 				{
 					// column
 					Gtk::TreeIter it = tv.get_selection()->get_selected();
-					size_t colid = it->get_value(columns.index);
+					auto colid = Id{it->get_value(columns.id).c_str()};
 
 					size_t i = pw.add_progress_bar(_("Line"));
 					pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-					pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignColumn), aligndial.get_config(), current_view_id, colid, pw.get_crn_progress(i), (crn::Progress*)nullptr));
+					pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignColumn), aligndial.get_config(), colid, pw.get_crn_progress(i), (crn::Progress*)nullptr));
 					set_need_save();
 				}
 				break;
@@ -1126,17 +1118,15 @@ void GUI::align_selection()
 				{
 					// line
 					Gtk::TreeIter it = tv.get_selection()->get_selected();
-					size_t linid = it->get_value(columns.index);
-					size_t colid = it->parent()->get_value(columns.index);
+					auto linid = Id{it->get_value(columns.id).c_str()};
 
 					size_t i = pw.add_progress_bar("");
 					pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-					pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignLine), aligndial.get_config(), current_view_id, colid, linid, pw.get_crn_progress(i)));
+					pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), aligndial.get_config(), linid, pw.get_crn_progress(i)));
 					set_need_save();
 				}
 				break;
 		}
-#endif
 		tree_selection_changed(false); // update display
 	}
 	else
@@ -1257,8 +1247,6 @@ void GUI::stats()
 
 void GUI::clear_sig()
 {
-	// TODO
-#if 0
 	Gtk::MessageDialog msg(*this, _("Are you sure you wish to flush the images' signatures?"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
 	if (msg.run() == Gtk::RESPONSE_YES)
 	{
@@ -1266,9 +1254,8 @@ void GUI::clear_sig()
 		GtkCRN::ProgressWindow pwin(_("Flushing signatures…"), this, true);
 		size_t id = pwin.add_progress_bar("");
 		pwin.get_crn_progress(id)->SetType(crn::Progress::Type::PERCENT);
-		pwin.run(sigc::bind(sigc::mem_fun(*project, &Project::ClearSignatures), pwin.get_crn_progress(id)));
+		pwin.run(sigc::bind(sigc::mem_fun(*doc, &Document::ClearSignatures), pwin.get_crn_progress(id)));
 	}
-#endif
 }
 
 void GUI::propagate_validation()

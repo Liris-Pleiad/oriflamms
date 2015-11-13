@@ -1163,7 +1163,7 @@ GraphicalLine::GraphicalLine(const SLinearInterpolation &lin, size_t lineheight)
  * \param[in]	b	the image of the whole view
  * \return	a list of signature elements
  */
-std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
+const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) const
 {
 	if (!features.empty())
 		return features; // do not recompute
@@ -1739,14 +1739,14 @@ std::vector<ImageSignature> GraphicalLine::ExtractFeatures(Block &b) const
 		s.cutproba = uint8_t(cumul / s.bbox.GetHeight());
 	}
 
-	features = sig;
+	features.swap(sig);
 
 	//std::cout << std::endl;
 	//lb->GetRGB()->SavePNG("xxx line sig.png");
 
 	if (b.HasTree(U"lines"))
 		b.RemoveChild(U"lines", lb);
-	return sig;
+	return features;
 }
 
 void GraphicalLine::deserialize(xml::Element &el)

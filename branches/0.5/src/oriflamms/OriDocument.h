@@ -14,6 +14,7 @@
 #include <CRNUtils/CRNXml.h>
 #include <CRNUtils/CRNProgress.h>
 #include <CRNBlock.h>
+#include <OriAlignConfig.h>
 #include <vector>
 #include <unordered_map>
 
@@ -57,14 +58,13 @@ namespace ori
 			Zone(Zone&&) = default;
 			Zone& operator=(const Zone&) = delete;
 			Zone& operator=(Zone&&) = default;
-			//const Id& GetId() const noexcept { return id; }
 			const crn::Rect& GetPosition() const noexcept;
 			const std::vector<crn::Point2DInt>& GetContour() const noexcept { return box; }
 
 			void SetPosition(const crn::Rect &r);
 			void SetContour(const std::vector<crn::Point2DInt> &c);
+			void Clear();
 		private:
-			//Id id;
 			mutable crn::Rect pos;
 			std::vector<crn::Point2DInt> box;
 			crn::xml::Element el;
@@ -81,12 +81,10 @@ namespace ori
 			Character(Character&&) = default;
 			Character& operator=(const Character&) = delete;
 			Character& operator=(Character&&) = default;
-			//const Id& GetId() const noexcept { return id; }
 			const crn::StringUTF8& GetText() const noexcept { return text; }
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
-			//Id id;
 			Id zone;
 			crn::StringUTF8 text;
 		
@@ -102,13 +100,11 @@ namespace ori
 			Word(Word&&) = default;
 			Word& operator=(const Word&) = delete;
 			Word& operator=(Word&&) = default;
-			//const Id& GetId() const { return id; }
 			const crn::StringUTF8& GetText() const noexcept { return text; }
 			const std::vector<Id>& GetCharacters() const noexcept { return characters; }
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
-			//Id id;
 			std::vector<Id> characters;
 			Id zone;
 			crn::StringUTF8 text;
@@ -125,12 +121,10 @@ namespace ori
 			Line(Line&&) = default;
 			Line& operator=(const Line&) = delete;
 			Line& operator=(Line&&) = default;
-			//const Id& GetId() const noexcept { return id; }
 			const std::vector<Id>& GetWords() const;
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
-			//Id id;
 			mutable std::vector<Id> left, center, right;
 			Id zone;
 		
@@ -146,12 +140,10 @@ namespace ori
 			Column(Column&&) = default;
 			Column& operator=(const Column&) = delete;
 			Column& operator=(Column&&) = default;
-			//const Id& GetId() const noexcept { return id; }
 			const std::vector<Id>& GetLines() const noexcept { return lines; }
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
-			//Id id;
 			std::vector<Id> lines;
 			Id zone;
 		
@@ -167,12 +159,10 @@ namespace ori
 			Page(Page&&) = default;
 			Page& operator=(const Page&) = delete;
 			Page& operator=(Page&&) = default;
-			//const Id& GetId() const noexcept { return id; }
 			const std::vector<Id>& GetColumns() const noexcept { return columns; }
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
-			//Id id;
 			std::vector<Id> columns;
 			Id zone;
 		
@@ -198,43 +188,47 @@ namespace ori
 
 			/*! \brief Returns the ordered list of pages' id */
 			const std::vector<Id>& GetPages() const noexcept;
-			const Page& GetPage(const Id &id) const;
-			Page& GetPage(const Id &id);
+			const Page& GetPage(const Id &page_id) const;
+			Page& GetPage(const Id &page_id);
 
 			const std::unordered_map<Id, Column>& GetColumns() const;
-			const Column& GetColumn(const Id &id) const;
-			Column& GetColumn(const Id &id);
+			const Column& GetColumn(const Id &col_id) const;
+			Column& GetColumn(const Id &col_id);
 			/*! \brief Returns all median lines of a column */
-			const std::vector<GraphicalLine>& GetGraphicalLines(const Id &id) const;
+			const std::vector<GraphicalLine>& GetGraphicalLines(const Id &col_id) const;
 			/*! \brief Adds a median line to a column */
-			void AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &id);
+			void AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &col_id);
 			/*! \brief Removes a median line from a column */
-			void RemoveGraphicalLine(const Id &id, size_t index);
+			void RemoveGraphicalLine(const Id &col_id, size_t index);
+			/*! \brief Removes all aligned coordinates in a column */
+			void ClearAlignment(const Id &col_id);
 
 			const std::unordered_map<Id, Line>& GetLines() const;
-			const Line& GetLine(const Id &id) const;
-			Line& GetLine(const Id &id);
+			const Line& GetLine(const Id &line_id) const;
+			Line& GetLine(const Id &line_id);
 			/*! \brief Returns the median line of a text line */
-			const GraphicalLine& GetGraphicalLine(const Id &id) const;
+			const GraphicalLine& GetGraphicalLine(const Id &line_id) const;
 			/*! \brief Returns the median line of a text line */
-			GraphicalLine& GetGraphicalLine(const Id &id);
+			GraphicalLine& GetGraphicalLine(const Id &line_id);
 			/*! \brief Returns the median line's index of a text line */
-			size_t GetGraphicalLineIndex(const Id &id) const;
+			size_t GetGraphicalLineIndex(const Id &line_id) const;
 
 			const std::unordered_map<Id, Word>& GetWords() const;
-			const Word& GetWord(const Id &id) const;
-			Word& GetWord(const Id &id);
+			const Word& GetWord(const Id &word_id) const;
+			Word& GetWord(const Id &word_id);
 			/*! \brief Checks if a word was validated or rejected by the user */
-			const crn::Prop3& IsValid(const Id &id) const;
+			const crn::Prop3& IsValid(const Id &word_id) const;
 			/*! \brief Sets if a word was validated or rejected by the user */
-			void SetValid(const Id &id, const crn::Prop3 &val);
+			void SetValid(const Id &word_id, const crn::Prop3 &val);
+			/*! \brief Returns the alignable characters in word */
+			crn::String GetAlignableText(const Id &word_id) const;
 
 			const std::unordered_map<Id, Character>& GetCharacters() const;
-			const Character& GetCharacter(const Id &id) const;
-			Character& GetCharacter(const Id &id);
+			const Character& GetCharacter(const Id &char_id) const;
+			Character& GetCharacter(const Id &char_id);
 
-			const Zone& GetZone(const Id &id) const;
-			Zone& GetZone(const Id &id);
+			const Zone& GetZone(const Id &zone_id) const;
+			Zone& GetZone(const Id &zone_id);
 			/*! \brief Sets the bounding box of an element */
 			void SetPosition(const Id &id, const crn::Rect &r, bool compute_contour);
 			/*! \brief Sets the contour of an element */
@@ -243,10 +237,24 @@ namespace ori
 			std::vector<crn::Point2DInt> ComputeFrontier(size_t x, size_t y1, size_t y2) const;
 			/*! \brief Computes the contour of a zone from its bounding box */
 			void ComputeContour(const Id &zone_id);
+
 			/*! \brief Sets the left frontier of a word */
 			void UpdateLeftFrontier(const Id &id, int x);
 			/*! \brief Sets the right frontier of a word */
 			void UpdateRightFrontier(const Id &id, int x);
+			/*! \brief Resets the left and right corrections of a word */
+			void ResetCorrections(const Id &id);
+
+			/*! \brief Computes alignment on a page */
+			void AlignPage(AlignConfig conf, const Id &page_id, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			/*! \brief Computes alignment on a column */
+			void AlignColumn(AlignConfig conf, const Id &col_id, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			/*! \brief Computes alignment on a line */
+			void AlignLine(AlignConfig conf, const Id &line_id, crn::Progress *prog = nullptr);
+			/*! \brief Computes alignment on a range of words */
+			void AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, size_t last_word);
+			/*! \brief Aligns the characters in a word */
+			void AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &word_id);
 
 		private:
 			struct Impl;
@@ -281,6 +289,11 @@ namespace ori
 
 			const std::vector<Id>& GetViews() const noexcept { return views; }
 			View GetView(const Id &id);
+
+			/*! \brief Erases image signatures in the document */
+			void ClearSignatures(crn::Progress *prog);
+			/*! \brief Computes alignment on the whole document */
+			void AlignAll(AlignConfig conf, crn::Progress *docprog = nullptr, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 
 			struct ViewStructure
 			{

@@ -52,7 +52,7 @@ namespace ori
 			size_t GetLineHeight() const noexcept { return lh; }
 
 			/*! \brief Gets the signature string of the line */
-			std::vector<ImageSignature> ExtractFeatures(crn::Block &b) const;
+			const std::vector<ImageSignature>& ExtractFeatures(crn::Block &b) const;
 			/*! \brief Deletes the cached signature string */
 			void ClearFeatures() { features.clear(); }
 		private:

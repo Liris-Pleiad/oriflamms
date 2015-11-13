@@ -5,6 +5,7 @@
  */
 
 #include <oriflamms_config.h>
+#include <OriConfig.h>
 #include <OriDocument.h>
 #include <CRNIO/CRNIO.h>
 #include <OriLines.h>
@@ -12,6 +13,8 @@
 #include <CRNImage/CRNDifferential.h>
 #include <OriTEIImporter.h>
 #include <OriViewImpl.h>
+#include <OriTextSignature.h>
+#include <OriFeatures.h>
 
 #include <CRNi18n.h>
 
@@ -135,6 +138,17 @@ void Zone::SetContour(const std::vector<crn::Point2DInt> &c)
 		str += pt.X + ","_s + pt.Y + " "_s;
 	str.Crop(0, str.Size() - 1);
 	el.SetAttribute("points", str);
+}
+
+void Zone::Clear()
+{
+	pos = crn::Rect{};
+	el.RemoveAttribute("ulx");
+	el.RemoveAttribute("uly");
+	el.RemoveAttribute("lrx");
+	el.RemoveAttribute("lry");
+	box.clear();
+	el.RemoveAttribute("points");
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -431,22 +445,22 @@ const std::vector<Id>& View::GetPages() const noexcept { return pimpl->struc.pag
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-const Page& View::GetPage(const Id &id) const
+const Page& View::GetPage(const Id &page_id) const
 {
-	auto it = pimpl->struc.pages.find(id);
+	auto it = pimpl->struc.pages.find(page_id);
 	if (it == pimpl->struc.pages.end())
-		throw crn::ExceptionNotFound{_("Invalid page id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid page id: ") + page_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-Page& View::GetPage(const Id &id)
+Page& View::GetPage(const Id &page_id)
 {
-	auto it = pimpl->struc.pages.find(id);
+	auto it = pimpl->struc.pages.find(page_id);
 	if (it == pimpl->struc.pages.end())
-		throw crn::ExceptionNotFound{_("Invalid page id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid page id: ") + page_id};
 	return it->second;
 }
 
@@ -457,45 +471,45 @@ const std::unordered_map<Id, Column>& View::GetColumns() const
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-const Column& View::GetColumn(const Id &id) const
+const Column& View::GetColumn(const Id &col_id) const
 {
-	auto it = pimpl->struc.columns.find(id);
+	auto it = pimpl->struc.columns.find(col_id);
 	if (it == pimpl->struc.columns.end())
-		throw crn::ExceptionNotFound{_("Invalid column id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid column id: ") + col_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-Column& View::GetColumn(const Id &id)
+Column& View::GetColumn(const Id &col_id)
 {
-	auto it = pimpl->struc.columns.find(id);
+	auto it = pimpl->struc.columns.find(col_id);
 	if (it == pimpl->struc.columns.end())
-		throw crn::ExceptionNotFound{_("Invalid column id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid column id: ") + col_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
- * \param[in]	id	the id of a column
+ * \param[in]	col_id	the id of a column
  * \return all graphical lines of the column
  */
-const std::vector<GraphicalLine>& View::GetGraphicalLines(const Id &id) const
+const std::vector<GraphicalLine>& View::GetGraphicalLines(const Id &col_id) const
 {
-	auto it = pimpl->medlines.find(id);
+	auto it = pimpl->medlines.find(col_id);
 	if (it == pimpl->medlines.end())
-		throw crn::ExceptionNotFound{_("Invalid column id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid column id: ") + col_id};
 	return it->second;
 }
 
 /*! Adds a median line to a column
  * \param[in]	pts	the median line
- * \param[in]	id	the id of a column
+ * \param[in]	col_id	the id of a column
  */
-void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &id)
+void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &col_id)
 {
-	auto &col = pimpl->medlines[id];
+	auto &col = pimpl->medlines[col_id];
 	// estimate line height
 	auto lh = std::vector<size_t>{};
 	for (const auto &l : col)
@@ -517,15 +531,36 @@ void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &i
 
 /*! Removes a median line from a column
  * \throws	crn::ExceptionDomain	index > number of lines
- * \param[in]	id	the id of a column
+ * \param[in]	col_id	the id of a column
  * \param[in]	index	the number of the line
  */
-void View::RemoveGraphicalLine(const Id &id, size_t index)
+void View::RemoveGraphicalLine(const Id &col_id, size_t index)
 {
-	auto &col = pimpl->medlines[id];
+	auto &col = pimpl->medlines[col_id];
 	if (index > col.size())
 		throw crn::ExceptionDomain("View::RemoveGraphicalLine(): "_s + _("index is greater than the number of lines."));
 	col.erase(col.begin() + index);
+}
+
+/*! Removes all aligned coordinates in a column 
+ * \param[in]	col_id	the id of the column
+ */
+void View::ClearAlignment(const Id &col_id)
+{
+	auto &col = GetColumn(col_id);
+	GetZone(col.GetZone()).Clear();
+	for (const auto &lid : col.GetLines())
+	{
+		auto &line = GetLine(lid);
+		GetZone(line.GetZone()).Clear();
+		for (const auto &wid : line.GetWords())
+		{
+			auto &word = GetWord(wid);
+			GetZone(word.GetZone()).Clear();
+			for (const auto &cid : word.GetCharacters())
+				GetZone(GetCharacter(cid).GetZone()).Clear();
+		}
+	}
 }
 
 const std::unordered_map<Id, Line>& View::GetLines() const
@@ -535,39 +570,39 @@ const std::unordered_map<Id, Line>& View::GetLines() const
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-const Line& View::GetLine(const Id &id) const
+const Line& View::GetLine(const Id &line_id) const
 {
-	auto it = pimpl->struc.lines.find(id);
+	auto it = pimpl->struc.lines.find(line_id);
 	if (it == pimpl->struc.lines.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-Line& View::GetLine(const Id &id)
+Line& View::GetLine(const Id &line_id)
 {
-	auto it = pimpl->struc.lines.find(id);
+	auto it = pimpl->struc.lines.find(line_id);
 	if (it == pimpl->struc.lines.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  * \throws	crn::ExceptionDomain	no graphical line associated to the text line
- * \param[in]	id	the id of a line
+ * \param[in]	line_id	the id of a line
  * \return the medline of the line
  */
-const GraphicalLine& View::GetGraphicalLine(const Id &id) const
+const GraphicalLine& View::GetGraphicalLine(const Id &line_id) const
 {
-	auto it = pimpl->line_links.find(id);
+	auto it = pimpl->line_links.find(line_id);
 	if (it == pimpl->line_links.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
 
 	if (it->second.second >= pimpl->medlines[it->second.first].size())
-		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + id};
+		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + line_id};
 
 	return pimpl->medlines[it->second.first][it->second.second];
 }
@@ -575,31 +610,31 @@ const GraphicalLine& View::GetGraphicalLine(const Id &id) const
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  * \throws	crn::ExceptionDomain	no graphical line associated to the text line
- * \param[in]	id	the id of a line
+ * \param[in]	line_id	the id of a line
  * \return the medline of the line
  */
-GraphicalLine& View::GetGraphicalLine(const Id &id)
+GraphicalLine& View::GetGraphicalLine(const Id &line_id)
 {
-	auto it = pimpl->line_links.find(id);
+	auto it = pimpl->line_links.find(line_id);
 	if (it == pimpl->line_links.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
 
 	if (it->second.second >= pimpl->medlines[it->second.first].size())
-		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + id};
+		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + line_id};
 
 	return pimpl->medlines[it->second.first][it->second.second];
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
- * \param[in]	id	the id of a line
+ * \param[in]	line_id	the id of a line
  * \return	the median line's index
  */
-size_t View::GetGraphicalLineIndex(const Id &id) const
+size_t View::GetGraphicalLineIndex(const Id &line_id) const
 {
-	auto it = pimpl->line_links.find(id);
+	auto it = pimpl->line_links.find(line_id);
 	if (it == pimpl->line_links.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
 	return it->second.second;
 }
 
@@ -610,136 +645,151 @@ const std::unordered_map<Id, Word>& View::GetWords() const
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-const Word& View::GetWord(const Id &id) const
+const Word& View::GetWord(const Id &word_id) const
 {
-	auto it = pimpl->struc.words.find(id);
+	auto it = pimpl->struc.words.find(word_id);
 	if (it == pimpl->struc.words.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
  */
-Word& View::GetWord(const Id &id)
+Word& View::GetWord(const Id &word_id)
 {
-	auto it = pimpl->struc.words.find(id);
+	auto it = pimpl->struc.words.find(word_id);
 	if (it == pimpl->struc.words.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
 	return it->second;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
- * \param[in]	id	the id of a word
+ * \param[in]	word_id	the id of a word
  * \returns the validation state of the word
  */
-const crn::Prop3& View::IsValid(const Id &id) const
+const crn::Prop3& View::IsValid(const Id &word_id) const
 {
-	const auto it = pimpl->validation.find(id);
+	const auto it = pimpl->validation.find(word_id);
 	if (it == pimpl->validation.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
 	return it->second.ok;
 }
 
 /*! 
  * \throws	crn::ExceptionNotFound	invalid id
- * \param[in]	id	the id of a word
+ * \param[in]	word_id	the id of a word
  * \param[in]	val	the validation state of the word
  */
-void View::SetValid(const Id &id, const crn::Prop3 &val)
+void View::SetValid(const Id &word_id, const crn::Prop3 &val)
 {
-	auto it = pimpl->validation.find(id);
+	auto it = pimpl->validation.find(word_id);
 	if (it == pimpl->validation.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + id};
+		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
 	it->second.ok = val;
+}
+
+/*! 
+ * \param[in]	word_id	the id of the word
+ * \return the alignable characters in word 
+ */
+crn::String View::GetAlignableText(const Id &word_id) const
+{
+	const auto &word = GetWord(word_id);
+	auto str = crn::String{};
+	for (const auto &cid : word.GetCharacters())
+	{
+		str += GetCharacter(cid).GetText();
+	}
+	return str;
 }
 
 const std::unordered_map<Id, Character>& View::GetCharacters() const
 {
-	return pimpl->struc.characters;
+return pimpl->struc.characters;
 }
 /*! 
- * \throws	crn::ExceptionNotFound	invalid id
- */
-const Character& View::GetCharacter(const Id &id) const
+* \throws	crn::ExceptionNotFound	invalid id
+*/
+const Character& View::GetCharacter(const Id &char_id) const
 {
-	auto it = pimpl->struc.characters.find(id);
-	if (it == pimpl->struc.characters.end())
-		throw crn::ExceptionNotFound{_("Invalid character id: ") + id};
-	return it->second;
-}
-
-/*! 
- * \throws	crn::ExceptionNotFound	invalid id
- */
-Character& View::GetCharacter(const Id &id)
-{
-	auto it = pimpl->struc.characters.find(id);
-	if (it == pimpl->struc.characters.end())
-		throw crn::ExceptionNotFound{_("Invalid character id: ") + id};
-	return it->second;
+auto it = pimpl->struc.characters.find(char_id);
+if (it == pimpl->struc.characters.end())
+	throw crn::ExceptionNotFound{_("Invalid character id: ") + char_id};
+return it->second;
 }
 
 /*! 
- * \throws	crn::ExceptionNotFound	invalid id
- */
-const Zone& View::GetZone(const Id &id) const
+* \throws	crn::ExceptionNotFound	invalid id
+*/
+Character& View::GetCharacter(const Id &char_id)
 {
-	auto it = pimpl->zones.find(id);
-	if (it == pimpl->zones.end())
-		throw crn::ExceptionNotFound{_("Invalid zone id: ") + id};
-	return it->second;
+auto it = pimpl->struc.characters.find(char_id);
+if (it == pimpl->struc.characters.end())
+	throw crn::ExceptionNotFound{_("Invalid character id: ") + char_id};
+return it->second;
 }
 
 /*! 
- * \throws	crn::ExceptionNotFound	invalid id
- */
-Zone& View::GetZone(const Id &id)
+* \throws	crn::ExceptionNotFound	invalid id
+*/
+const Zone& View::GetZone(const Id &zone_id) const
 {
-	auto it = pimpl->zones.find(id);
-	if (it == pimpl->zones.end())
-		throw crn::ExceptionNotFound{_("Invalid zone id: ") + id};
-	return it->second;
+auto it = pimpl->zones.find(zone_id);
+if (it == pimpl->zones.end())
+	throw crn::ExceptionNotFound{_("Invalid zone id: ") + zone_id};
+return it->second;
+}
+
+/*! 
+* \throws	crn::ExceptionNotFound	invalid id
+*/
+Zone& View::GetZone(const Id &zone_id)
+{
+auto it = pimpl->zones.find(zone_id);
+if (it == pimpl->zones.end())
+	throw crn::ExceptionNotFound{_("Invalid zone id: ") + zone_id};
+return it->second;
 }
 
 /*! Sets the bounding box of an element
- * \throws	crn::ExceptionNotFound	invalid id
- * \param[in]	id	the id of the element
- * \param[in]	r	the bounding box
- * \param[in]	compute_contour	shall the contour be automatically set? (computes curves at left and right ends)
- */
+* \throws	crn::ExceptionNotFound	invalid id
+* \param[in]	id	the id of the element
+* \param[in]	r	the bounding box
+* \param[in]	compute_contour	shall the contour be automatically set? (computes curves at left and right ends)
+*/
 void View::SetPosition(const Id &id, const crn::Rect &r, bool compute_contour)
 {
-	auto zid = id;
-	auto wit = pimpl->struc.words.find(id);
-	if (wit != pimpl->struc.words.end())
+auto zid = id;
+auto wit = pimpl->struc.words.find(id);
+if (wit != pimpl->struc.words.end())
+{
+	zid = wit->second.GetZone();
+}
+else
+{
+	auto cit = pimpl->struc.characters.find(id);
+	if (cit != pimpl->struc.characters.end())
 	{
-		zid = wit->second.GetZone();
+		zid = cit->second.GetZone();
 	}
-	else
-	{
-		auto cit = pimpl->struc.characters.find(id);
-		if (cit != pimpl->struc.characters.end())
-		{
-			zid = cit->second.GetZone();
-		}
-	}
-	auto zit = pimpl->zones.find(zid);
-	if (zit != pimpl->zones.end())
-	{
-		zit->second.SetPosition(r);
-		if (compute_contour)
-			ComputeContour(zid);
-	}
-	else
-		throw crn::ExceptionNotFound("View::SetPosition(): "_s + _("Invalid zone id: ") + id);
+}
+auto zit = pimpl->zones.find(zid);
+if (zit != pimpl->zones.end())
+{
+	zit->second.SetPosition(r);
+	if (compute_contour)
+		ComputeContour(zid);
+}
+else
+	throw crn::ExceptionNotFound("View::SetPosition(): "_s + _("Invalid zone id: ") + id);
 }
 
 /*! Sets the contour of an element
- * \throws	crn::ExceptionNotFound	invalid id
- * \param[in]	id	the id of the element
- * \param[in]	c	the contour
+* \throws	crn::ExceptionNotFound	invalid id
+* \param[in]	id	the id of the element
+* \param[in]	c	the contour
  * \param[in]	set_position	shall the bounding box be automatically set?
  */
 void View::SetContour(const Id &id, const std::vector<crn::Point2DInt> &c, bool set_position)
@@ -896,6 +946,269 @@ void View::UpdateRightFrontier(const Id &id, int x)
 		throw crn::ExceptionUninitialized("View::UpdateRightFrontier(): "_s + _("uninitialized zone: ") + zid);
 }
 
+/*! Resets the left and right corrections of a word
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of the word
+ */
+void View::ResetCorrections(const Id &id)
+{
+	if (pimpl->struc.words.find(id) == pimpl->struc.words.end())
+		throw crn::ExceptionNotFound("View::ResetCorrections(): "_s + _("Invalid word id: ") + id);
+
+	auto &val = pimpl->validation.find(id)->second;
+	val.left_corr = val.right_corr = 0;
+}
+
+/*! Computes alignment on a page
+ * \param[in]	conf	alignment options
+ * \param[in]	page_id	the id of the page
+ * \param[in]	pageprog	progress bar on columns
+ * \param[in]	colprog	progress bar on lines
+ * \param[in]	linprog	progress bar on words
+ */
+void View::AlignPage(AlignConfig conf, const Id &page_id, crn::Progress *pageprog, crn::Progress *colprog, crn::Progress *linprog)
+{
+	auto &page = GetPage(page_id);
+	if (pageprog)
+		pageprog->SetMaxCount(int(page.GetColumns().size()));
+	for (const auto cid : page.GetColumns())
+	{
+		AlignColumn(conf, cid, colprog, linprog);
+		if (pageprog)
+			pageprog->Advance();
+	}
+}
+
+/*! Computes alignment on a column
+ * \param[in]	conf	alignment options
+ * \param[in]	col_id	the id of the column
+ * \param[in]	colprog	progress bar on lines
+ * \param[in]	linprog	progress bar on words
+ */
+void View::AlignColumn(AlignConfig conf, const Id &col_id, crn::Progress *colprog, crn::Progress *linprog)
+{
+	auto &col = GetColumn(col_id);
+	if (colprog)
+		colprog->SetMaxCount(int(col.GetLines().size()));
+	for (const auto &lid : col.GetLines())
+	{
+		AlignLine(conf, lid, linprog);
+		if (colprog)
+			colprog->Advance();
+	}
+}
+
+/*! Computes alignment on a line
+ * \param[in]	conf	alignment options
+ * \param[in]	line_id	the id of the line
+ * \param[in]	prog	progress bar on words
+ */
+void View::AlignLine(AlignConfig conf, const Id &line_id, crn::Progress *prog)
+{
+	auto &line = GetLine(line_id);
+	if (line.GetWords().empty()) // Is it even possible?
+		return;
+
+	// Align words
+	if (!!(conf & AlignConfig::AllWords))
+	{
+		AlignRange(conf, line_id, 0, line.GetWords().size() - 1);
+	}
+	else if (!!(conf & AlignConfig::NOKWords))
+	{
+		// gather ranges of words to align
+		auto wranges = std::vector<std::vector<size_t>>{};
+		auto in = false;
+		for (auto w : crn::Range(line.GetWords()))
+		{
+			if (!GetZone(GetWord(line.GetWords()[w]).GetZone()).GetPosition().IsValid() || 
+					!IsValid(line.GetWords()[w]).IsTrue())
+			{
+				if (!in)
+				{
+					in = true;
+					wranges.push_back(std::vector<size_t>{});
+				}
+				wranges.back().push_back(w);
+			}
+			else
+			{
+				in = false;
+			}
+		}
+		// align
+		if (prog)
+			prog->SetMaxCount(int(wranges.size()));
+		for (const auto &r : wranges)
+		{
+			const auto &firstwid = line.GetWords()[r.front()];
+			if ((r.size() == 1) && GetZone(GetWord(firstwid).GetZone()).GetPosition().IsValid())
+			{ // a single word between validated words
+				SetValid(firstwid, crn::Prop3::True);
+			}
+			else
+			{
+				AlignRange(conf, line_id, r.front(), r.back());
+			}
+			if (prog)
+				prog->Advance();
+		}
+	}
+	// Only update frontiers
+	if (!!(conf & AlignConfig::WordFrontiers))
+	{
+		for (const auto &wid : line.GetWords())
+		{
+			const auto &wzid = GetWord(wid).GetZone();
+			if (GetZone(wzid).GetPosition().IsValid())
+				ComputeContour(wzid);
+		}
+	}
+	// Align characters
+	for (const auto &wid : line.GetWords())
+	{
+		if (!GetZone(GetWord(wid).GetZone()).GetPosition().IsValid())
+			continue;
+
+		const auto &val = IsValid(wid);
+		if (!!(conf & AlignConfig::CharsAllWords) ||
+				(!!(conf & AlignConfig::CharsOKWords) && val.IsTrue()) ||
+				(!!(conf & AlignConfig::CharsNKOWords) && !val.IsFalse()))
+			AlignWordCharacters(conf, line_id, wid);
+	}
+}
+
+/*! Computes alignment on a range of words
+ * \throws	crn::ExceptionDomain	the last word is before the first of range error
+ * \throws	crn::ExceptionUninitialized	the word before or after the range is not aligned
+ * \param[in]	conf	alignment options
+ * \param[in]	line_id	the id of the line
+ * \param[in]	first_word	index of the first word to align
+ * \param[in]	lastçword 	index of the last word to align (included!)
+ */
+void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, size_t last_word)
+{
+	if (last_word < first_word)
+		throw crn::ExceptionDomain("View::AlignRange(): "_s + _("the last word is located before the first."));
+	auto &line = GetLine(line_id);
+	if (first_word >= line.GetWords().size() || last_word >= line.GetWords().size())
+		throw crn::ExceptionDomain("View::AlignRange(): "_s + _("out of range."));
+
+	auto &bl = GetGraphicalLine(line_id);
+	// range on image
+	auto bx = size_t(0);
+	if (first_word == 0)
+	{
+		// start of the line
+		bx = bl.GetFront().X;
+	}
+	else
+	{
+		bx = GetZone(GetWord(line.GetWords()[first_word - 1]).GetZone()).GetPosition().GetRight() + 1; // may throw
+	}
+	auto ex = size_t(0);
+	if (last_word == line.GetWords().size() - 1)
+	{
+		// end of the line
+		ex = bl.GetBack().X;
+	}
+	else
+	{
+		ex = GetZone(GetWord(line.GetWords()[last_word + 1]).GetZone()).GetPosition().GetLeft() - 1; // may throw
+	}
+	// extract image signature
+	const auto &isig = bl.ExtractFeatures(GetBlock());
+	auto risig = std::vector<ImageSignature>{};
+	for (const auto &is : isig)
+	{
+		if (is.bbox.GetRight() > ex)
+			break;
+		if (is.bbox.GetLeft() >= bx)
+			risig.push_back(is);
+	}
+
+	// text signature
+	auto lsig = std::vector<TextSignature>{};
+	for (auto w = first_word; w <= last_word; ++w)
+	{
+		auto wsig = TextSignatureDB::Sign(GetAlignableText(line.GetWords()[w]));
+		for (auto tmp = size_t(1); tmp < wsig.size(); ++tmp)
+			wsig[tmp].start = false;
+		std::copy(wsig.begin(), wsig.end(), std::back_inserter(lsig));
+	}
+
+	// perform alignment
+	const auto align = Align(risig, lsig);
+	auto bbn = size_t(0);
+	for (auto w = first_word; w <= last_word; ++w)
+	{
+		if (bbn >= align.size())
+		{
+			CRNError(_("Range align misfit."));
+			break;
+		}
+		const auto &wid = line.GetWords()[w];
+		auto &word = GetWord(wid);
+		if (word.GetText().IsEmpty())
+			continue; // XXX Is this necessary???
+
+		auto &wzone = GetZone(word.GetZone());
+		//word.SetImageSignature(align[bbn].second);
+		if (wzone.GetPosition() != align[bbn].first)
+			SetValid(wid, crn::Prop3::Unknown);
+		wzone.SetPosition(align[bbn].first);
+		ResetCorrections(wid); // reset left/right corrections
+		ComputeContour(word.GetZone());
+		
+		bbn += 1;
+	} // for each word
+}
+
+/*! Aligns the characters in a word
+ * \param[in]	conf	alignment options
+ * \param[in]	line_id	the id of the line
+ * \param[in]	word_id	the id of the word
+ */
+void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &word_id)
+{
+	// TODO use config
+
+	auto &word = GetWord(word_id);
+	const auto isig = GetGraphicalLine(line_id).ExtractFeatures(GetBlock());
+	auto wsig = std::vector<TextSignature>{};
+	for (const auto cid : word.GetCharacters())
+	{
+		auto csig = TextSignatureDB::Sign(GetCharacter(cid).GetText());
+		std::move(csig.begin(), csig.end(), std::back_inserter(wsig));
+	}
+
+	auto wisig = std::vector<ImageSignature>{};
+	const auto wordbox = GetZone(word.GetZone()).GetPosition();
+	for (const auto &is : isig)
+	{
+		if ((is.bbox & wordbox).IsValid())
+			wisig.push_back(is);
+	}
+	// align
+	const auto align = Align(wisig, wsig);
+	if (align.empty())
+		return; // XXX
+
+	auto abox = size_t(0);
+	for (const auto &cid : word.GetCharacters())
+	{
+		const auto &czid = GetCharacter(cid).GetZone();
+		auto &czone = GetZone(czid);
+		czone.SetPosition(align[abox++].first);
+		ComputeContour(czid);
+		if (abox >= align.size())
+		{
+			// XXX
+			break;
+		}
+	}
+}
+
 const crn::ImageGray& View::getWeight() const
 {
 	if (!pimpl->weight)
@@ -953,6 +1266,9 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 	{
 		throw ExceptionTEISelection(ex.what());
 	}
+
+	// TODO multiple choices
+	TextSignatureDB::Load(Config::GetInstance().GetStaticDataDir() / "orisig.xml");
 
 	// get base name
 	const auto txtdir = crn::IO::Directory{base / TEXTDIR};
@@ -1226,6 +1542,46 @@ View Document::GetView(const Id &id)
 	else
 		v = it->second.lock();
 	return View(v);
+}
+
+/*! Erases image signatures in the document
+ * \param[in]	prog	a progress bar
+ */
+void Document::ClearSignatures(crn::Progress *prog)
+{
+	if (prog)
+		prog->SetMaxCount(int(views.size()));
+	for (const auto vid : views)
+	{
+		auto v = GetView(vid);
+		for (auto &col : v.pimpl->medlines)
+			for (auto &gl : col.second)
+				gl.ClearFeatures();
+		if (prog)
+			prog->Advance();
+	}
+}
+
+/*! Computes alignment on the whole document
+ * \param[in]	conf	alignment options
+ * \param[in]	docprog	progress bar on views
+ * \param[in]	pageprog	progress bar on columns
+ * \param[in]	colprog	progress bar on lines
+ * \param[in]	linprog	progress bar on words
+ */
+void Document::AlignAll(AlignConfig conf, crn::Progress *docprog, crn::Progress *pageprog, crn::Progress *colprog, crn::Progress *linprog)
+{
+	if (docprog)
+		docprog->SetMaxCount(int(views.size()));
+	for (const auto &vid : views)
+	{
+		auto view = GetView(vid);
+		for (const auto &pid : view.GetPages())
+			view.AlignPage(conf, pid, pageprog, colprog, linprog);
+	
+		if (docprog)
+			docprog->Advance();
+	}
 }
 
 static crn::StringUTF8 allTextInElement(crn::xml::Element &el, const TEISelectionNode& teisel)
