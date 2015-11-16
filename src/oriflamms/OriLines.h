@@ -16,6 +16,9 @@
 
 namespace ori
 {
+	class View;
+	/*! \brief Detect lines and columns on an image */
+	crn::SVector DetectLines(crn::Block &b, const View &view);
 	/*! \brief Reduces the number of points in a curve */
 	std::vector<crn::Point2DInt> SimplifyCurve(const std::vector<crn::Point2DInt> &line, double maxdist);
 	/*! \brief Reduces the number of points in a curve */
@@ -26,10 +29,6 @@ namespace ori
 		public:
 			/*! \brief Constructor */
 			GraphicalLine(const crn::SLinearInterpolation &lin, size_t lineheight);
-			GraphicalLine(const GraphicalLine&) = delete;
-			GraphicalLine(GraphicalLine&&) = default;
-			GraphicalLine& operator=(const GraphicalLine&) = delete;
-			GraphicalLine& operator=(GraphicalLine&&) = default;
 			virtual ~GraphicalLine() override {}
 
 			/*! \brief This is a Serializable object */
@@ -52,7 +51,7 @@ namespace ori
 			size_t GetLineHeight() const noexcept { return lh; }
 
 			/*! \brief Gets the signature string of the line */
-			const std::vector<ImageSignature>& ExtractFeatures(crn::Block &b) const;
+			std::vector<ImageSignature> ExtractFeatures(crn::Block &b) const;
 			/*! \brief Deletes the cached signature string */
 			void ClearFeatures() { features.clear(); }
 		private:

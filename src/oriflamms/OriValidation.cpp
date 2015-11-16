@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
  *
  * file: OriValidation.h
  * \author Yann LEYDIER
@@ -15,15 +15,16 @@
 #include <iostream>
 using namespace ori;
 
+
+
 static bool nullkey(GdkEventKey*)
 {
 	return true;
 }
-
-Validation::Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc):
-	doc(docu),
-	okwords(docu,_("Accepted"), true),
-	kowords(docu,_("Rejected"), true),
+Validation::Validation(Gtk::Window &parent, Project &proj, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc):
+	project(proj),
+	okwords(proj,_("Accepted"), proj.GetDoc()->GetFilenames(),true),
+	kowords(proj,_("Rejected"), proj.GetDoc()->GetFilenames(),true),
 	firstrun(true),
 	needsave(false),
 	batch(batch_valid),
@@ -103,31 +104,42 @@ Validation::Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bo
 
 void Validation::update_words(crn::Progress *prog)
 {
-	prog->SetMaxCount(int(doc.GetViews().size()));
-	auto kowords = std::set<crn::String>{};
-	for (const auto &vid : doc.GetViews())
+	prog->SetMaxCount((int)project.GetNbViews());
+	std::set<crn::String> kowords;
+	for (size_t v = 0; v < project.GetNbViews(); ++v)
 	{
-		auto view = doc.GetView(vid);
-		for (const auto &w : view.GetWords())
+		View &page(project.GetStructure().GetViews()[v]);
+		for (size_t c = 0; c < page.GetColumns().size(); ++c)
 		{
-			words[w.second.GetText()].push_back(w.first);
-			if (view.IsValid(w.first).IsUnknown())
-				kowords.insert(w.second.GetText());
+			Column &col(page.GetColumns()[c]);
+			for (size_t l = 0; l < col.GetLines().size(); ++l)
+			{
+				Line &line(col.GetLines()[l]);
+				for (size_t w = 0; w < line.GetWords().size(); ++w)
+				{
+					Word &word(line.GetWords()[w]);
+					words[word.GetText()].push_back(WordPath(v, c, l, w));
+					if (word.GetValid().IsUnknown())
+					{
+						kowords.insert(word.GetText());
+					}
+				}
+			}
 		}
 		prog->Advance();
 	}
 
 	store->clear();
-	for (const auto &w : words)
+	for (std::map<crn::String, std::vector<WordPath> >::const_iterator it = words.begin(); it != words.end(); ++it)
 	{
 		Gtk::TreeIter lit = store->append();
-		lit->set_value(columns.name, Glib::ustring(w.first.CStr()));
-		lit->set_value(columns.pop, w.second.size());
-		lit->set_value(columns.size, w.first.Length());
-		int we = Pango::WEIGHT_NORMAL;
-		if (kowords.find(w.first) != kowords.end())
-			we = Pango::WEIGHT_HEAVY;
-		lit->set_value(columns.weight, we);
+		lit->set_value(columns.name, Glib::ustring(it->first.CStr()));
+		lit->set_value(columns.pop, it->second.size());
+		lit->set_value(columns.size, it->first.Length());
+		int w = Pango::WEIGHT_NORMAL;
+		if (kowords.find(it->first) != kowords.end())
+			w = Pango::WEIGHT_HEAVY;
+		lit->set_value(columns.weight, w);
 	}
 }
 
@@ -152,7 +164,7 @@ return;
 	Glib::ustring sname(it->get_value(columns.name));
 
 	GtkCRN::ProgressWindow prog(_("Loading words"), this, true);
-	auto id = prog.add_progress_bar("Occurrence");
+	size_t id = prog.add_progress_bar("Occurrence");
 	prog.get_crn_progress(id)->SetType(crn::Progress::Type::ABSOLUTE);
 	prog.run(sigc::bind(sigc::mem_fun(this, &Validation::read_word), sname, prog.get_crn_progress(id)));
 
@@ -167,119 +179,122 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 {
 	okwords.lock();
 	kowords.lock();
-	const auto &elems = words[wname.c_str()];
+	const std::vector<WordPath> &elems(words[wname.c_str()]);
 	if (prog)
 		prog->SetMaxCount(int(elems.size()));
-	auto lastview = Id{};
-	auto view = View{};
+	size_t lastview = std::numeric_limits<size_t>::max();
 	Glib::RefPtr<Gdk::Pixbuf> pb;
-	std::vector<Id> clustpath;
-	std::vector<Glib::RefPtr<Gdk::Pixbuf>> clustimg;
-	std::vector<std::vector<int>> clustproj;
+	std::vector<WordPath> clustpath;
+	std::vector<Glib::RefPtr<Gdk::Pixbuf> > clustimg;
+	std::vector<std::vector<int> > clustproj;
 	std::vector<crn::String> clustsig;
-	for (const auto &wp : elems)
+	for (const WordPath &wp : elems)
 	{
-		const auto vid = doc.GetPosition(wp).view;
-		if (vid != lastview)
+		Word &oriword(project.GetStructure().GetWord(wp));
+		if (oriword.GetBBox().IsValid())
 		{
-			view = doc.GetView(vid);
-			lastview = vid;
-			pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
-		}
 
-		const auto &oriword = view.GetWord(wp);
-		const auto &wzone = view.GetZone(oriword.GetZone());
-		const auto &bbox = wzone.GetPosition();
-		if (bbox.IsValid())
-		{
-			auto contour = wzone.GetContour();
-			auto frontier = size_t(0);
-			if (contour.empty())
+			if (lastview != wp.view)
 			{
-				contour.emplace_back(bbox.GetLeft(), bbox.GetTop());
-				contour.emplace_back(bbox.GetLeft(), bbox.GetBottom());
-				frontier = 2;
-				contour.emplace_back(bbox.GetRight(), bbox.GetTop());
-				contour.emplace_back(bbox.GetRight(), bbox.GetBottom());
-			}
-			else
-			{
-				for (; frontier < contour.size() - 1; ++frontier)
-					if (contour[frontier + 1].Y < contour[frontier].Y)
-						break;
+				pb = Gdk::Pixbuf::create_from_file(project.GetDoc()->GetFilenames()[wp.view].CStr());
+				lastview = wp.view;
 			}
 
-			auto max_x = contour[frontier].X;
-			for (auto i = frontier; i < contour.size(); ++i)
-				if (contour[i].X > max_x)
-					max_x = contour[i].X;
+			std::vector<crn::Point2DInt> fronfrontier = oriword.GetFrontFrontier();
+			std::vector<crn::Point2DInt> backfrontier = oriword.GetBackFrontier();
 
-			auto min_x = contour.front().X;
-			for (auto i = size_t(0); i < frontier; ++i)
-				if (contour[i].X < min_x)
-					min_x = contour[i].X;
+			int max_x = backfrontier[0].X;
+			int min_x = fronfrontier[0].X;
 
-			const auto min_y = contour.front().Y;
-			const auto max_y = contour[frontier].Y;
+			int min_y = fronfrontier[0].Y;
+			int max_y = fronfrontier.back().Y;
+
+			for (size_t i = 0; i < backfrontier.size(); ++i)
+			{
+				if(backfrontier[i].X > max_x)
+					max_x = backfrontier[i].X;
+			}
+
+			for (size_t i = 0; i < fronfrontier.size(); ++i)
+			{
+				if(fronfrontier[i].X < min_x)
+					min_x = fronfrontier[i].X;
+			}
 
 			Glib::RefPtr<Gdk::Pixbuf> wpb(Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, max_y - min_y));;
 			pb->copy_area(min_x, min_y, max_x - min_x, max_y - min_y, wpb, 0, 0);
 
 			// add word
-			if (!wpb->get_has_alpha())
+			if(!wpb->get_has_alpha())
 				wpb = wpb->add_alpha(true,255,255,255);
-			auto* pixs = wpb->get_pixels();
-			const auto rowstrides = wpb->get_rowstride();
-			const auto channels = wpb->get_n_channels();
+			guint8* pixs = wpb->get_pixels();
+			int rowstrides = wpb->get_rowstride();
+			int channels = wpb->get_n_channels();
 
-			for (auto j = size_t(0); j < wpb->get_height(); ++j)
+			for(size_t j = 0; j < wpb->get_height(); ++ j)
 			{
-				auto x = 0;
-				for (auto i = size_t(0); i < frontier - 1; ++i)
+				int x = 0;
+				for(size_t i = 0; i < fronfrontier.size() - 1; ++ i)
 				{
-					const auto x1 = contour[i].X - min_x;
-					const auto y1 = contour[i].Y - min_y;
-					const auto x2 = contour[i + 1].X - min_x;
-					const auto y2 = contour[i + 1].Y - min_y;
+					double x1 = double(fronfrontier[i].X - min_x);
+					double y1 = double(fronfrontier[i].Y - min_y);
+					double x2 = double(fronfrontier[i + 1].X - min_x);
+					double y2 = double(fronfrontier[i + 1].Y - min_y);
 
-					if (j == y2)
-						x = x2;
-					if (j == y1)
-						x = x1;
-					if ((j < y2) && (j > y1))
+					if (double(j) == y2)
+					{
+						x = int(x2);
+						//   pixs[(int(x) * channels + j * rowstrides )+3] = 128;
+					}
+					if (double(j) == y1)
+					{
+						x = int(x1);
+						//  pixs[(int(x) * channels + j * rowstrides )+3] = 128;
+					}
+					if ((double(j) < y2) && (double(j) > y1))
+					{
 						x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+					}
 
 				}
-				for (auto k = 0; k <= x; ++k)
-					pixs[k * channels + j * rowstrides + 3] = 0;
+				for(int k = 0; k <= x; ++k)
+					pixs[(k * channels + j * rowstrides )+3] = 0;
 			}
-			for (auto j = size_t (0); j < wpb->get_height(); ++j)
+			for(size_t j = 0; j < wpb->get_height(); ++ j)
 			{
 				int x;
-				for(auto i = frontier; i < contour.size() - 1; ++i)
+				for(size_t i = 0; i < backfrontier.size() - 1; ++ i)
 				{
-					const auto x1 = contour[i].X - min_x;
-					const auto y1 = contour[i].Y - min_y;
-					const auto x2 = contour[i + 1].X - min_x;
-					const auto y2 = contour[i + 1].Y - min_y;
-					if (j == y2)
-						x = x2;
-					if (j == y1)
-						x = x1;
-					if ((j < y2) && (j > y1))
+					double x1 = double(backfrontier[i].X - oriword.GetBBox().GetLeft());
+					double y1 = double(backfrontier[i].Y - oriword.GetBBox().GetTop());
+					double x2 = double(backfrontier[i + 1].X - oriword.GetBBox().GetLeft());
+					double y2 = double(backfrontier[i + 1].Y - oriword.GetBBox().GetTop());
+					if (double(j) == y2)
+					{
+						x = int(x2);
+
+					}
+					if (double(j) == y1)
+					{
+						x = int(x1);
+
+					}
+					if ((double(j) < y2) && (double(j) > y1))
+					{
 						x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+					}
 				}
 				for(int k = x; k < wpb->get_width(); ++k)
-					pixs[k * channels + j * rowstrides + 3] = 0;
+					pixs[(k * channels + j * rowstrides )+3] = 0;
 			}
-			if (view.IsValid(wp).IsFalse())
+			if (oriword.GetValid().IsFalse())
 			{
 				// add to reject list
 				kowords.add_element(wpb, kowords.label_ko, wp);
 			}
 			else
 			{
-				if (view.IsValid(wp).IsTrue())
+				if (oriword.GetValid().IsTrue())
 					okwords.add_element(wpb, okwords.label_ok, wp);
 
 				else
@@ -288,7 +303,20 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 					{
 						clustpath.push_back(wp);
 						clustimg.push_back(wpb);
-						clustsig.push_back(""/*oriword.GetImageSignature()*/); // TODO
+						clustsig.push_back(oriword.GetImageSignature());
+						/*
+							 clustproj.push_back(std::vector<int>(wpb->get_width()));
+							 for (int x = 0; x < wpb->get_width(); ++x)
+							 {
+							 int sum = 0;
+							 for (int y = 0; y < wpb->get_height(); ++y)
+							 {
+							 int offset = x * wpb->get_n_channels() + y * wpb->get_rowstride();
+							 sum += wpb->get_pixels()[offset] + wpb->get_pixels()[offset + 1] + wpb->get_pixels()[offset + 2];
+							 }
+							 clustproj.back()[x] = sum;
+							 }
+							 */
 					}
 					else
 					{
@@ -303,6 +331,62 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 	if (clustering)
 	{
 		// cluster the unvalidated words
+		/*
+			 if (prog)
+			 {
+			 prog->SetMaxCount(int(crn::Sqr(clustpath.size()) - clustpath.size()) / 2);
+			 prog->SetName(_("Clustering…"));
+			 prog->SetType(crn::Progress::PERCENT);
+			 }
+		// distance matrix
+		std::vector<std::vector<int> > distmat(clustpath.size(), std::vector<int>(clustpath.size(), 0));
+		for (size_t i = 0; i < clustpath.size(); ++i)
+		{
+		for (size_t j = i + 1; j < clustpath.size(); ++j)
+		{
+		size_t minw = crn::Min(clustproj[i].size(), clustproj[j].size());
+		int dist = crn::Max(clustimg[i]->get_height(), clustimg[j]->get_height()) * int(crn::Max(clustproj[i].size(), clustproj[j].size()) - minw);
+		for (size_t tmp = 0; tmp < minw; ++tmp)
+		dist += crn::Abs(clustproj[i][tmp] - clustproj[j][tmp]);
+		distmat[i][j] = distmat[j][i] = dist;
+		if (prog)
+		prog->Advance();
+		}
+		}
+		// threshold
+		std::ofstream dm("distmat.csv");
+		std::multiset<double> meandists;
+		for (size_t i = 0; i < distmat.size(); ++i)
+		{
+		for (size_t j = 0; j < distmat.size(); ++j)
+		dm << distmat[i][j] << " ";
+		dm << std::endl;
+
+		std::vector<int> li(distmat[i]);
+		std::sort(li.begin(), li.end());
+		double md = 0;
+		md = li[crn::Min(li.size() - 1, size_t(5))];
+		meandists.insert(md);
+		}
+		std::multiset<double>::iterator meandistsit(meandists.begin());
+		std::advance(meandistsit, meandists.size() / 5);
+		int s = int(*meandistsit);
+		std::cout << s << std::endl;
+		// clustering
+		crn::IterativeClustering<size_t> clust;
+		for (size_t i = 0; i < distmat.size(); ++i)
+		for (size_t j = i; j < distmat.size(); ++j)
+		if (distmat[i][j] < s)
+		clust.Associate(i, j);
+		// add to panel
+		int cnt = 1;
+		CRN_FOREACH(const std::set<size_t> &c, clust.GetClusters())
+		{
+		crn::StringUTF8 lab(cnt++);
+		CRN_FOREACH(size_t i, c)
+		okwords.add_element(lab, clustpath[i], clustimg[i]);
+		}
+		*/
 		crn::IterativeClustering<size_t> clust;
 		for (size_t i = 0; i < clustsig.size(); ++i)
 			for (size_t j = i; j < clustsig.size(); ++j)
@@ -312,7 +396,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 		std::vector<std::set<size_t>> cl = clust.GetClusters();
 		std::set<size_t> newclust;
 
-		//std::cout<<clust.GetClusters().size()<<std::endl;
+		std::cout<<clust.GetClusters().size()<<std::endl;
 		if(cl.size() > 1)
 		{
 			for( size_t i = 0; i < cl.size(); ++i)
@@ -326,7 +410,9 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 			}
 
 			cl.push_back(newclust);
+
 		}
+
 
 		// add to panel
 		int cnt = 1;
@@ -347,42 +433,29 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 
 void Validation::on_remove_words(ValidationPanel::ElementList words)
 {
-	auto work = std::unordered_map<Id, std::vector<ValidationPanel::ElementCluster::value_type>>{};
-	for (const auto &el : words)
-		for (const auto &w : el.second)
-			work[doc.GetPosition(w.first.id).view].push_back(w);
-
-	for (const auto &v : work)
+	for (const ValidationPanel::ElementList::value_type &el : words)
 	{
-		auto view = doc.GetView(v.first);
-		for (const auto &w : v.second)
+		for (const ValidationPanel::ElementCluster::value_type &w : el.second)
 		{
-			view.SetValid(w.first.id, false);
-			kowords.add_element(w.second, kowords.label_ko, w.first.id);
+			project.GetStructure().GetWord(w.first.path).SetValid(FALSE);
+			kowords.add_element(w.second, kowords.label_ko, w.first.path);
+			// kowords.add_element("ddd", wp, wpb);
 		}
 	}
-
 	needsave = true;
 	kowords.full_refresh();
 }
 
 void Validation::on_unremove_words(ValidationPanel::ElementList words)
 {
-	auto work = std::unordered_map<Id, std::vector<ValidationPanel::ElementCluster::value_type>>{};
-	for (const auto &el : words)
-		for (const auto &w : el.second)
-			work[doc.GetPosition(w.first.id).view].push_back(w);
-
-	for (const auto &v : work)
+	for (const ValidationPanel::ElementList::value_type &el : words)
 	{
-		auto view = doc.GetView(v.first);
-		for (const auto &w : v.second)
+		for (const ValidationPanel::ElementCluster::value_type &w : el.second)
 		{
-			view.SetValid(w.first.id, true);
-			okwords.add_element(w.second, kowords.label_ko, w.first.id);
+			project.GetStructure().GetWord(w.first.path).SetValid(TRUE);
+			okwords.add_element(w.second, okwords.label_revalidated, w.first.path);
 		}
 	}
-
 	needsave = true;
 	okwords.full_refresh();
 }
@@ -399,14 +472,9 @@ void Validation::on_close()
 		if (msg.run() == Gtk::RESPONSE_YES)
 		{
 			// validate
-			auto work = std::unordered_map<Id, std::vector<Id>>{};
-			for (const auto &w : needconfirm)
-				work[doc.GetPosition(w).view].push_back(w);
-			for (const auto &v : work)
+			for (const WordPath &w : needconfirm)
 			{
-				auto view = doc.GetView(v.first);
-				for (const auto &w : v.second)
-					view.SetValid(w, true);
+				project.GetStructure().GetWord(w).SetValid(TRUE);
 			}
 			needsave = true;
 		}
@@ -428,18 +496,12 @@ void Validation::on_close()
 void Validation::conclude_word()
 {
 	const std::set<ValidationPanel::ElementId> validcontent(okwords.GetContent());
-	auto work = std::unordered_map<Id, std::vector<Id>>{};
-	for (const auto &w : validcontent)
-		work[doc.GetPosition(w.id).view].push_back(w.id);
-
 	if (okwords.IsModified())
 	{
 		// validate
-		for (const auto &v : work)
+		for (const auto &w : validcontent)
 		{
-			auto view = doc.GetView(v.first);
-			for (const auto &w : v.second)
-				view.SetValid(w, true);
+			project.GetStructure().GetWord(w.path).SetValid(TRUE);
 		}
 		needsave = true;
 	}
@@ -449,23 +511,19 @@ void Validation::conclude_word()
 		{
 			// store for later
 			for (const auto &w : validcontent)
-				needconfirm.insert(w.id);
+				needconfirm.insert(w.path);
 		}
 		else
 		{
 			// check is some words need to be validated
 			bool need_ask = false;
-			for (const auto &v : work)
+			for (const auto &w : validcontent)
 			{
-				auto view = doc.GetView(v.first);
-				for (const auto &w : v.second)
-					if (view.IsValid(w).IsUnknown())
-					{
-						need_ask = true;
-						break;
-					}
-				if (need_ask)
+				if (project.GetStructure().GetWord(w.path).GetValid().IsUnknown())
+				{
+					need_ask = true;
 					break;
+				}
 			}
 			if (need_ask)
 			{
@@ -474,21 +532,18 @@ void Validation::conclude_word()
 				if (msg.run() == Gtk::RESPONSE_YES)
 				{
 					// validate
-					for (const auto &v : work)
+					for (const auto &w : validcontent)
 					{
-						auto view = doc.GetView(v.first);
-						for (const auto &w : v.second)
-							view.SetValid(w, true);
+						project.GetStructure().GetWord(w.path).SetValid(TRUE);
 					}
 				} // if response = yes
 			} // if needed to ask for validation
 		} // not in batch mode (= ask every time)
 	} // no modification was made
 
-	//project.PropagateValidation(); TODO
+	project.PropagateValidation();
 
 	okwords.clear();
 	kowords.clear();
 }
-
 

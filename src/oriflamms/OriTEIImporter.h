@@ -1,4 +1,4 @@
-/* Copyright 2014-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2014-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
  *
  * file: OriTEIImporter.h
  * \author ZHAO Xiaojuan, Yann LEYDIER
@@ -13,16 +13,8 @@
 
 namespace ori
 {
-	class ExceptionTEISelection: public crn::Exception
-	{
-		public:
-			explicit ExceptionTEISelection() noexcept {}
-			explicit ExceptionTEISelection(const crn::StringUTF8 &msg) noexcept: crn::Exception(msg) {}
-			explicit ExceptionTEISelection(const char *msg) noexcept: crn::Exception(msg) {}
-	};
-	
 	/*! \brief Node to create a tree of XML element paths */
-	class TEISelectionNode: public crn::ComplexObject
+	class TEISelectionNode: public crn::Object
 	{
 		public:
 			TEISelectionNode(crn::StringUTF8 n): name(n) { }
@@ -58,7 +50,7 @@ namespace ori
 	class TEIImporter: public Gtk::Dialog
 	{
 		public:
-			TEIImporter(const crn::Path &path1, const crn::Path &path2, Gtk::Window &parent);
+			TEIImporter(const crn::Path &path, Gtk::Window &parent);
 			virtual ~TEIImporter(void) override {}
 
 			TEISelectionNode export_selected_elements() const;
@@ -78,6 +70,7 @@ namespace ori
 			};
 
 			recolumn column;
+			std::unique_ptr<crn::xml::Document> xdoc;
 
 			Gtk::ScrolledWindow scrollwin;
 			Gtk::TreeView view;

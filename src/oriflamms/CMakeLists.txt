@@ -1,4 +1,4 @@
-# Oriflamms build script
+# Seth build script
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/oriflamms/oriflamms_config.h.in"

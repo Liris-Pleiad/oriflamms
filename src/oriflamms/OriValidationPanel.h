@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
  *
  * file: OriValidationPanel.h
  * \author Yann LEYDIER
@@ -10,7 +10,8 @@
 #include <oriflamms_config.h>
 #include <gtkmm.h>
 #include <CRNUtils/CRNProgress.h>
-#include <OriDocument.h>
+#include <OriStruct.h>
+#include <OriProject.h>
 
 namespace ori
 {
@@ -20,23 +21,23 @@ namespace ori
 		public:
 			struct ElementId
 			{
-				ElementId(const Id &wid, size_t p = 0): id(wid), pos(p) {}
-				Id id;
+				ElementId(const WordPath &wp, size_t p = 0): path(wp), pos(p) {}
+				WordPath path;
 				size_t pos;
 				inline bool operator<(const ElementId &other) const
 				{
-					if (id < other.id) return true;
-					else if (id == other.id) return pos < other.pos;
+					if (path < other.path) return true;
+					else if (path == other.path) return pos < other.pos;
 					else return false;
 				}
 			};
 			using ElementCluster = std::map<ElementId, Glib::RefPtr<Gdk::Pixbuf>>;
 			using ElementList = std::map<crn::StringUTF8, ElementCluster>;
 
-			ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m);
+			ValidationPanel(Project &pro, const crn::StringUTF8 &name, const std::vector<crn::Path> &imagenames, bool active_m);
 			virtual ~ValidationPanel() override { if (tipthread) tipthread->join(); }
 
-			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &p, size_t pos = 0);
+			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const WordPath &p, size_t pos = 0);
 			/*! \brief Erases all elements */
 			void clear()
 			{
@@ -92,7 +93,7 @@ namespace ori
 			Gtk::Window tipwin;
 			Gtk::Label tiplab;
 			Gtk::Image tipimg;
-			Id tipword;
+			WordPath tipword;
 			Glib::RefPtr<Gdk::Pixbuf> tippb;
 			Glib::Dispatcher tipsig;
 			Glib::Thread *tipthread;
@@ -107,8 +108,9 @@ namespace ori
 			crn::StringUTF8 title;
 			int nelem;
 			bool modified;
+			std::vector<crn::StringUTF8> images;
 			sigc::signal<void, ElementList> removed;
-			Document &doc;
+			Project &project;
 			bool active_mouse;
 
 	};

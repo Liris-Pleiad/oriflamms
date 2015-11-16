@@ -7,7 +7,6 @@
 #ifndef OriStruct_HEADER
 #define OriStruct_HEADER
 
-#if 0
 #include <oriflamms_config.h>
 #include <CRNGeometry/CRNRect.h>
 #include <CRNMath/CRNProp3.h>
@@ -296,7 +295,6 @@ namespace ori
 	};
 
 }
-#endif
 
 #endif
 

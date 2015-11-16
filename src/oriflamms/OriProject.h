@@ -7,12 +7,11 @@
 #ifndef OriProject_HEADER
 #define OriProject_HEADER
 
-#if 0
 #include <oriflamms_config.h>
 #include <CRNDocument.h>
 #include <CRNUtils/CRNProgress.h>
 #include <OriTEIImporter.h>
-#include <OriDocument.h>
+#include <OriStruct.h>
 #include <OriAlignConfig.h>
 
 namespace ori
@@ -103,7 +102,6 @@ namespace ori
 			std::map<char32_t, crn::StringUTF8> signature_db; /*!< signature database */
 	};
 }
-#endif
 
 #endif
 
