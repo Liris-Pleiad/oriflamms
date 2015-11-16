@@ -15,6 +15,7 @@
 #include <OriViewImpl.h>
 #include <OriTextSignature.h>
 #include <OriFeatures.h>
+#include <CRNIO/CRNZip.h>
 
 #include <CRNi18n.h>
 
@@ -429,6 +430,16 @@ void View::Impl::save()
 View::View() = default;
 
 View::~View() = default;
+
+void View::Save()
+{
+	if (pimpl)
+	{
+		pimpl->zonesdoc.Save();
+		pimpl->linksdoc.Save();
+		pimpl->save();
+	}
+}
 
 const crn::Path& View::GetImageName() const noexcept { return pimpl->imagename; }
 
@@ -907,7 +918,7 @@ void View::UpdateLeftFrontier(const Id &id, int x)
 		if (r.GetLeft() == x)
 			return;
 		auto &val = pimpl->validation.find(id)->second;
-		val.left_corr += crn::Abs(r.GetLeft() - x);
+		val.left_corr += r.GetLeft() - x;
 		r.SetLeft(x);
 		zone.SetPosition(r);
 		if (val.right_corr)
@@ -936,7 +947,7 @@ void View::UpdateRightFrontier(const Id &id, int x)
 		if (r.GetRight() == x)
 			return;
 		auto &val = pimpl->validation.find(id)->second;
-		val.right_corr += crn::Abs(r.GetRight() - x);
+		val.right_corr += r.GetRight() - x;
 		r.SetRight(x);
 		zone.SetPosition(r);
 		if (val.left_corr)
@@ -944,6 +955,32 @@ void View::UpdateRightFrontier(const Id &id, int x)
 	}
 	else
 		throw crn::ExceptionUninitialized("View::UpdateRightFrontier(): "_s + _("uninitialized zone: ") + zid);
+}
+
+/*!
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of the word
+ * \return	the total left correction of the word
+ */
+int View::GetLeftCorrection(const Id &id)
+{
+	auto wit = pimpl->struc.words.find(id);
+	if (wit == pimpl->struc.words.end())
+		throw crn::ExceptionNotFound("View::GetLeftCorrection(): "_s + _("Invalid word id: ") + id);
+	return pimpl->validation.find(id)->second.left_corr;
+}
+
+/*!
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of the word
+ * \return	the total right correction of the word
+ */
+int View::GetRightCorrection(const Id &id)
+{
+	auto wit = pimpl->struc.words.find(id);
+	if (wit == pimpl->struc.words.end())
+		throw crn::ExceptionNotFound("View::GetRightCorrection(): "_s + _("Invalid word id: ") + id);
+	return pimpl->validation.find(id)->second.right_corr;
 }
 
 /*! Resets the left and right corrections of a word
@@ -1140,6 +1177,7 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 	// perform alignment
 	const auto align = Align(risig, lsig);
 	auto bbn = size_t(0);
+	auto bbox = crn::Rect{};
 	for (auto w = first_word; w <= last_word; ++w)
 	{
 		if (bbn >= align.size())
@@ -1157,11 +1195,17 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 		if (wzone.GetPosition() != align[bbn].first)
 			SetValid(wid, crn::Prop3::Unknown);
 		wzone.SetPosition(align[bbn].first);
+		bbox |= align[bbn].first;
 		ResetCorrections(wid); // reset left/right corrections
 		ComputeContour(word.GetZone());
 		
 		bbn += 1;
 	} // for each word
+
+	// recompute line's bbox
+	auto &lzone = GetZone(line.GetZone());
+	bbox |= lzone.GetPosition();
+	lzone.SetPosition(bbox);
 }
 
 /*! Aligns the characters in a word
@@ -1582,6 +1626,711 @@ void Document::AlignAll(AlignConfig conf, crn::Progress *docprog, crn::Progress 
 		if (docprog)
 			docprog->Advance();
 	}
+}
+
+/*! Propagates the validation of word alignment
+ * \param[in]	prog	a progress bar
+ */
+void Document::PropagateValidation(crn::Progress *prog)
+{
+	if (prog)
+		prog->SetMaxCount(int(views.size()));
+	for (const auto &vid : views)
+	{
+		auto v = GetView(vid);
+		for (const auto &lp : v.pimpl->struc.lines)
+		{
+			for (size_t w = 1; w < lp.second.GetWords().size() - 1; ++w)
+			{
+				auto &precid = lp.second.GetWords()[w - 1];
+				auto &currid = lp.second.GetWords()[w];
+				auto &nextid = lp.second.GetWords()[w + 1];
+				if (v.IsValid(precid).IsTrue() && v.IsValid(currid).IsUnknown() && v.IsValid(nextid).IsTrue())
+				{
+					// 1 ? 1 -> 1 1 1
+					v.SetValid(currid, true);
+				}
+				if (v.IsValid(precid).IsTrue() && v.IsValid(currid).IsFalse() && v.IsValid(nextid).IsUnknown())
+				{
+					// 1 0 ? -> 1 0 0
+					v.SetValid(nextid, false);
+				}
+				if (v.IsValid(precid).IsUnknown() && v.IsValid(currid).IsFalse() && v.IsValid(nextid).IsTrue())
+				{
+					// ? 0 1 -> 0 0 1
+					v.SetValid(precid, false);
+				}
+			} // words
+		} // lines
+		if (prog)
+			prog->Advance();
+	} // views
+}
+
+static crn::xml::Element addcell(crn::xml::Element &row)
+{
+	crn::xml::Element cell = row.PushBackElement("table:table-cell");
+	return cell;
+}
+
+static crn::xml::Element addcell(crn::xml::Element &row, const crn::StringUTF8 &s)
+{
+	crn::xml::Element cell = row.PushBackElement("table:table-cell");
+	cell.SetAttribute("office:value-type", "string");
+	//cell.SetAttribute("calcext:value-type", "string");
+	crn::xml::Element el = cell.PushBackElement("text:p");
+	el.PushBackText(s);
+	return cell;
+}
+
+static crn::xml::Element addcell(crn::xml::Element &row, int v)
+{
+	crn::xml::Element cell = row.PushBackElement("table:table-cell");
+	cell.SetAttribute("office:value-type", "float");
+	cell.SetAttribute("office:value", v);
+	//cell.SetAttribute("calcext:value-type", "float");
+	crn::xml::Element el = cell.PushBackElement("text:p");
+	el.PushBackText(crn::StringUTF8(v));
+	return cell;
+}
+
+static crn::xml::Element addcell(crn::xml::Element &row, double v)
+{
+	crn::xml::Element cell = row.PushBackElement("table:table-cell");
+	cell.SetAttribute("office:value-type", "float");
+	cell.SetAttribute("office:value", v);
+	//cell.SetAttribute("calcext:value-type", "float");
+	crn::xml::Element el = cell.PushBackElement("text:p");
+	el.PushBackText(crn::StringUTF8(v));
+	return cell;
+}
+
+static crn::xml::Element addcellp(crn::xml::Element &row, double v)
+{
+	crn::xml::Element cell = row.PushBackElement("table:table-cell");
+	cell.SetAttribute("office:value-type", "percentage");
+	cell.SetAttribute("office:value", v);
+	//cell.SetAttribute("calcext:value-type", "percentage");
+	cell.SetAttribute("table:style-name", "percent");
+	crn::xml::Element el = cell.PushBackElement("text:p");
+	el.PushBackText(crn::StringUTF8(v * 100) + "%");
+	return cell;
+}
+
+struct statelem
+{
+	statelem():ok(0),ko(0),un(0),nleft(0),leftc(0),leftac(0),nright(0),rightc(0),rightac(0) { }
+	statelem(int o, int k, int u):ok(o),ko(k),un(u),nleft(0),leftac(0),nright(0),rightc(0),rightac(0) { }
+	int total() const
+	{
+		return ok + ko + un;
+	}
+	int ok, ko, un;
+	int nleft, leftc, leftac, nright, rightc, rightac;
+};
+/*! Exports statistics on alignment validation to an ODS file
+ * \param[in]	fname	the filename of the spreadsheet
+ */
+void Document::ExportStats(const crn::Path &fname)
+{
+	if (crn::IO::Access(fname, crn::IO::EXISTS))
+		crn::IO::Rm(fname);
+
+	auto ods = crn::Zip::Create(fname, true);
+	// stuff
+	const auto mime = "application/vnd.oasis.opendocument.spreadsheet"_s;
+	ods.AddFile("mimetype", mime.CStr(), mime.Size());
+	ods.AddDirectory("META-INF");
+	auto midoc = crn::xml::Document{};
+	auto el = midoc.PushBackElement("manifest:manifest");
+	el.SetAttribute("xmlns:manifest", "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0");
+	el.SetAttribute("manifest:version", "1.2");
+	auto manel = el.PushBackElement("manifest:file-entry");
+	manel.SetAttribute("manifest:full-path", "/");
+	manel.SetAttribute("manifest:version", "1.2");
+	manel.SetAttribute("manifest:media-type", "application/vnd.oasis.opendocument.spreadsheet");
+	manel = el.PushBackElement("manifest:file-entry");
+	manel.SetAttribute("manifest:full-path", "styles.xml");
+	manel.SetAttribute("manifest:media-type", "text/xml");
+	manel = el.PushBackElement("manifest:file-entry");
+	manel.SetAttribute("manifest:full-path", "content.xml");
+	manel.SetAttribute("manifest:media-type", "text/xml");
+	manel = el.PushBackElement("manifest:file-entry");
+	manel.SetAttribute("manifest:full-path", "meta.xml");
+	manel.SetAttribute("manifest:media-type", "text/xml");
+	manel = el.PushBackElement("manifest:file-entry");
+	manel.SetAttribute("manifest:full-path", "settings.xml");
+	manel.SetAttribute("manifest:media-type", "text/xml");
+
+	const auto mistr = midoc.AsString();
+	ods.AddFile("META-INF/manifest.xml", mistr.CStr(), mistr.Size());
+
+	// create document-styles
+	auto sdoc = crn::xml::Document{};
+	el = sdoc.PushBackElement("office:document-styles");
+	el.SetAttribute("xmlns:office", "urn:oasis:names:tc:opendocument:xmlns:office:1.0");
+	el.SetAttribute("xmlns:style", "urn:oasis:names:tc:opendocument:xmlns:style:1.0");
+	el.SetAttribute("xmlns:text", "urn:oasis:names:tc:opendocument:xmlns:text:1.0");
+	el.SetAttribute("xmlns:table", "urn:oasis:names:tc:opendocument:xmlns:table:1.0");
+	el.SetAttribute("xmlns:draw", "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0");
+	el.SetAttribute("xmlns:fo", "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0");
+	el.SetAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+	el.SetAttribute("xmlns:dc", "http://purl.org/dc/elements/1.1/");
+	el.SetAttribute("xmlns:meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+	el.SetAttribute("xmlns:number", "urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0");
+	el.SetAttribute("xmlns:presentation", "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0");
+	el.SetAttribute("xmlns:svg", "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0");
+	el.SetAttribute("xmlns:chart", "urn:oasis:names:tc:opendocument:xmlns:chart:1.0");
+	el.SetAttribute("xmlns:dr3d", "urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0");
+	el.SetAttribute("xmlns:math", "http://www.w3.org/1998/Math/MathML");
+	el.SetAttribute("xmlns:form", "urn:oasis:names:tc:opendocument:xmlns:form:1.0");
+	el.SetAttribute("xmlns:script", "urn:oasis:names:tc:opendocument:xmlns:script:1.0");
+	el.SetAttribute("xmlns:ooo", "http://openoffice.org/2004/office");
+	el.SetAttribute("xmlns:ooow", "http://openoffice.org/2004/writer");
+	el.SetAttribute("xmlns:oooc", "http://openoffice.org/2004/calc");
+	el.SetAttribute("xmlns:dom", "http://www.w3.org/2001/xml-events");
+	el.SetAttribute("xmlns:rpt", "http://openoffice.org/2005/report");
+	el.SetAttribute("xmlns:of", "urn:oasis:names:tc:opendocument:xmlns:of:1.2");
+	el.SetAttribute("xmlns:xhtml", "http://www.w3.org/1999/xhtml");
+	el.SetAttribute("xmlns:grddl", "http://www.w3.org/2003/g/data-view#");
+	el.SetAttribute("xmlns:tableooo", "http://openoffice.org/2009/table");
+	el.SetAttribute("xmlns:drawooo", "http://openoffice.org/2010/draw");
+	el.SetAttribute("xmlns:calcext", "urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0");
+	el.SetAttribute("xmlns:css3t", "http://www.w3.org/TR/css3-text/");
+	el.SetAttribute("office:version", "1.2");
+	auto styles = el.PushBackElement("office:styles");
+	auto style = styles.PushBackElement("style:default-style");
+	style.SetAttribute("style:family", "table-cell");
+	auto style2 = style.PushBackElement("style:table-column-properties");
+	style2.SetAttribute("style:use-optimal-column-width", "true"); // not working…
+
+	style = styles.PushBackElement("style:style");
+	style.SetAttribute("style:name", "percent");
+	style.SetAttribute("style:family","table-cell");
+	style.SetAttribute("style:data-style-name", "N11");
+
+	style = styles.PushBackElement("style:style");
+	style.SetAttribute("style:name", "title");
+	style.SetAttribute("style:family","table-cell");
+	style2 = style.PushBackElement("style:text-properties");
+	style2.SetAttribute("fo:font-weight", "bold");
+
+	const auto str = sdoc.AsString();
+	ods.AddFile("styles.xml", str.CStr(), str.Size());
+
+	// create document-meta
+	auto mdoc = crn::xml::Document{};
+	el = mdoc.PushBackElement("office:document-meta");
+	el.SetAttribute("xmlns:office", "urn:oasis:names:tc:opendocument:xmlns:office:1.0");
+	el.SetAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+	el.SetAttribute("xmlns:dc", "http://purl.org/dc/elements/1.1/");
+	el.SetAttribute("xmlns:meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+	el.SetAttribute("xmlns:ooo", "http://openoffice.org/2004/office");
+	el.SetAttribute("xmlns:grddl", "http://www.w3.org/2003/g/data-view#");
+	el.SetAttribute("office:version", "1.2");
+
+	const auto mstr = mdoc.AsString();
+	ods.AddFile("meta.xml", mstr.CStr(), mstr.Size());
+
+	// create document-settings
+	auto setdoc = crn::xml::Document{};
+	el = setdoc.PushBackElement("office:document-settings");
+	el.SetAttribute("xmlns:office", "urn:oasis:names:tc:opendocument:xmlns:office:1.0");
+	el.SetAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+	el.SetAttribute("xmlns:draw", "urn:oasis:names:tc:opendocument:xmlns:config:1.0");
+	el.SetAttribute("xmlns:ooo", "http://openoffice.org/2004/office");
+	el.SetAttribute("office:version", "1.2");
+
+	const auto sstr = setdoc.AsString();
+	ods.AddFile("settings.xml", sstr.CStr(), sstr.Size());
+
+	// create document-content
+	auto doc = crn::xml::Document{};
+	el = doc.PushBackElement("office:document-content");
+	el.SetAttribute("xmlns:office", "urn:oasis:names:tc:opendocument:xmlns:office:1.0");
+	el.SetAttribute("xmlns:style", "urn:oasis:names:tc:opendocument:xmlns:style:1.0");
+	el.SetAttribute("xmlns:text", "urn:oasis:names:tc:opendocument:xmlns:text:1.0");
+	el.SetAttribute("xmlns:table", "urn:oasis:names:tc:opendocument:xmlns:table:1.0");
+	el.SetAttribute("xmlns:draw", "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0");
+	el.SetAttribute("xmlns:fo", "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0");
+	el.SetAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+	el.SetAttribute("xmlns:dc", "http://purl.org/dc/elements/1.1/");
+	el.SetAttribute("xmlns:meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+	el.SetAttribute("xmlns:number", "urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0");
+	el.SetAttribute("xmlns:presentation", "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0");
+	el.SetAttribute("xmlns:svg", "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0");
+	el.SetAttribute("xmlns:chart", "urn:oasis:names:tc:opendocument:xmlns:chart:1.0");
+	el.SetAttribute("xmlns:dr3d", "urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0");
+	el.SetAttribute("xmlns:math", "http://www.w3.org/1998/Math/MathML");
+	el.SetAttribute("xmlns:form", "urn:oasis:names:tc:opendocument:xmlns:form:1.0");
+	el.SetAttribute("xmlns:script", "urn:oasis:names:tc:opendocument:xmlns:script:1.0");
+	el.SetAttribute("xmlns:config", "urn:oasis:names:tc:opendocument:xmlns:config:1.0");
+	el.SetAttribute("xmlns:ooo", "http://openoffice.org/2004/office");
+	el.SetAttribute("xmlns:ooow", "http://openoffice.org/2004/writer");
+	el.SetAttribute("xmlns:oooc", "http://openoffice.org/2004/calc");
+	el.SetAttribute("xmlns:dom", "http://www.w3.org/2001/xml-events");
+	el.SetAttribute("xmlns:xforms", "http://www.w3.org/2002/xforms");
+	el.SetAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+	el.SetAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+	el.SetAttribute("xmlns:rpt", "http://openoffice.org/2005/report");
+	el.SetAttribute("xmlns:of", "urn:oasis:names:tc:opendocument:xmlns:of:1.2");
+	el.SetAttribute("xmlns:xhtml", "http://www.w3.org/1999/xhtml");
+	el.SetAttribute("xmlns:grddl", "http://www.w3.org/2003/g/data-view#");
+	el.SetAttribute("xmlns:tableooo", "http://openoffice.org/2009/table");
+	el.SetAttribute("xmlns:drawooo", "http://openoffice.org/2010/draw");
+	el.SetAttribute("xmlns:calcext", "urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0");
+	el.SetAttribute("xmlns:field", "urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0");
+	el.SetAttribute("xmlns:formx", "urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0");
+	el.SetAttribute("xmlns:css3t", "http://www.w3.org/TR/css3-text/");
+	el.SetAttribute("office:version", "1.2");
+
+	el = el.PushBackElement("office:body");
+	el = el.PushBackElement("office:spreadsheet");
+
+	// gather stats
+	statelem globalstat;
+	auto imagestat = std::vector<statelem>{};
+	auto wordstat = std::map<crn::String, statelem>{};
+	auto lenstat = std::map<size_t, statelem>{};
+	auto inistat = std::map<char32_t, statelem>{};
+	auto endstat = std::map<char32_t, statelem>{};
+	auto nextinistat = std::map<char32_t, statelem>{};
+	auto precendstat = std::map<char32_t, statelem>{};
+	auto precend_startstat = std::map<char32_t, std::map<char32_t, statelem>>{};
+	auto end_nextinistat = std::map<char32_t, std::map<char32_t, statelem>>{};
+	auto nblineerr = 0, nblines = 0;
+	auto nblinecor = 0, nbwordcor = 0;
+	auto totwordcor = int64_t(0);
+	auto totawordcor = uint64_t(0);
+	for (const auto &vid : views)
+	{
+		auto v = GetView(vid);
+		auto wok = 0, wko = 0, wun = 0;
+		for (const auto &l : v.pimpl->struc.lines)
+		{
+			auto err = false;
+			auto precend = U' ';
+			for (auto tmpw = size_t(0); tmpw < l.second.GetWords().size(); ++tmpw)
+			{
+				const auto &wid = l.second.GetWords()[tmpw];
+				const auto &w = v.GetWord(wid);
+				if (w.GetText().IsEmpty())
+					continue;
+				auto nextini = U' ';
+				if ((tmpw + 1 < l.second.GetWords().size()) && !v.GetWord(l.second.GetWords()[tmpw + 1]).GetText().IsEmpty())
+					nextini = v.GetWord(l.second.GetWords()[tmpw + 1]).GetText()[0];
+				if (v.IsValid(wid).IsTrue())
+				{
+					wok += 1;
+					wordstat[w.GetText()].ok += 1;
+					lenstat[w.GetText().Length()].ok += 1;
+					inistat[w.GetText()[0]].ok += 1;
+					endstat[w.GetText()[w.GetText().Length() - 1]].ok += 1;
+					nextinistat[nextini].ok += 1;
+					precendstat[precend].ok += 1;
+					precend_startstat[precend][w.GetText()[0]].ok += 1;
+					end_nextinistat[w.GetText()[w.GetText().Length() - 1]][nextini].ok += 1;
+				}
+				else if (v.IsValid(wid).IsFalse())
+				{
+					wko += 1;
+					wordstat[w.GetText()].ko += 1;
+					lenstat[w.GetText().Length()].ko += 1;
+					inistat[w.GetText()[0]].ko += 1;
+					endstat[w.GetText()[w.GetText().Length() - 1]].ko += 1;
+					nextinistat[nextini].ko += 1;
+					precendstat[precend].ko += 1;
+					precend_startstat[precend][w.GetText()[0]].ko += 1;
+					end_nextinistat[w.GetText()[w.GetText().Length() - 1]][nextini].ko += 1;
+					err = true;
+				}
+				else
+				{
+					wun += 1;
+					wordstat[w.GetText()].un += 1;
+					lenstat[w.GetText().Length()].un += 1;
+					inistat[w.GetText()[0]].un += 1;
+					endstat[w.GetText()[w.GetText().Length() - 1]].un += 1;
+					nextinistat[nextini].un += 1;
+					precendstat[precend].un += 1;
+					precend_startstat[precend][w.GetText()[0]].un += 1;
+					end_nextinistat[w.GetText()[w.GetText().Length() - 1]][nextini].un += 1;
+				}
+				precend = w.GetText()[w.GetText().Length() - 1];
+				auto corr = false;
+				const auto lcorr = v.GetLeftCorrection(wid);
+				if (lcorr != 0)
+				{
+					if (tmpw == 0)
+					{
+						corr = true;
+						totwordcor += lcorr;
+						totawordcor += crn::Abs(lcorr);
+					}
+					inistat[w.GetText()[0]].nleft += 1;
+					inistat[w.GetText()[0]].leftc += lcorr;
+					inistat[w.GetText()[0]].leftac += crn::Abs(lcorr);
+				}
+				const auto rcorr = v.GetRightCorrection(wid);
+				if (rcorr != 0)
+				{
+					corr = true;
+					totwordcor += rcorr;
+					totawordcor += crn::Abs(rcorr);
+					endstat[w.GetText()[w.GetText().Length() - 1]].nright += 1;
+					endstat[w.GetText()[w.GetText().Length() - 1]].rightc += rcorr;
+					endstat[w.GetText()[w.GetText().Length() - 1]].rightac += crn::Abs(rcorr);
+				}
+				if (corr)
+					nbwordcor += 1;
+			} // word
+			nblines += 1;
+			if (err)
+				nblineerr += 1;
+			//if (l.second.GetCorrected()) TODO
+				//nblinecor += 1;
+		} // line
+		globalstat.ok += wok;
+		globalstat.ko += wko;
+		globalstat.un += wun;
+		imagestat.push_back(statelem(wok, wko, wun));
+	}
+
+	// Global statistics
+	auto tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Global"));
+	auto row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Document name"));
+	addcell(row, name);
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Number of pages"));
+	addcell(row, int(views.size()));
+	row = tab.PushBackElement("table:table-row");
+
+	auto wordstot = globalstat.total();
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Validated words"));
+	addcell(row, globalstat.ok);
+	addcellp(row, globalstat.ok / double(wordstot));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Rejected words"));
+	addcell(row, globalstat.ko);
+	addcellp(row, globalstat.ko / double(wordstot));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Unchecked words"));
+	addcell(row, globalstat.un);
+	addcellp(row, globalstat.un / double(wordstot));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Total"));
+	addcell(row, wordstot);
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Accuracy on checked words"));
+	addcellp(row, (globalstat.ok + globalstat.ko) == 0 ? 0.0 : globalstat.ok / double(globalstat.ok + globalstat.ko));
+	row = tab.PushBackElement("table:table-row");
+
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Number of lines"));
+	addcell(row, nblines);
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Lines containing errors"));
+	addcell(row, nblineerr);
+	addcellp(row, nblineerr / double(nblines));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Number of manually corrected lines"));
+	addcell(row, nblinecor);
+	addcellp(row, nblinecor / double(nblines));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Number of manually corrected words"));
+	addcell(row, nbwordcor);
+	addcellp(row, nbwordcor / double(wordstot));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Mean word correction length"));
+	addcell(row, nbwordcor == 0 ? 0 : double(totwordcor) / nbwordcor);
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Mean word correction absolute length"));
+	addcell(row, nbwordcor == 0 ? 0 : double(totawordcor) / nbwordcor);
+
+	// Page statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Image"));
+	row = tab.PushBackElement("table:table-row");
+	addcell(row, _("Page id")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Image name")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (auto p = size_t(0); p < imagestat.size(); ++p)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, views[p]);
+		addcell(row, GetView(views[p]).GetImageName());
+		addcell(row, imagestat[p].ok);
+		addcell(row, imagestat[p].ko);
+		addcell(row, imagestat[p].un);
+		const auto tot = imagestat[p].total();
+		addcell(row, tot);
+		addcellp(row, imagestat[p].ok / double(tot));
+		addcellp(row, imagestat[p].ko / double(tot));
+		addcellp(row, imagestat[p].un / double(tot));
+		addcellp(row, (imagestat[p].ok + imagestat[p].ko) == 0 ? 0.0 : imagestat[p].ok / double(imagestat[p].ok + imagestat[p].ko));
+	}
+
+	// Word statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Word"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Transcription")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (const auto &it : wordstat)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, it.first.CStr());
+		addcell(row, it.second.ok);
+		addcell(row, it.second.ko);
+		addcell(row, it.second.un);
+		const auto tot = it.second.total();
+		addcell(row, tot);
+		addcellp(row, it.second.ok / double(tot));
+		addcellp(row, it.second.ko / double(tot));
+		addcellp(row, it.second.un / double(tot));
+		addcellp(row, (it.second.ok + it.second.ko) == 0 ? 0.0 : it.second.ok / double(it.second.ok + it.second.ko));
+	}
+
+	// Length statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Length"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Length")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (const auto &it : lenstat)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, int(it.first));
+		addcell(row, it.second.ok);
+		addcell(row, it.second.ko);
+		addcell(row, it.second.un);
+		const auto tot = it.second.total();
+		addcell(row, tot);
+		addcellp(row, it.second.ok / double(tot));
+		addcellp(row, it.second.ko / double(tot));
+		addcellp(row, it.second.un / double(tot));
+		addcellp(row, (it.second.ok + it.second.ko) == 0 ? 0.0 : it.second.ok / double(it.second.ok + it.second.ko));
+	}
+
+	// Initial statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Initial letter"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Initial letter")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Mean manual correction")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Mean absolute manual correction")).SetAttribute("table:style-name", "title");
+	for (const auto &it : inistat)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, crn::String(it.first).CStr());
+		addcell(row, it.second.ok);
+		addcell(row, it.second.ko);
+		addcell(row, it.second.un);
+		const auto tot = it.second.total();
+		addcell(row, tot);
+		addcellp(row, it.second.ok / double(tot));
+		addcellp(row, it.second.ko / double(tot));
+		addcellp(row, it.second.un / double(tot));
+		addcellp(row, (it.second.ok + it.second.ko) == 0 ? 0.0 : it.second.ok / double(it.second.ok + it.second.ko));
+		addcell(row, it.second.leftc / double(it.second.nleft));
+		addcell(row, it.second.leftac / double(it.second.nleft));
+	}
+
+	// Final statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Final letter"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Final letter")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Mean manual correction")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Mean absolute manual correction")).SetAttribute("table:style-name", "title");
+	for (const auto &it : endstat)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, crn::String(it.first).CStr());
+		addcell(row, it.second.ok);
+		addcell(row, it.second.ko);
+		addcell(row, it.second.un);
+		const auto tot = it.second.total();
+		addcell(row, tot);
+		addcellp(row, it.second.ok / double(tot));
+		addcellp(row, it.second.ko / double(tot));
+		addcellp(row, it.second.un / double(tot));
+		addcellp(row, (it.second.ok + it.second.ko) == 0 ? 0.0 : it.second.ok / double(it.second.ok + it.second.ko));
+		addcell(row, it.second.rightc / double(it.second.nright));
+		addcell(row, it.second.rightac / double(it.second.nright));
+	}
+
+	// Preceding final statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Preceding final letter"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Preceding final letter")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (const auto &it : precendstat)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, crn::String(it.first).CStr());
+		addcell(row, it.second.ok);
+		addcell(row, it.second.ko);
+		addcell(row, it.second.un);
+		const auto tot = it.second.total();
+		addcell(row, tot);
+		addcellp(row, it.second.ok / double(tot));
+		addcellp(row, it.second.ko / double(tot));
+		addcellp(row, it.second.un / double(tot));
+		addcellp(row, (it.second.ok + it.second.ko) == 0 ? 0.0 : it.second.ok / double(it.second.ok + it.second.ko));
+	}
+
+	// Next initial statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Next initial letter"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Next initial letter")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (const auto &it : nextinistat)
+	{
+		row = tab.PushBackElement("table:table-row");
+		addcell(row, crn::String(it.first).CStr());
+		addcell(row, it.second.ok);
+		addcell(row, it.second.ko);
+		addcell(row, it.second.un);
+		const auto tot = it.second.total();
+		addcell(row, tot);
+		addcellp(row, it.second.ok / double(tot));
+		addcellp(row, it.second.ko / double(tot));
+		addcellp(row, it.second.un / double(tot));
+		addcellp(row, (it.second.ok + it.second.ko) == 0 ? 0.0 : it.second.ok / double(it.second.ok + it.second.ko));
+	}
+
+	// Preceding final + initial statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Preceding final + initial"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Digram")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (const auto &it : precend_startstat)
+		for (const auto &it2 : it.second)
+		{
+			row = tab.PushBackElement("table:table-row");
+			auto label = crn::String(it.first);
+			label += " - ";
+			label += it2.first;
+			addcell(row, label.CStr());
+			addcell(row, it2.second.ok);
+			addcell(row, it2.second.ko);
+			addcell(row, it2.second.un);
+			const auto tot = it2.second.total();
+			addcell(row, tot);
+			addcellp(row, it2.second.ok / double(tot));
+			addcellp(row, it2.second.ko / double(tot));
+			addcellp(row, it2.second.un / double(tot));
+			addcellp(row, (it2.second.ok + it2.second.ko) == 0 ? 0.0 : it2.second.ok / double(it2.second.ok + it2.second.ko));
+		}
+
+	// Final + next initial statistics
+	tab = el.PushBackElement("table:table");
+	tab.SetAttribute("table:name", _("Final + next initial"));
+	row = tab.PushBackElement("table:table-row");
+	row.SetAttribute("table:style-name", "title");
+	addcell(row, _("Digram")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Total")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Validated")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Rejected")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Unchecked")).SetAttribute("table:style-name", "title");
+	addcell(row, _("Accuracy on checked words")).SetAttribute("table:style-name", "title");
+	for (const auto &it : end_nextinistat)
+		for (const auto &it2 : it.second)
+		{
+			row = tab.PushBackElement("table:table-row");
+			auto label = crn::String(it.first);
+			label += " - ";
+			label += it2.first;
+			addcell(row, label.CStr());
+			addcell(row, it2.second.ok);
+			addcell(row, it2.second.ko);
+			addcell(row, it2.second.un);
+			const auto tot = it2.second.total();
+			addcell(row, tot);
+			addcellp(row, it2.second.ok / double(tot));
+			addcellp(row, it2.second.ko / double(tot));
+			addcellp(row, it2.second.un / double(tot));
+			addcellp(row, (it2.second.ok + it2.second.ko) == 0 ? 0.0 : it2.second.ok / double(it2.second.ok + it2.second.ko));
+		}
+
+	const auto dstr = doc.AsString();
+	ods.AddFile("content.xml", dstr.CStr(), dstr.Size());
+	ods.Save();
 }
 
 static crn::StringUTF8 allTextInElement(crn::xml::Element &el, const TEISelectionNode& teisel)

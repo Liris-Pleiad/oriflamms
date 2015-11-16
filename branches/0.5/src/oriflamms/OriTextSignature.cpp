@@ -49,6 +49,8 @@ std::vector<TextSignature> TextSignatureDB::Sign(const crn::String &str)
 {
 	const auto f = Convert(str);
 	auto sig = std::vector<TextSignature>{};
+	if (f.IsEmpty())
+		return sig;
 	sig.emplace_back(true, f[0]);
 	for (auto tmp = size_t(1); tmp < f.Size(); ++tmp)
 		sig.emplace_back(false, f[tmp]);

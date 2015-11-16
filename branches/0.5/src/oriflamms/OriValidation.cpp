@@ -104,7 +104,7 @@ Validation::Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bo
 void Validation::update_words(crn::Progress *prog)
 {
 	prog->SetMaxCount(int(doc.GetViews().size()));
-	auto kowords = std::set<crn::StringUTF8>{};
+	auto kowords = std::set<crn::String>{};
 	for (const auto &vid : doc.GetViews())
 	{
 		auto view = doc.GetView(vid);

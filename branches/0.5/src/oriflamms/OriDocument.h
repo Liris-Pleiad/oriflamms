@@ -81,12 +81,12 @@ namespace ori
 			Character(Character&&) = default;
 			Character& operator=(const Character&) = delete;
 			Character& operator=(Character&&) = default;
-			const crn::StringUTF8& GetText() const noexcept { return text; }
+			const crn::String& GetText() const noexcept { return text; }
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
 			Id zone;
-			crn::StringUTF8 text;
+			crn::String text;
 		
 		friend class View;
 		friend class Document;
@@ -100,14 +100,14 @@ namespace ori
 			Word(Word&&) = default;
 			Word& operator=(const Word&) = delete;
 			Word& operator=(Word&&) = default;
-			const crn::StringUTF8& GetText() const noexcept { return text; }
+			const crn::String& GetText() const noexcept { return text; }
 			const std::vector<Id>& GetCharacters() const noexcept { return characters; }
 			const Id& GetZone() const noexcept { return zone; }
 
 		private:
 			std::vector<Id> characters;
 			Id zone;
-			crn::StringUTF8 text;
+			crn::String text;
 		
 		friend class View;
 		friend class Document;
@@ -181,6 +181,8 @@ namespace ori
 			View& operator=(View&&) = default;
 			~View();
 
+			void Save();
+
 			/*! \brief Full path of the image */
 			const crn::Path& GetImageName() const noexcept;
 			/*! \brief Gets the image */
@@ -244,6 +246,10 @@ namespace ori
 			void UpdateRightFrontier(const Id &id, int x);
 			/*! \brief Resets the left and right corrections of a word */
 			void ResetCorrections(const Id &id);
+			/*! \brief Gets the total left correction of a word */
+			int GetLeftCorrection(const Id &id);
+			/*! \brief Gets the total right correction of a word */
+			int GetRightCorrection(const Id &id);
 
 			/*! \brief Computes alignment on a page */
 			void AlignPage(AlignConfig conf, const Id &page_id, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
@@ -294,6 +300,11 @@ namespace ori
 			void ClearSignatures(crn::Progress *prog);
 			/*! \brief Computes alignment on the whole document */
 			void AlignAll(AlignConfig conf, crn::Progress *docprog = nullptr, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			/*! \brief Propagates the validation of word alignment */
+			void PropagateValidation(crn::Progress *prog = nullptr);
+
+			/*! \brief Exports statistics on alignment validation to an ODS file */
+			void ExportStats(const crn::Path &fname);
 
 			struct ViewStructure
 			{

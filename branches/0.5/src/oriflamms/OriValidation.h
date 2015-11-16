@@ -21,7 +21,6 @@ namespace ori
 		public:
 			Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc);
 			virtual ~Validation() override {}
-			const std::map<crn::StringUTF8, std::vector<Id>>& get_word_ids() { return words; }
 
 		private:
 			void update_words(crn::Progress *prog);
@@ -49,7 +48,7 @@ namespace ori
 
 			// attributes
 			Document &doc;
-			std::map<crn::StringUTF8, std::vector<Id> > words;
+			std::map<crn::String, std::vector<Id> > words;
 			bool firstrun;
 			std::set<Id> needconfirm;
 			bool needsave, batch, clustering;

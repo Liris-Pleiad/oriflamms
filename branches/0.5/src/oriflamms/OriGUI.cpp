@@ -678,7 +678,7 @@ Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 					// get text and remove html elements
 					auto s = ""_s;
 					for (const auto &wid : l.GetWords())
-						s += view.GetWord(wid).GetText() + " ";
+						s += view.GetWord(wid).GetText().CStr() + " "_s;
 					auto ltxt = Glib::ustring{};
 					ltxt.reserve(s.Size() * 2);
 					for (size_t tmp = 0; tmp < s.Size(); ++tmp)
@@ -770,23 +770,28 @@ void GUI::tree_selection_changed(bool focus)
 						{
 							const auto lzoneid = current_view.GetLine(lid).GetZone();
 							const auto &r = current_view.GetZone(lzoneid).GetPosition();
-							fx = r.GetCenterX();
-							fy = r.GetTop();
+							if (r.IsValid())
+							{
+								fx = r.GetCenterX();
+								fy = r.GetTop();
+							}
 						}
 						catch (...) {}
 					}
 				}
-				// set focus
-				if (!fx || !fy)
-				{
-					const auto &glines = current_view.GetGraphicalLines(colid);
-					if (!glines.empty())
+				if (focus)
+				{ // set focus
+					if (!fx || !fy)
 					{
-						fx = (glines.front().GetFront().X + glines.front().GetBack().X) / 2;
-						fy = glines.front().GetFront().Y;
+						const auto &glines = current_view.GetGraphicalLines(colid);
+						if (!glines.empty())
+						{
+							fx = (glines.front().GetFront().X + glines.front().GetBack().X) / 2;
+							fy = glines.front().GetFront().Y;
+						}
 					}
+					img.focus_on(fx, fy);
 				}
-				img.focus_on(fx, fy);
 
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
 					img.set_selection_type(GtkCRN::Image::Overlay::Line);
@@ -799,23 +804,26 @@ void GUI::tree_selection_changed(bool focus)
 				// line
 				it = tv.get_selection()->get_selected();
 				auto linid = Id{it->get_value(columns.id).c_str()};
-				// set focus
-				auto ok = true;
-				try
-				{
-					const auto lzoneid = current_view.GetLine(linid).GetZone();
-					const auto &r = current_view.GetZone(lzoneid).GetPosition();
-					img.focus_on(r.GetCenterX(), r.GetTop());
-				}
-				catch (...) { ok = false; }
-				if (!ok)
-				{
+				if (focus)
+				{ // set focus
+					auto ok = true;
 					try
 					{
-						const auto &gl = current_view.GetGraphicalLine(linid);
-						img.focus_on((gl.GetFront().X + gl.GetBack().X) / 2, gl.GetFront().Y);
+						const auto lzoneid = current_view.GetLine(linid).GetZone();
+						const auto &r = current_view.GetZone(lzoneid).GetPosition();
+						if (r.IsValid())
+							img.focus_on(r.GetCenterX(), r.GetTop());
 					}
-					catch (...) { }
+					catch (...) { ok = false; }
+					if (!ok)
+					{
+						try
+						{
+							const auto &gl = current_view.GetGraphicalLine(linid);
+							img.focus_on((gl.GetFront().X + gl.GetBack().X) / 2, gl.GetFront().Y);
+						}
+						catch (...) { }
+					}
 				}
 
 				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
@@ -1138,8 +1146,6 @@ void GUI::align_all()
 	if (aligndial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		aligndial.hide();
-		// TODO
-#if 0
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t iv = pw.add_progress_bar(_("View"));
 		pw.get_crn_progress(iv)->SetType(crn::Progress::Type::ABSOLUTE);
@@ -1147,8 +1153,7 @@ void GUI::align_all()
 		pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
 		size_t il = pw.add_progress_bar(_("Line"));
 		pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
-		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::AlignAll), aligndial.get_config(), pw.get_crn_progress(iv), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
-#endif
+		pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::AlignAll), aligndial.get_config(), pw.get_crn_progress(iv), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
 		set_need_save();
 		tree_selection_changed(false); // update display
 	}
@@ -1178,13 +1183,7 @@ void GUI::save_project()
 {
 	if (doc)
 	{
-		// TODO
-#if 0
-		GtkCRN::ProgressWindow pw(_("Saving…"), this, true);
-		size_t i = pw.add_progress_bar("");
-		pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-		pw.run(sigc::bind(sigc::mem_fun(*project, &Project::Save), pw.get_crn_progress(i)));
-#endif
+		current_view.Save();
 		need_save = false;
 		set_win_title();
 	}
@@ -1217,8 +1216,6 @@ void GUI::change_font()
 
 void GUI::stats()
 {
-	// TODO
-#if 0
 	Gtk::FileChooserDialog fdial(*this, _("Export statistics to…"), Gtk::FILE_CHOOSER_ACTION_SAVE);
 	fdial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
 	fdial.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
@@ -1237,12 +1234,11 @@ void GUI::stats()
 	if (fdial.run() != Gtk::RESPONSE_ACCEPT)
 		return;
 	fdial.hide();
-	crn::Path fname(fdial.get_filename().c_str());
-	crn::Path ext = fname.GetExtension();
+	auto fname = crn::Path(fdial.get_filename().c_str());
+	const auto ext = fname.GetExtension();
 	if ((ext != "ods") && (ext != "Ods") && (ext != "ODS"))
 		fname += ".ods";
-	project->ExportStats(fname);
-#endif
+	doc->ExportStats(fname);
 }
 
 void GUI::clear_sig()
@@ -1260,15 +1256,12 @@ void GUI::clear_sig()
 
 void GUI::propagate_validation()
 {
-	// TODO
-#if 0
 	GtkCRN::ProgressWindow pwin(_("Propagating validation…"), this, true);
 	size_t id = pwin.add_progress_bar("");
 	pwin.get_crn_progress(id)->SetType(crn::Progress::Type::PERCENT);
-	pwin.run(sigc::bind(sigc::mem_fun(*project, &Project::PropagateValidation), pwin.get_crn_progress(id)));
+	pwin.run(sigc::bind(sigc::mem_fun(*doc, &Document::PropagateValidation), pwin.get_crn_progress(id)));
 	set_need_save();
 	tree_selection_changed(false); // update display
-#endif
 }
 
 void GUI::manage_entities()
