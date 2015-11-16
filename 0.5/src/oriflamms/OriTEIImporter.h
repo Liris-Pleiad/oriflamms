@@ -6,7 +6,6 @@
 
 #ifndef TEIIMPORTER_H
 #define TEIIMPORTER_H
-#include <OriStruct.h>
 #include <CRNUtils/CRNXml.h>
 #include <set>
 #include <gtkmm.h>

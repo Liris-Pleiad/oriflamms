@@ -1,17 +1,15 @@
 ../oriflamms/OriFeatures.cpp
 ../oriflamms/OriEntityDialog.cpp
-../oriflamms/OriStruct.h
-../oriflamms/OriStruct.cpp
 ../oriflamms/OriEntityManager.cpp
 ../oriflamms/OriGUI.cpp
 ../oriflamms/OriConfig.h
+../oriflamms/OriViewImpl.h
 ../oriflamms/OriValidation.h
 ../oriflamms/OriValidationPanel.h
 ../oriflamms/OriDocument.cpp
-../oriflamms/OriProject.h
+../oriflamms/OriTextSignature.cpp
 ../oriflamms/OriFeatures.h
 ../oriflamms/OriTEIImporter.cpp
-../oriflamms/OriProject.cpp
 ../oriflamms/OriEntityManager.h
 ../oriflamms/OriValidationPanel.cpp
 ../oriflamms/OriDocument.h
@@ -26,4 +24,5 @@
 ../oriflamms/OriConfig.cpp
 ../oriflamms/OriAlignConfig.h
 ../oriflamms/OriLines.cpp
+../oriflamms/OriTextSignature.h
 ../utils/signatures.cpp

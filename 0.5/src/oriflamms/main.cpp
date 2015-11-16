@@ -5,9 +5,6 @@
  */
 
 #include <oriflamms_config.h>
-#include <OriLines.h>
-#include <OriFeatures.h>
-#include <OriProject.h>
 #include <OriGUI.h>
 #include <GtkCRNMain.h>
 #include <CRNi18n.h>
