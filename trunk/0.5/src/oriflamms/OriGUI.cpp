@@ -15,7 +15,6 @@
 #include <CRNi18n.h>
 #include <OriTEIImporter.h>
 #include <OriEntityDialog.h>
-#include <OriStruct.h>
 #include <CRNUtils/CRNAtScopeExit.h>
 #include <gtkmm/accelmap.h>
 
