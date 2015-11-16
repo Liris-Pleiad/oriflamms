@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan
+/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
  *
  * file: OriValidation.h
  * \author Yann LEYDIER
@@ -8,23 +8,19 @@
 #define OriValidation_HEADER
 
 #include <oriflamms_config.h>
+#include <OriValidationPanel.h>
 #include <gtkmm.h>
 #include <CRNUtils/CRNProgress.h>
-#include <OriStruct.h>
-#include <OriProject.h>
 #include <functional>
-#include <OriValidationPanel.h>
 
 namespace ori
 {
 	/*! \brief Word tabular validation */
 	class Validation: public Gtk::Window
 	{
-
 		public:
-			Validation(Gtk::Window &parent, Project &proj, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc);
+			Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bool use_clustering, const std::function<void(void)> &savefunc, const std::function<void(void)> &refreshfunc);
 			virtual ~Validation() override {}
-			std::map<crn::String, std::vector<WordPath> > get_words_path(){return words;}
 
 		private:
 			void update_words(crn::Progress *prog);
@@ -51,10 +47,10 @@ namespace ori
 			ValidationPanel okwords, kowords;
 
 			// attributes
-			Project &project;
-			std::map<crn::String, std::vector<WordPath> > words;
+			Document &doc;
+			std::map<crn::String, std::vector<Id> > words;
 			bool firstrun;
-			std::set<WordPath> needconfirm;
+			std::set<Id> needconfirm;
 			bool needsave, batch, clustering;
 			std::function<void(void)> saveatclose;
 			std::function<void(void)> refreshatclose;

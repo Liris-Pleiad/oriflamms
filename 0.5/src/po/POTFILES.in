@@ -7,12 +7,14 @@
 ../oriflamms/OriConfig.h
 ../oriflamms/OriValidation.h
 ../oriflamms/OriValidationPanel.h
+../oriflamms/OriDocument.cpp
 ../oriflamms/OriProject.h
 ../oriflamms/OriFeatures.h
 ../oriflamms/OriTEIImporter.cpp
 ../oriflamms/OriProject.cpp
 ../oriflamms/OriEntityManager.h
 ../oriflamms/OriValidationPanel.cpp
+../oriflamms/OriDocument.h
 ../oriflamms/OriLines.h
 ../oriflamms/OriTEIImporter.h
 ../oriflamms/OriAlignDialog.h

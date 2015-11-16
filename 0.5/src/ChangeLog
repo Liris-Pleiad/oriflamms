@@ -1,3 +1,6 @@
+2015-10-07 Yann LEYDIER <yann@leydier.info>
+	* branch: Version 0.5.
+
 2015-08-17 Yann LEYDIER <yann@leydier.info>
 	* AlignConfig, AlignDialog, Project (AlignLine): Added option to 
 			recompute words' frontiers without realigning.

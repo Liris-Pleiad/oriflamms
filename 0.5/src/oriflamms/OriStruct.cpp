@@ -4,6 +4,7 @@
  * \author Yann LEYDIER
  */
 
+#if 0
 #include <OriStruct.h>
 #include <OriConfig.h>
 #include <CRNUtils/CRNXml.h>
@@ -528,4 +529,4 @@ void Document::Save(const crn::Path &fname, crn::Progress *prog) const
 }
 
 
-
+#endif
