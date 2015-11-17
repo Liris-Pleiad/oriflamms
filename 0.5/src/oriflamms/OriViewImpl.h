@@ -29,6 +29,8 @@ namespace ori
 		crn::xml::Document zonesdoc;
 		crn::xml::Document linksdoc;
 		std::unordered_map<crn::StringUTF8, crn::xml::Element> link_groups;
+		crn::xml::Document ontolinksdoc;
+		std::unique_ptr<crn::xml::Element> ontolinkgroup;
 
 		crn::Path datapath;
 		struct WordValidation
@@ -40,6 +42,7 @@ namespace ori
 		std::unordered_map<Id, WordValidation> validation; // word Id
 		std::unordered_map<Id, std::vector<GraphicalLine>> medlines; // column Id
 		std::unordered_map<Id, std::pair<Id, size_t>> line_links; // line Id -> column Id + index
+		std::unordered_map<Id, std::vector<Id>> onto_links; // word Id -> { glyph Ids }
 	};
 }
 

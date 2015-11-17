@@ -40,6 +40,9 @@ const auto ONTODIR = "ontologies"_p;
 const auto ONTOLINKDIR = "ontologies_links"_p;
 const auto ORIDIR = "oriflamms"_p;
 
+const auto GLOBALGLYPH = "ggly:"_s;
+const auto LOCALGLYPH = "lgly:"_s;
+
 //////////////////////////////////////////////////////////////////////////////////
 // Utils
 //////////////////////////////////////////////////////////////////////////////////
@@ -221,10 +224,80 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	if (link_groups.find(CHARLINKS) == link_groups.end())
 		link_groups.emplace(CHARLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", CHARLINKS);
 	
-	// read if it exists ONTODIR/??? for character classes
-	// TODO
-	// read if it exists ONTOLINKDIR/??? for links between characters and classes
-	// TODO
+	// read or create ONTOLINKDIR/projname_id-links.xml for links between characters and classes
+	try
+	{
+		ontolinksdoc = crn::xml::Document{base / ONTOLINKDIR / projname + "_" + crn::Path{id} + "-ontolinks.xml"};
+	}
+	catch (...)
+	{
+		ontolinksdoc = crn::xml::Document{};
+		root = ontolinksdoc.PushBackElement("TEI");
+		auto hel = root.PushBackElement("teiHeader");
+		el = hel.PushBackElement("fileDesc");
+		auto tmpel = el.PushBackElement("titleStmt");
+		tmpel = tmpel.PushBackElement("title");
+		tmpel.PushBackText(_("Allograph links"));
+		tmpel = el.PushBackElement("sourceDesc");
+		tmpel = tmpel.PushBackElement("p");
+		tmpel.PushBackText(_("Created by Oriflamms."));
+		el = hel.PushBackElement("encodingDesc");
+		el = el.PushBackElement("listPrefixDef");
+		tmpel = el.PushBackElement("prefixDef");
+		tmpel.SetAttribute("ident", "txt");
+		tmpel.SetAttribute("matchPattern", "([a-z]+)");
+		tmpel.SetAttribute("replacementPattern", "../texts/" + projname + "$1");
+		tmpel = el.PushBackElement("prefixDef");
+		tmpel.SetAttribute("ident", LOCALGLYPH.SubString(0, LOCALGLYPH.Size() - 1));
+		tmpel.SetAttribute("matchPattern", "([a-z]+)");
+		tmpel.SetAttribute("replacementPattern", "../ontologies/" + projname + "$1");
+		tmpel = el.PushBackElement("prefixDef");
+		tmpel.SetAttribute("ident", GLOBALGLYPH.SubString(0, GLOBALGLYPH.Size() - 1));
+		tmpel.SetAttribute("matchPattern", "([a-z]+)");
+		tmpel.SetAttribute("replacementPattern", "../../charDecl.xml$1");
+		el = root.PushBackElement("text");
+		el = el.PushBackElement("body");
+		el = el.PushBackElement("ab");
+		el = el.PushBackElement("linkGrp");
+		el.SetAttribute("type", "words");
+		ontolinksdoc.Save(base / ONTOLINKDIR / projname + "_" + crn::Path{id} + "-ontolinks.xml");
+	}
+	root = ontolinksdoc.GetRoot();
+	el = root.GetFirstChildElement("text");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-ontolinks.xml: " + _("no text element."));
+	el = el.GetFirstChildElement("body");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-ontolinks.xml: " + _("no body element."));
+	el = el.GetFirstChildElement("ab");
+	if (!el)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-ontolinks.xml: " + _("no ab element."));
+	ontolinkgroup = std::make_unique<crn::xml::Element>(el.GetFirstChildElement("linkGrp"));
+	if (!*ontolinkgroup)
+		throw crn::ExceptionNotFound(projname + "_" + id + "-ontolinks.xml: " + _("no linkGrp element."));
+	el = ontolinkgroup->GetFirstChildElement("link");
+	while (el)
+	{
+		const auto target = el.GetAttribute<crn::StringUTF8>("target").Split(" \t");
+		auto wid = Id{};
+		auto gids = std::vector<Id>{};
+		for (const auto &part : target)
+		{
+			if (part.StartsWith("txt:"))
+				wid = part.SubString(4);
+			else if (part.StartsWith(LOCALGLYPH))
+				gids.push_back(part);
+			else if (part.StartsWith(GLOBALGLYPH))
+				gids.push_back(part);
+			else
+				throw crn::ExceptionInvalidArgument(projname + "_" + id + "-ontolinks.xml: " + _("invalid target base."));
+		}
+		if (wid.IsEmpty())
+			throw crn::ExceptionInvalidArgument(projname + "_" + id + "-ontolinks.xml: " + _("incomplete target."));
+		onto_links.emplace(std::move(wid), std::move(gids));
+
+		el = el.GetNextSiblingElement("link");
+	}
 
 	// read or create oriflamms file
 	datapath = base / ORIDIR / projname + "_" + crn::Path{id};
@@ -386,7 +459,25 @@ void View::Impl::load()
 
 void View::Impl::save()
 {
-	// create document
+	//////////////////////////////////////////////
+	// ontology links
+	//////////////////////////////////////////////
+	ontolinkgroup->Clear();
+	for (const auto &l : onto_links)
+	{
+		if (l.second.empty())
+			continue;
+		auto val = "txt:" + l.first;
+		for (const auto &gid : l.second)
+			val += " " + gid;
+		auto el = ontolinkgroup->PushBackElement("link");
+		el.SetAttribute("target", val);
+	}
+	ontolinksdoc.Save();
+
+	//////////////////////////////////////////////
+	// custom data
+	//////////////////////////////////////////////
 	auto doc = crn::xml::Document{};
 	doc.PushBackComment("oriflamms data file");
 	auto root = doc.PushBackElement("OriData");
@@ -716,10 +807,33 @@ crn::String View::GetAlignableText(const Id &word_id) const
 	return str;
 }
 
+/*! 
+ * \throws	crn::ExceptionNotFound	invalid word id
+ * \param[in]	word_id	the id of the word
+ * \return	the list of glyph Ids associated to a word
+ */
+const std::vector<Id>& View::GetClusters(const Id &word_id) const
+{
+	auto it = pimpl->onto_links.find(word_id);
+	if (it == pimpl->onto_links.end())
+		throw crn::ExceptionNotFound("View::GetClusters(): "_s + _("invalid word id."));
+	return it->second;
+}
+
+/*! 
+ * \param[in]	word_id	the id of the word
+ * \return	the list of glyph Ids associated to a word
+ */
+std::vector<Id>& View::GetClusters(const Id &word_id)
+{
+	return pimpl->onto_links[word_id];
+}
+
 const std::unordered_map<Id, Character>& View::GetCharacters() const
 {
 return pimpl->struc.characters;
 }
+
 /*! 
 * \throws	crn::ExceptionNotFound	invalid id
 */
@@ -1285,6 +1399,19 @@ Id View::addZone(Id id_base, crn::xml::Element &elem)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
+// Glyph
+//////////////////////////////////////////////////////////////////////////////////
+Glyph::Glyph(crn::xml::Element &elem):
+	el(elem)
+{
+}
+
+crn::StringUTF8 Glyph::GetDescription() const
+{
+	return el.GetFirstChildElement("desc").GetFirstChildText();
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 // Document
 //////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -1379,6 +1506,71 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += ": ";
 		report += ex.what();
 		report += "\n";
+	}
+
+	// read global ontology file
+	try
+	{
+		global_onto = crn::xml::Document{base / ".." / "charDecl.xml"};
+		auto root = global_onto.GetRoot();
+		auto el = root.GetFirstChildElement("teiHeader");
+		if (!el) throw 1;
+		el = el.GetFirstChildElement("encodingDesc");
+		if (!el) throw 1;
+		el = el.GetFirstChildElement("charDecl");
+		if (!el) throw 1;
+		el = el.GetFirstChildElement("glyph");
+		while (el)
+		{
+			glyphs.emplace(GLOBALGLYPH + el.GetAttribute<Id>("xml:id"), Glyph{el});
+			el = el.GetNextSiblingElement("glyph");
+		}
+	}
+	catch (...) {}
+	// read or create local ontology file
+	try
+	{
+		local_onto = crn::xml::Document{base / ONTODIR / name + "_ontology.xml"};
+		auto root = local_onto.GetRoot();
+		auto el = root.GetFirstChildElement("teiHeader");
+		if (!el) throw 1;
+		el = el.GetFirstChildElement("encodingDesc");
+		if (!el) throw 1;
+		charDecl = std::make_unique<crn::xml::Element>(el.GetFirstChildElement("charDecl"));
+		if (!*charDecl) throw 1;
+		el = charDecl->GetFirstChildElement("glyph");
+		while (el)
+		{
+			glyphs.emplace(LOCALGLYPH + el.GetAttribute<Id>("xml:id"), Glyph{el});
+			el = el.GetNextSiblingElement("glyph");
+		}
+	}
+	catch (int) 
+	{
+		report += name + "_ontology.xml";
+		report += ": ";
+		report += _("malformed file.");
+		report += "\n";
+	}
+	catch (...)
+	{
+		local_onto = crn::xml::Document{};
+		auto root = local_onto.PushBackElement("TEI");
+		auto hel = root.PushBackElement("teiHeader");
+		auto el = hel.PushBackElement("fileDesc");
+		auto tmpel = el.PushBackElement("titleStmt");
+		tmpel = tmpel.PushBackElement("title");
+		tmpel.PushBackText(_("Allograph declaration"));
+		tmpel = el.PushBackElement("sourceDesc");
+		tmpel = tmpel.PushBackElement("p");
+		tmpel.PushBackText(_("Created by Oriflamms."));
+		el = hel.PushBackElement("encodingDesc");
+		charDecl = std::make_unique<crn::xml::Element>(el.PushBackElement("charDecl"));
+		el = root.PushBackElement("text");
+		el = el.PushBackElement("body");
+		el = el.PushBackElement("p");
+		el.PushBackText(_("Allograph declaration"));
+		local_onto.Save(base / ONTODIR / name + "_ontology.xml");
 	}
 
 	// read all files
@@ -1665,6 +1857,49 @@ void Document::PropagateValidation(crn::Progress *prog)
 		if (prog)
 			prog->Advance();
 	} // views
+}
+
+/*! \return	the list of characters sorted firstly by Unicode value and then by view id */
+std::map<crn::String, std::unordered_map<Id, std::vector<Id>>> Document::CollectCharacters() const
+{
+	auto res = std::map<crn::String, std::unordered_map<Id, std::vector<Id>>>{};
+	for (const auto &v : view_struct)
+	{
+		for (const auto &c : v.second.characters)
+			res[c.second.GetText()][v.first].push_back(c.first);
+	}
+	return res;
+}
+
+const Glyph& Document::GetGlyph(const Id &id) const
+{
+	auto it = glyphs.find(id);
+	if (it == glyphs.end())
+		throw crn::ExceptionNotFound("Document::GetGlyph(): "_s + _("invalid glyph id."));
+	return it->second;
+}
+
+Glyph& Document::GetGlyph(const Id &id)
+{
+	auto it = glyphs.find(id);
+	if (it == glyphs.end())
+		throw crn::ExceptionNotFound("Document::GetGlyph(): "_s + _("invalid glyph id."));
+	return it->second;
+}
+
+/* Adds a glyph to the local ontology file
+ * \param[in]	id	the id of the new glyph
+ * \param[in]	desc	a description for the glyph
+ * \return	a reference to the new glyph
+ */
+Glyph& Document::AddGlyph(const Id &id, const crn::StringUTF8 &desc)
+{
+	if (glyphs.find(id) != glyphs.end())
+		throw crn::ExceptionNotFound("Document::AddGlyph(): "_s + _("the glyph already exists."));
+	auto el = charDecl->PushBackElement("glyph");
+	el.SetAttribute("xml:id", id);
+	el.PushBackElement("desc").PushBackText(desc);
+	return glyphs.emplace(LOCALGLYPH + id, Glyph{el}).first->second;
 }
 
 static crn::xml::Element addcell(crn::xml::Element &row)

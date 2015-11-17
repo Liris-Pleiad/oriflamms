@@ -1,3 +1,13 @@
+2015-11-17 Yann LEYDIER <yann@leydier.info>
+	* Glyph: Added.
+	* Document (GetGlyph, AddGlyph, CollectCharacters): Added.
+	* View (GetClusters): Added.
+
+2015-11-16 Yann LEYDIER <yann@leydier.info>
+	* trunk: Version 0.5.
+	* OriStruct, OriProject: Removed.
+	* OriDocument: Added (support for Oriflamms TEI guidelines).
+
 2015-10-07 Yann LEYDIER <yann@leydier.info>
 	* branch: Version 0.5.
 
