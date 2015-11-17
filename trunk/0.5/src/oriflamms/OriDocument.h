@@ -224,6 +224,10 @@ namespace ori
 			void SetValid(const Id &word_id, const crn::Prop3 &val);
 			/*! \brief Returns the alignable characters in word */
 			crn::String GetAlignableText(const Id &word_id) const;
+			/*! \brief Returns the list of glyph Ids associated to a word */
+			const std::vector<Id>& GetClusters(const Id &word_id) const;
+			/*! \brief Returns the list of glyph Ids associated to a word */
+			std::vector<Id>& GetClusters(const Id &word_id);
 
 			const std::unordered_map<Id, Character>& GetCharacters() const;
 			const Character& GetCharacter(const Id &char_id) const;
@@ -275,6 +279,21 @@ namespace ori
 		friend class Document;
 	};
 
+	class Glyph
+	{
+		public:
+			Glyph(crn::xml::Element &elem);
+			Glyph(const Glyph&) = delete;
+			Glyph(Glyph&&) = default;
+			Glyph& operator=(const Glyph&) = delete;
+			Glyph& operator=(Glyph&&) = default;
+
+			crn::StringUTF8 GetDescription() const;
+
+		private:
+			mutable crn::xml::Element el;
+	};
+
 	class TEISelectionNode;
 	class Document
 	{
@@ -303,6 +322,14 @@ namespace ori
 			/*! \brief Propagates the validation of word alignment */
 			void PropagateValidation(crn::Progress *prog = nullptr);
 
+			/*! \brief Gets the list of characters sorted by Unicode value */
+			std::map<crn::String, std::unordered_map<Id, std::vector<Id>>> CollectCharacters() const;
+
+			const Glyph& GetGlyph(const Id &id) const;
+			Glyph& GetGlyph(const Id &id);
+			/* \brief Adds a glyph to the local ontology file */
+			Glyph& AddGlyph(const Id &id, const crn::StringUTF8 &desc);
+
 			/*! \brief Exports statistics on alignment validation to an ODS file */
 			void ExportStats(const crn::Path &fname);
 
@@ -322,13 +349,16 @@ namespace ori
 
 			using ViewRef = std::weak_ptr<View::Impl>;
 			std::unordered_map<Id, ViewRef> view_refs; // weak references to views
-			std::unordered_map<Id, ElementPosition> positions;
 			std::vector<Id> views; // views in order of the document
 			std::unordered_map<Id, ViewStructure> view_struct;
+			std::unordered_map<Id, ElementPosition> positions;
+			std::unordered_map<Id, Glyph> glyphs;
 
 			crn::Path base;
 			crn::StringUTF8 name;
 			crn::StringUTF8 report;
+			crn::xml::Document global_onto, local_onto;
+			std::unique_ptr<crn::xml::Element> charDecl;
 	};
 
 }

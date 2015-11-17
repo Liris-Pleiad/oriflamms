@@ -1,8 +1,10 @@
 ../oriflamms/OriFeatures.cpp
 ../oriflamms/OriEntityDialog.cpp
+../oriflamms/OriCharacter.h
 ../oriflamms/OriEntityManager.cpp
 ../oriflamms/OriGUI.cpp
 ../oriflamms/OriConfig.h
+../oriflamms/OriCharacter.cpp
 ../oriflamms/OriViewImpl.h
 ../oriflamms/OriValidation.h
 ../oriflamms/OriValidationPanel.h

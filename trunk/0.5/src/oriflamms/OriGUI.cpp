@@ -16,6 +16,7 @@
 #include <OriTEIImporter.h>
 #include <OriEntityDialog.h>
 #include <CRNUtils/CRNAtScopeExit.h>
+#include <OriCharacter.h>
 #include <gtkmm/accelmap.h>
 
 using namespace ori;
@@ -1450,3 +1451,8 @@ void GUI::find_string()
 	dialog.run();
 }
 
+void GUI::show_chars()
+{
+	CharacterDialog dial(*doc, *this);
+	dial.run();
+}

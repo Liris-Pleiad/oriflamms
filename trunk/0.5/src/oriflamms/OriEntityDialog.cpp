@@ -16,7 +16,6 @@ EntityDialog::EntityDialog(Gtk::Window &parent):
 	Gtk::Dialog(_("Entity manager"), parent, true)
 {
 	resize(300, 600);
-	Gtk::Button b;
 	m_ScrolledWindow.add(view);
 	m_ScrolledWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 
