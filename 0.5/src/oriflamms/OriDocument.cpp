@@ -1662,14 +1662,39 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 	{
 		auto dmdoc = crn::xml::Document{base / ORIDIR / "char_dm.xml"};
 		auto root = dmdoc.GetRoot();
-		auto el = root.GetFirstChildElement();
+		auto el = root.GetFirstChildElement("dm");
 		while (el)
 		{
-			chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), crn::SquareMatrixDouble{el});
-			el = el.GetNextSiblingElement();
+			auto iel = el.GetFirstChildElement("ids");
+			if (!iel)
+			{
+				report += "char_dm.xml";
+				report += ": ";
+				report += _("missing id list.");
+				report += "\n";
+				continue;
+			}
+			auto idlist = iel.GetFirstChildText().Split(" ");
+			auto mel = el.GetFirstChildElement("SquareMatrixDouble");
+			if (!mel)
+			{
+				report += "char_dm.xml";
+				report += ": ";
+				report += _("missing distance matrix.");
+				report += "\n";
+				continue;
+			}
+			chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), std::make_pair(std::move(idlist), crn::SquareMatrixDouble{mel}));
+			el = el.GetNextSiblingElement("dm");
 		}
 	}
-	catch (...) {}
+	catch (std::exception &ex) 
+	{
+		report += "char_dm.xml";
+		report += ": ";
+		report += ex.what();
+		report += "\n";
+	}
 
 	// read all files
 	for (const auto &id : views)
@@ -1871,8 +1896,17 @@ void Document::Save() const
 	auto root = dmdoc.PushBackElement("charsdm");
 	for (const auto &dm : chars_dm)
 	{
-		auto el = dm.second.Serialize(root);
+		auto el = root.PushBackElement("dm");
 		el.SetAttribute("charname", dm.first.CStr());
+		dm.second.second.Serialize(el);
+		el = el.PushBackElement("ids");
+		auto idlist = crn::StringUTF8{};
+		for (const auto &id : dm.second.first)
+		{
+			idlist += id;
+			idlist += ' ';
+		}
+		el.PushBackText(idlist);
 	}
 	dmdoc.Save(base / ORIDIR / "char_dm.xml");
 }
@@ -2689,12 +2723,24 @@ void Document::ExportStats(const crn::Path &fname)
  * \param[in]	character	the character string
  * \return	the distance matrix for the character
  */
-const crn::SquareMatrixDouble& Document::GetDistanceMatrix(const crn::String &character) const
+const std::pair<std::vector<Id>, crn::SquareMatrixDouble>& Document::GetDistanceMatrix(const crn::String &character) const
 {
 	auto it = chars_dm.find(character);
 	if (it == chars_dm.end())
 		throw crn::ExceptionNotFound{"Document::GetDistanceMatrix(): "_s + _("character not found.")};
 	return it->second;
+}
+
+/*! Erases the distance matrix for a character
+ * \throws	crn::ExceptionNotFound	the distance matrix was not computed for this character
+ * \param[in]	character	the character string
+ */
+void Document::EraseDistanceMatrix(const crn::String &character)
+{
+	auto it = chars_dm.find(character);
+	if (it == chars_dm.end())
+		throw crn::ExceptionNotFound{"Document::EraseDistanceMatrix(): "_s + _("character not found.")};
+	chars_dm.erase(it);
 }
 
 static crn::StringUTF8 allTextInElement(crn::xml::Element &el, const TEISelectionNode& teisel)

@@ -29,6 +29,9 @@ namespace ori
 
 			void update_buttons();
 			void compute_distmat();
+			void compute_gm(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog);
+			void compute_gsc(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog);
+			void delete_dm();
 
 			Document &doc;
 			std::map<crn::String, std::unordered_map<Id, std::vector<Id>>> characters;

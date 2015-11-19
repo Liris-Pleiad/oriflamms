@@ -340,11 +340,11 @@ namespace ori
 			void ExportStats(const crn::Path &fname);
 
 			/*! \brief Returns the distance matrix for a character */
-			const crn::SquareMatrixDouble& GetDistanceMatrix(const crn::String &character) const;
+			const std::pair<std::vector<Id>, crn::SquareMatrixDouble>& GetDistanceMatrix(const crn::String &character) const;
 			/*! \brief Sets the distance matrix for a character */
-			void SetDistanceMatrix(const crn::String &character, const crn::SquareMatrixDouble &dm) { chars_dm.emplace(character, dm); }
-			/*! \brief Sets the distance matrix for a character */
-			void SetDistanceMatrix(const crn::String &character, crn::SquareMatrixDouble &&dm) { chars_dm.emplace(character, std::move(dm)); }
+			template<typename VectorOdIds, typename DistanceMatrix> void SetDistanceMatrix(const crn::String &character, VectorOdIds &&ids, DistanceMatrix &&dm) { chars_dm.emplace(character, std::make_pair(std::forward<VectorOdIds>(ids), std::forward<DistanceMatrix>(dm))); }
+			/*! \brief Erases the distance matrix for a character */
+			void EraseDistanceMatrix(const crn::String &character);
 
 			struct ViewStructure
 			{
@@ -366,7 +366,7 @@ namespace ori
 			std::unordered_map<Id, ViewStructure> view_struct;
 			std::unordered_map<Id, ElementPosition> positions;
 			std::unordered_map<Id, Glyph> glyphs;
-			std::unordered_map<crn::String, crn::SquareMatrixDouble> chars_dm;
+			std::unordered_map<crn::String, std::pair<std::vector<Id>, crn::SquareMatrixDouble>> chars_dm;
 
 			crn::Path base;
 			crn::StringUTF8 name;

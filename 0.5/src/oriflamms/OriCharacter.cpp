@@ -5,6 +5,8 @@
  */
 
 #include <OriCharacter.h>
+#include <CRNFeature/CRNGradientMatching.h>
+#include <GtkCRNProgressWindow.h>
 #include <CRNi18n.h>
 
 using namespace ori;
@@ -59,6 +61,7 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	hbox2->pack_start(compute_dm, false, false, 0);
 	compute_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::compute_distmat));
 	tab->attach(clear_dm, 2, 3, 0, 1, Gtk::FILL, Gtk::FILL);
+	clear_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::delete_dm));
 
 	tab->attach(*Gtk::manage(new Gtk::Label(_("Clusters"))), 0, 1, 1, 2, Gtk::FILL, Gtk::FILL);
 	auto *hbox3 = Gtk::manage(new Gtk::HBox);
@@ -116,13 +119,89 @@ void CharacterDialog::update_buttons()
 
 void CharacterDialog::compute_distmat()
 {
-	if (Gtk::MessageDialog{*this, 
+	auto row = *tv.get_selection()->get_selected();
+	const auto character = crn::String{Glib::ustring{row[columns.value]}.c_str()};
+	auto ids = std::vector<Id>{};
+	for (const auto &v : characters[character])
+		ids.insert(ids.end(), v.second.begin(), v.second.end());
+	auto dm = crn::SquareMatrixDouble{ids.size(), 0.0};
+
+	const auto res = Gtk::MessageDialog{*this, 
 			_("Are all the occurrences of this character approximately the same size?"), 
-			false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO}.run() == Gtk::RESPONSE_YES)
+			false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO}.run();
+
+	GtkCRN::ProgressWindow pw(_("Computing distance matrix..."), this, true);
+	auto pid = pw.add_progress_bar("");
+
+	if (res == Gtk::RESPONSE_YES)
 	{ // gradient matching
+		pw.run(sigc::bind(sigc::mem_fun(this, &CharacterDialog::compute_gm), character, ids, std::ref(dm), pw.get_crn_progress(pid)));
 	}
 	else
 	{ // gradient shape context
+		pw.run(sigc::bind(sigc::mem_fun(this, &CharacterDialog::compute_gsc), character, ids, std::ref(dm), pw.get_crn_progress(pid)));
 	}
+	doc.SetDistanceMatrix(character, std::move(ids), std::move(dm));
+	compute_dm.hide();
+	dm_ok.show();
+	clear_dm.set_sensitive(true);
+	compute_clusters.set_sensitive(true);
+}
+
+void CharacterDialog::compute_gm(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog)
+{
+	prog->SetMaxCount(2 * ids.size());
+	auto grad = std::vector<crn::GradientModel>{};
+	for (const auto &v : characters[character])
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &c : v.second)
+		{
+			grad.emplace_back(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient());
+			prog->Advance();
+		}
+	}
+	for (auto i : crn::Range(ids))
+	{
+		for (auto j = i + 1; j < ids.size(); ++j)
+		{
+			dm[i][j] = dm[j][i] = crn::Distance(grad[i], grad[j], 0);
+		}
+		prog->Advance();
+	}
+}
+
+void CharacterDialog::compute_gsc(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog)
+{
+	prog->SetMaxCount(2 * ids.size());
+	//auto grad = std::vector<crn::GradientModel>{};
+	for (const auto &v : characters[character])
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &c : v.second)
+		{
+			//grad.emplace_back(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient());
+			prog->Advance();
+		}
+	}
+	for (auto i : crn::Range(ids))
+	{
+		for (auto j = i + 1; j < ids.size(); ++j)
+		{
+			//dm[i][j] = dm[j][i] = crn::Distance(grad[i], grad[j], 0);
+		}
+		prog->Advance();
+	}
+}
+
+void CharacterDialog::delete_dm()
+{
+	auto row = *tv.get_selection()->get_selected();
+	const auto character = crn::String{Glib::ustring{row[columns.value]}.c_str()};
+	doc.EraseDistanceMatrix(character);
+	compute_dm.show();
+	dm_ok.hide();
+	clear_dm.set_sensitive(false);
+	compute_clusters.set_sensitive(false);
 }
 

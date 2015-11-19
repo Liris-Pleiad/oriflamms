@@ -1,6 +1,7 @@
 2015-11-19 Yann LEYDIER <yann@leydier.info>
 	* ValidationPanel: Removed threads. Tooltips are now computed in the main
 	loop.
+	* CharacterDialog: Added clustering.
 
 2015-11-18 Yann LEYDIER <yann@leydier.info>
 	* Document (Save, GetDistanceMatrix, SetDistanceMatrix): Added.
@@ -8,6 +9,7 @@
 	* GUI (display_search): Bugfix.
 	* Validation (read_word): Bugfix.
 	* Align: Bugfix.
+	* CharacterDialog: Added.
 
 2015-11-17 Yann LEYDIER <yann@leydier.info>
 	* Glyph: Added.
