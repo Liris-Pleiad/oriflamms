@@ -86,6 +86,8 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("valid-propagate", Gtk::Stock::REFRESH, _("_Propagate validation"), _("Propagate validation")), sigc::mem_fun(this, &GUI::propagate_validation));
 	actions->add(Gtk::Action::create("valid-stats", Gtk::Stock::PRINT, _("_Statistics"), _("Statistics")), sigc::mem_fun(this, &GUI::stats));
 
+	actions->add(Gtk::Action::create("chars-classif",Gtk::Stock::SELECT_FONT,_("Characters"), _("Characters")), sigc::mem_fun(this,&GUI::show_chars));
+
 	actions->add(Gtk::Action::create("find-string",Gtk::Stock::FIND,_("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
 
 	// Alignment menu
@@ -154,6 +156,8 @@ GUI::GUI():
 		"			<separator/>"
 		"			<menuitem action='valid-propagate'/>"
 		"			<menuitem action='valid-stats'/>"
+		"			<separator/>"
+		"			<menuitem action='chars-classif'/>"
 		"		</menu>"
 		"		<menu action='option-menu'>"
 		"			<menuitem action='validation-batch'/>"
@@ -1184,6 +1188,7 @@ void GUI::save_project()
 	if (doc)
 	{
 		current_view.Save();
+		doc->Save();
 		need_save = false;
 		set_win_title();
 	}
@@ -1331,8 +1336,8 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 					if (bcont.empty())
 					{
 						const auto &box = bczone.GetPosition();
-						backfrontier.emplace_back(box.GetRight(), box.GetTop());
 						backfrontier.emplace_back(box.GetRight(), box.GetBottom());
+						backfrontier.emplace_back(box.GetRight(), box.GetTop());
 					}
 					else
 					{
@@ -1362,8 +1367,8 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 						break;
 
 					const auto &bbox = wzone.GetPosition();
-					auto wpb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, bbox.GetHeight());
-					pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, bbox.GetHeight(), wpb, 0, 0);
+					auto wpb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, max_y - min_y);
+					pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, max_y - min_y, wpb, 0, 0);
 
 					if (!wpb->get_has_alpha())
 						wpb = wpb->add_alpha(true, 255, 255, 255);
@@ -1388,16 +1393,16 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 							if ((j < y2) && (j > y1))
 								x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
 						}
-						for (auto k = 0; k <= crn::Min(x, wpb->get_width() - 1); ++k)
+						for (auto k = 0; k < crn::Min(x, wpb->get_width()); ++k)
 							pixs[k * channels + j * rowstrides + 3] = 0;
 
-						auto xx = 0;
+						auto xx = wpb->get_width();
 						for (auto i = size_t(0); i < backfrontier.size() - 1; ++i)
 						{
-							const auto x1 = backfrontier[i].X - min_x;
-							const auto y1 = backfrontier[i].Y - min_y;
-							const auto x2 = backfrontier[i + 1].X - min_x;
-							const auto y2 = backfrontier[i + 1].Y - min_y;
+							const auto x2 = backfrontier[i].X - min_x;
+							const auto y2 = backfrontier[i].Y - min_y;
+							const auto x1 = backfrontier[i + 1].X - min_x;
+							const auto y1 = backfrontier[i + 1].Y - min_y;
 
 							if (j == y2)
 								xx = x2;
@@ -1406,7 +1411,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 							if ((j < y2) && (j > y1))
 								xx = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
 						}
-						for (auto k = crn::Max(xx, 0); k < wpb->get_width(); ++k)
+						for (auto k = crn::Max(xx + 1, 0); k < wpb->get_width(); ++k)
 							pixs[k * channels + j * rowstrides + 3] = 0;
 					}
 

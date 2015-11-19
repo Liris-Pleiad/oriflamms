@@ -27,12 +27,21 @@ namespace ori
 					Gtk::TreeModelColumn<size_t> count;
 			};
 
+			void update_buttons();
+			void compute_distmat();
+
 			Document &doc;
 			std::map<crn::String, std::unordered_map<Id, std::vector<Id>>> characters;
 
 			Gtk::TreeView tv;
 			Glib::RefPtr<Gtk::ListStore> store;
 			model columns;
+			Gtk::Label dm_ok;
+			Gtk::Button compute_dm;
+			Gtk::Button clear_dm;
+			Gtk::Button compute_clusters;
+			Gtk::Button show_clusters;
+			Gtk::Button clear_clusters;
 	};
 }
 

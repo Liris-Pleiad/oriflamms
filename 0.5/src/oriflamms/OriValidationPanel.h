@@ -34,7 +34,7 @@ namespace ori
 			using ElementList = std::map<crn::StringUTF8, ElementCluster>;
 
 			ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m);
-			virtual ~ValidationPanel() override { if (tipthread) tipthread->join(); }
+			virtual ~ValidationPanel() override { }
 
 			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &p, size_t pos = 0);
 			/*! \brief Erases all elements */
@@ -81,7 +81,7 @@ namespace ori
 			/*! \brief Init tooltip */
 			bool tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip);
 			/*! \brief Loads tooltip image */
-			void load_tooltip_img();
+			bool load_tooltip_img();
 			/*! \brief Displays tooltip image */
 			void set_tooltip_img();
 
@@ -92,10 +92,10 @@ namespace ori
 			Gtk::Window tipwin;
 			Gtk::Label tiplab;
 			Gtk::Image tipimg;
-			Id tipword;
+			Id tipword, loadedtip;
 			Glib::RefPtr<Gdk::Pixbuf> tippb;
 			Glib::Dispatcher tipsig;
-			Glib::Thread *tipthread;
+			std::mutex tipmutex;
 
 			ElementList elements;
 			std::map<ElementId, crn::Point2DInt> positions;

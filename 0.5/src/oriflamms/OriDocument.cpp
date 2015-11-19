@@ -16,7 +16,7 @@
 #include <OriTextSignature.h>
 #include <OriFeatures.h>
 #include <CRNIO/CRNZip.h>
-
+#include <CRNIO/CRNFileShield.h>
 #include <CRNi18n.h>
 
 #include <iostream>
@@ -42,32 +42,6 @@ const auto ORIDIR = "oriflamms"_p;
 
 const auto GLOBALGLYPH = "ggly:"_s;
 const auto LOCALGLYPH = "lgly:"_s;
-
-//////////////////////////////////////////////////////////////////////////////////
-// Utils
-//////////////////////////////////////////////////////////////////////////////////
-enum class XMLType { Text, Zone, Link, Unknown };
-static XMLType getType(crn::xml::Document &doc)
-{
-	auto root = doc.GetRoot();
-	if (root.GetName() != "TEI")
-		return XMLType::Unknown;
-	auto el = root.GetFirstChildElement("facsimile");
-	if (el)
-		return XMLType::Zone;
-	el = root.GetFirstChildElement("text");
-	if (el)
-	{
-		el = el.GetFirstChildElement("body");
-		if (!el)
-			return XMLType::Unknown;
-		if (el.GetFirstChildElement().GetName() == "ab")
-			return XMLType::Link;
-		else
-			return XMLType::Text;
-	}
-	return XMLType::Unknown;
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 // Zone
@@ -182,8 +156,11 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	id(surfid),
 	struc(s)
 {
+	std::lock_guard<std::mutex> flock(crn::FileShield::GetMutex("views://" + id));
+
 	// read ZONEDIR/projname_id-zones.xml for boxes and image
-	zonesdoc = crn::xml::Document{base / ZONEDIR / projname + "_" + crn::Path{id} + "-zones.xml"};
+	const auto zonesdocpath = base / ZONEDIR / projname + "_" + crn::Path{id} + "-zones.xml";
+	zonesdoc = crn::xml::Document{zonesdocpath};
 	auto root = zonesdoc.GetRoot();
 	auto el = root.GetFirstChildElement("facsimile");
 	if (!el)
@@ -199,7 +176,8 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	readZoneElements(el);
 
 	// read LINKDIR/projname_id-links.xml for boxes
-	linksdoc = crn::xml::Document{base / LINKDIR / projname + "_" + crn::Path{id} + "-links.xml"};
+	const auto linksdocpath = base / LINKDIR / projname + "_" + crn::Path{id} + "-links.xml";
+	linksdoc = crn::xml::Document{linksdocpath};
 	root = linksdoc.GetRoot();
 	el = root.GetFirstChildElement("text");
 	if (!el)
@@ -225,9 +203,10 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 		link_groups.emplace(CHARLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", CHARLINKS);
 	
 	// read or create ONTOLINKDIR/projname_id-links.xml for links between characters and classes
+	const auto ontolinksdocpath = base / ONTOLINKDIR / projname + "_" + crn::Path{id} + "-ontolinks.xml";
 	try
 	{
-		ontolinksdoc = crn::xml::Document{base / ONTOLINKDIR / projname + "_" + crn::Path{id} + "-ontolinks.xml"};
+		ontolinksdoc = crn::xml::Document{ontolinksdocpath};
 	}
 	catch (...)
 	{
@@ -322,8 +301,6 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 
 View::Impl::~Impl()
 {
-	zonesdoc.Save();
-	linksdoc.Save();
 	save();
 }
 
@@ -459,6 +436,10 @@ void View::Impl::load()
 
 void View::Impl::save()
 {
+	std::lock_guard<std::mutex> flock(crn::FileShield::GetMutex("views://" + id));
+	zonesdoc.Save();
+	linksdoc.Save();
+
 	//////////////////////////////////////////////
 	// ontology links
 	//////////////////////////////////////////////
@@ -478,6 +459,7 @@ void View::Impl::save()
 	//////////////////////////////////////////////
 	// custom data
 	//////////////////////////////////////////////
+	const auto f = datapath + "-oridata.xml";
 	auto doc = crn::xml::Document{};
 	doc.PushBackComment("oriflamms data file");
 	auto root = doc.PushBackElement("OriData");
@@ -512,7 +494,7 @@ void View::Impl::save()
 		el.SetAttribute("n", l.second.second);
 	}
 	// save file
-	doc.Save(datapath + "-oridata.xml");
+	doc.Save(f);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -526,8 +508,6 @@ void View::Save()
 {
 	if (pimpl)
 	{
-		pimpl->zonesdoc.Save();
-		pimpl->linksdoc.Save();
 		pimpl->save();
 	}
 }
@@ -551,7 +531,7 @@ const Page& View::GetPage(const Id &page_id) const
 {
 	auto it = pimpl->struc.pages.find(page_id);
 	if (it == pimpl->struc.pages.end())
-		throw crn::ExceptionNotFound{_("Invalid page id: ") + page_id};
+		throw crn::ExceptionNotFound{"View::GetPage(): "_s + _("Invalid page id: ") + page_id};
 	return it->second;
 }
 
@@ -562,7 +542,7 @@ Page& View::GetPage(const Id &page_id)
 {
 	auto it = pimpl->struc.pages.find(page_id);
 	if (it == pimpl->struc.pages.end())
-		throw crn::ExceptionNotFound{_("Invalid page id: ") + page_id};
+		throw crn::ExceptionNotFound{"View::GetPage(): "_s + _("Invalid page id: ") + page_id};
 	return it->second;
 }
 
@@ -577,7 +557,7 @@ const Column& View::GetColumn(const Id &col_id) const
 {
 	auto it = pimpl->struc.columns.find(col_id);
 	if (it == pimpl->struc.columns.end())
-		throw crn::ExceptionNotFound{_("Invalid column id: ") + col_id};
+		throw crn::ExceptionNotFound{"View::GetColumn(): "_s + _("Invalid column id: ") + col_id};
 	return it->second;
 }
 
@@ -588,7 +568,7 @@ Column& View::GetColumn(const Id &col_id)
 {
 	auto it = pimpl->struc.columns.find(col_id);
 	if (it == pimpl->struc.columns.end())
-		throw crn::ExceptionNotFound{_("Invalid column id: ") + col_id};
+		throw crn::ExceptionNotFound{"View::GetColumn(): "_s + _("Invalid column id: ") + col_id};
 	return it->second;
 }
 
@@ -601,7 +581,7 @@ const std::vector<GraphicalLine>& View::GetGraphicalLines(const Id &col_id) cons
 {
 	auto it = pimpl->medlines.find(col_id);
 	if (it == pimpl->medlines.end())
-		throw crn::ExceptionNotFound{_("Invalid column id: ") + col_id};
+		throw crn::ExceptionNotFound{"View::GetGraphicalLines(): "_s + _("Invalid column id: ") + col_id};
 	return it->second;
 }
 
@@ -676,7 +656,7 @@ const Line& View::GetLine(const Id &line_id) const
 {
 	auto it = pimpl->struc.lines.find(line_id);
 	if (it == pimpl->struc.lines.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
+		throw crn::ExceptionNotFound{"View::GetLine(): "_s + _("Invalid line id: ") + line_id};
 	return it->second;
 }
 
@@ -687,7 +667,7 @@ Line& View::GetLine(const Id &line_id)
 {
 	auto it = pimpl->struc.lines.find(line_id);
 	if (it == pimpl->struc.lines.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
+		throw crn::ExceptionNotFound{"View::GetLine(): "_s + _("Invalid line id: ") + line_id};
 	return it->second;
 }
 
@@ -701,10 +681,10 @@ const GraphicalLine& View::GetGraphicalLine(const Id &line_id) const
 {
 	auto it = pimpl->line_links.find(line_id);
 	if (it == pimpl->line_links.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
+		throw crn::ExceptionNotFound{"View::GetGraphicalLine(): "_s + _("Invalid line id: ") + line_id};
 
 	if (it->second.second >= pimpl->medlines[it->second.first].size())
-		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + line_id};
+		throw crn::ExceptionDomain{"View::GetGraphicalLine(): "_s + _("No graphical line associated to text line: ") + line_id};
 
 	return pimpl->medlines[it->second.first][it->second.second];
 }
@@ -719,10 +699,10 @@ GraphicalLine& View::GetGraphicalLine(const Id &line_id)
 {
 	auto it = pimpl->line_links.find(line_id);
 	if (it == pimpl->line_links.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
+		throw crn::ExceptionNotFound{"View::GetGraphicalLine(): "_s + _("Invalid line id: ") + line_id};
 
 	if (it->second.second >= pimpl->medlines[it->second.first].size())
-		throw crn::ExceptionDomain{_("No graphical line associated to text line: ") + line_id};
+		throw crn::ExceptionDomain{"View::GetGraphicalLine(): "_s + _("No graphical line associated to text line: ") + line_id};
 
 	return pimpl->medlines[it->second.first][it->second.second];
 }
@@ -736,7 +716,7 @@ size_t View::GetGraphicalLineIndex(const Id &line_id) const
 {
 	auto it = pimpl->line_links.find(line_id);
 	if (it == pimpl->line_links.end())
-		throw crn::ExceptionNotFound{_("Invalid line id: ") + line_id};
+		throw crn::ExceptionNotFound{"View::GetGraphicalLineIndex(): "_s + _("Invalid line id: ") + line_id};
 	return it->second.second;
 }
 
@@ -751,7 +731,7 @@ const Word& View::GetWord(const Id &word_id) const
 {
 	auto it = pimpl->struc.words.find(word_id);
 	if (it == pimpl->struc.words.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
+		throw crn::ExceptionNotFound{"View::GetWord(): "_s + _("Invalid word id: ") + word_id};
 	return it->second;
 }
 
@@ -762,7 +742,7 @@ Word& View::GetWord(const Id &word_id)
 {
 	auto it = pimpl->struc.words.find(word_id);
 	if (it == pimpl->struc.words.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
+		throw crn::ExceptionNotFound{"View::GetWord(): "_s + _("Invalid word id: ") + word_id};
 	return it->second;
 }
 
@@ -775,7 +755,7 @@ const crn::Prop3& View::IsValid(const Id &word_id) const
 {
 	const auto it = pimpl->validation.find(word_id);
 	if (it == pimpl->validation.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
+		throw crn::ExceptionNotFound{"View::IsValid(): "_s + _("Invalid word id: ") + word_id};
 	return it->second.ok;
 }
 
@@ -788,7 +768,7 @@ void View::SetValid(const Id &word_id, const crn::Prop3 &val)
 {
 	auto it = pimpl->validation.find(word_id);
 	if (it == pimpl->validation.end())
-		throw crn::ExceptionNotFound{_("Invalid word id: ") + word_id};
+		throw crn::ExceptionNotFound{"View::SetValid(): "_s + _("Invalid word id: ") + word_id};
 	it->second.ok = val;
 }
 
@@ -841,7 +821,7 @@ const Character& View::GetCharacter(const Id &char_id) const
 {
 auto it = pimpl->struc.characters.find(char_id);
 if (it == pimpl->struc.characters.end())
-	throw crn::ExceptionNotFound{_("Invalid character id: ") + char_id};
+	throw crn::ExceptionNotFound{"View::GetCharacter(): "_s + _("Invalid character id: ") + char_id};
 return it->second;
 }
 
@@ -852,7 +832,7 @@ Character& View::GetCharacter(const Id &char_id)
 {
 auto it = pimpl->struc.characters.find(char_id);
 if (it == pimpl->struc.characters.end())
-	throw crn::ExceptionNotFound{_("Invalid character id: ") + char_id};
+	throw crn::ExceptionNotFound{"View::GetCharacter(): "_s + _("Invalid character id: ") + char_id};
 return it->second;
 }
 
@@ -863,7 +843,7 @@ const Zone& View::GetZone(const Id &zone_id) const
 {
 auto it = pimpl->zones.find(zone_id);
 if (it == pimpl->zones.end())
-	throw crn::ExceptionNotFound{_("Invalid zone id: ") + zone_id};
+	throw crn::ExceptionNotFound{"View::GetZone(): "_s + _("Invalid zone id: ") + zone_id};
 return it->second;
 }
 
@@ -874,7 +854,7 @@ Zone& View::GetZone(const Id &zone_id)
 {
 auto it = pimpl->zones.find(zone_id);
 if (it == pimpl->zones.end())
-	throw crn::ExceptionNotFound{_("Invalid zone id: ") + zone_id};
+	throw crn::ExceptionNotFound{"View::GetZone(): "_s + _("Invalid zone id: ") + zone_id};
 return it->second;
 }
 
@@ -1011,6 +991,110 @@ void View::ComputeContour(const Id &zone_id)
 	auto contour2 = ComputeFrontier(r.GetRight(), r.GetTop(), r.GetBottom());
 	std::move(contour2.rbegin(), contour2.rend(), std::back_inserter(contour));
 	zit->second.SetContour(contour);
+}
+
+/*! Gets the image of a zone. If the zone has a contour, the exterior will be filled with white pixels or null gradients.
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \throws	crn::ExceptionUninitialized	uninitialized zone
+ * \param[in]	zone_id	the id of the zone
+ * \return	a block containing a RGB and gradient buffers
+ */
+crn::SBlock View::GetZoneImage(const Id &zone_id) const
+{
+	auto zit = pimpl->zones.find(zone_id);
+	if (zit == pimpl->zones.end())
+		throw crn::ExceptionNotFound("View::GetZoneImage(): "_s + _("Invalid zone id: ") + zone_id);
+	const auto &pos = zit->second.GetPosition();
+	if (!pos.IsValid())
+		throw crn::ExceptionUninitialized("View::GetZoneImage(): "_s + _("Uninitialized zone id: ") + zone_id);
+	auto &b = GetBlock();
+	b.GetGradient(); // precompute
+	try
+	{
+		return b.GetChild(U"zones", zone_id);
+	}
+	catch (crn::ExceptionNotFound&)
+	{
+		auto contour = zit->second.GetContour();
+		auto frontier = size_t(0);
+		if (!contour.empty())
+		{
+			contour.emplace_back(pos.GetLeft(), pos.GetTop());
+			contour.emplace_back(pos.GetLeft(), pos.GetBottom());
+			frontier = 2;
+			contour.emplace_back(pos.GetRight(), pos.GetTop());
+			contour.emplace_back(pos.GetRight(), pos.GetBottom());
+		}
+		else
+		{
+			for (; frontier < contour.size() - 1; ++frontier)
+				if (contour[frontier + 1].Y < contour[frontier].Y)
+					break;
+		}
+
+		auto max_x = contour[frontier].X;
+		for (auto i = frontier; i < contour.size(); ++i)
+			if (contour[i].X > max_x)
+				max_x = contour[i].X;
+
+		auto min_x = contour.front().X;
+		for (auto i = size_t(0); i < frontier; ++i)
+			if (contour[i].X < min_x)
+				min_x = contour[i].X;
+
+		const auto min_y = contour.front().Y;
+		const auto max_y = contour[frontier].Y;
+
+		auto img = b.AddChildAbsolute(U"zones", {min_x, min_y, max_x, max_y}, zone_id);
+
+		for (auto j = size_t(0); j < img->GetRGB()->GetHeight(); ++j)
+		{ // left frontier
+			auto x = 0;
+			for (auto i = size_t(0); i < frontier - 1; ++i)
+			{
+				const auto x1 = contour[i].X - min_x;
+				const auto y1 = contour[i].Y - min_y;
+				const auto x2 = contour[i + 1].X - min_x;
+				const auto y2 = contour[i + 1].Y - min_y;
+
+				if (j == y2)
+					x = x2;
+				if (j == y1)
+					x = x1;
+				if ((j < y2) && (j > y1))
+					x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+
+			}
+			for (auto k = 0; k <= x; ++k)
+			{
+				img->GetRGB()->At(k, j) = {255, 255, 255};
+				img->GetGradient()->At(k, j).rho = 0;
+			}
+		}
+		for (auto j = size_t(0); j < img->GetRGB()->GetHeight(); ++j)
+		{ // right frontier
+			auto x = 0;
+			for (auto i = frontier; i < contour.size() - 1; ++i)
+			{
+				const auto x2 = contour[i].X - min_x;
+				const auto y2 = contour[i].Y - min_y;
+				const auto x1 = contour[i + 1].X - min_x;
+				const auto y1 = contour[i + 1].Y - min_y;
+				if (j == y2)
+					x = x2;
+				if (j == y1)
+					x = x1;
+				if ((j < y2) && (j > y1))
+					x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+			}
+			for (auto k = x; k < img->GetRGB()->GetWidth(); ++k)
+			{
+				img->GetRGB()->At(k, j) = {255, 255, 255};
+				img->GetGradient()->At(k, j).rho = 0;
+			}
+		}
+		return img;
+	}
 }
 
 /*! Sets the left frontier of a word
@@ -1312,7 +1396,7 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 		bbox |= align[bbn].first;
 		ResetCorrections(wid); // reset left/right corrections
 		ComputeContour(word.GetZone());
-		
+
 		bbn += 1;
 	} // for each word
 
@@ -1455,7 +1539,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		}
 	}
 	if (name.IsEmpty())
-		throw crn::ExceptionInvalidArgument{_("Cannot find main transcription filename.")};
+		throw crn::ExceptionInvalidArgument{"Document::Document(): "_s + _("Cannot find main transcription filename.")};
 
 	// read structure up to word level
 	auto milestones = std::multimap<int, Id>{};
@@ -1572,6 +1656,20 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		el.PushBackText(_("Allograph declaration"));
 		local_onto.Save(base / ONTODIR / name + "_ontology.xml");
 	}
+
+	// read distance matrices
+	try
+	{
+		auto dmdoc = crn::xml::Document{base / ORIDIR / "char_dm.xml"};
+		auto root = dmdoc.GetRoot();
+		auto el = root.GetFirstChildElement();
+		while (el)
+		{
+			chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), crn::SquareMatrixDouble{el});
+			el = el.GetNextSiblingElement();
+		}
+	}
+	catch (...) {}
 
 	// read all files
 	for (const auto &id : views)
@@ -1717,7 +1815,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 
 					if (!lzone.GetPosition().IsValid() && lbox.IsValid())
 						lzone.SetPosition(lbox);
-					
+
 					if (!medianline.empty())
 					{
 						try
@@ -1761,13 +1859,31 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 	}
 }
 
-Document::~Document() = default;
+Document::~Document()
+{
+	Save();
+}
+
+void Document::Save() const
+{
+	// save distance matrices
+	auto dmdoc = crn::xml::Document{};
+	auto root = dmdoc.PushBackElement("charsdm");
+	for (const auto &dm : chars_dm)
+	{
+		auto el = dm.second.Serialize(root);
+		el.SetAttribute("charname", dm.first.CStr());
+	}
+	dmdoc.Save(base / ORIDIR / "char_dm.xml");
+}
 
 View Document::GetView(const Id &id)
 {
+	std::lock_guard<std::mutex> flock(crn::FileShield::GetMutex("views://doc/" + id));
+
 	auto it = view_refs.find(id);
 	if (it == view_refs.end())
-		throw crn::ExceptionNotFound(_("Cannot find view with id ") + id);
+		throw crn::ExceptionNotFound("Document::GetView(): "_s + _("Cannot find view with id ") + id);
 
 	auto v = std::shared_ptr<View::Impl>{};
 	if (it->second.expired())
@@ -1814,7 +1930,7 @@ void Document::AlignAll(AlignConfig conf, crn::Progress *docprog, crn::Progress 
 		auto view = GetView(vid);
 		for (const auto &pid : view.GetPages())
 			view.AlignPage(conf, pid, pageprog, colprog, linprog);
-	
+
 		if (docprog)
 			docprog->Advance();
 	}
@@ -2223,7 +2339,7 @@ void Document::ExportStats(const crn::Path &fname)
 			if (err)
 				nblineerr += 1;
 			//if (l.second.GetCorrected()) TODO
-				//nblinecor += 1;
+			//nblinecor += 1;
 		} // line
 		globalstat.ok += wok;
 		globalstat.ko += wko;
@@ -2566,6 +2682,19 @@ void Document::ExportStats(const crn::Path &fname)
 	const auto dstr = doc.AsString();
 	ods.AddFile("content.xml", dstr.CStr(), dstr.Size());
 	ods.Save();
+}
+
+/*! 
+ * \throws	crn::ExceptionNotFound	the distance matrix was not computed for this character
+ * \param[in]	character	the character string
+ * \return	the distance matrix for the character
+ */
+const crn::SquareMatrixDouble& Document::GetDistanceMatrix(const crn::String &character) const
+{
+	auto it = chars_dm.find(character);
+	if (it == chars_dm.end())
+		throw crn::ExceptionNotFound{"Document::GetDistanceMatrix(): "_s + _("character not found.")};
+	return it->second;
 }
 
 static crn::StringUTF8 allTextInElement(crn::xml::Element &el, const TEISelectionNode& teisel)
