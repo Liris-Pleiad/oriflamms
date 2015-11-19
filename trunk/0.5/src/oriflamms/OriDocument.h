@@ -13,6 +13,7 @@
 #include <CRNGeometry/CRNPoint2DInt.h>
 #include <CRNUtils/CRNXml.h>
 #include <CRNUtils/CRNProgress.h>
+#include <CRNMath/CRNSquareMatrixDouble.h>
 #include <CRNBlock.h>
 #include <OriAlignConfig.h>
 #include <vector>
@@ -39,6 +40,7 @@ namespace ori
 		Id column;
 		Id line;
 		Id word;
+		crn::StringUTF8 ToString() const { return view + ", " + page + ", " + column + ", " + line + ", " + word; }
 	};
 	
 	class CharacterClass
@@ -243,6 +245,8 @@ namespace ori
 			std::vector<crn::Point2DInt> ComputeFrontier(size_t x, size_t y1, size_t y2) const;
 			/*! \brief Computes the contour of a zone from its bounding box */
 			void ComputeContour(const Id &zone_id);
+			/*! \brief Gets the image of a zone */
+			crn::SBlock GetZoneImage(const Id &zone_id) const;
 
 			/*! \brief Sets the left frontier of a word */
 			void UpdateLeftFrontier(const Id &id, int x);
@@ -310,6 +314,8 @@ namespace ori
 			const crn::Path& GetBase() const noexcept { return base; }
 			const crn::StringUTF8& ErrorReport() const noexcept { return report; }
 
+			void Save() const;
+
 			const ElementPosition& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
 
 			const std::vector<Id>& GetViews() const noexcept { return views; }
@@ -333,6 +339,13 @@ namespace ori
 			/*! \brief Exports statistics on alignment validation to an ODS file */
 			void ExportStats(const crn::Path &fname);
 
+			/*! \brief Returns the distance matrix for a character */
+			const crn::SquareMatrixDouble& GetDistanceMatrix(const crn::String &character) const;
+			/*! \brief Sets the distance matrix for a character */
+			void SetDistanceMatrix(const crn::String &character, const crn::SquareMatrixDouble &dm) { chars_dm.emplace(character, dm); }
+			/*! \brief Sets the distance matrix for a character */
+			void SetDistanceMatrix(const crn::String &character, crn::SquareMatrixDouble &&dm) { chars_dm.emplace(character, std::move(dm)); }
+
 			struct ViewStructure
 			{
 				std::unordered_map<Id, Page> pages;
@@ -353,6 +366,7 @@ namespace ori
 			std::unordered_map<Id, ViewStructure> view_struct;
 			std::unordered_map<Id, ElementPosition> positions;
 			std::unordered_map<Id, Glyph> glyphs;
+			std::unordered_map<crn::String, crn::SquareMatrixDouble> chars_dm;
 
 			crn::Path base;
 			crn::StringUTF8 name;

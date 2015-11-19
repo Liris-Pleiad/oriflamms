@@ -31,7 +31,7 @@ namespace ori
 	};
 
 	/*! \brief Aligns two signature strings */
-	const std::vector<std::pair<crn::Rect, crn::StringUTF8>> Align(const std::vector<ImageSignature> &isig, const std::vector<TextSignature> &tsig);
+	std::vector<std::pair<crn::Rect, crn::StringUTF8>> Align(const std::vector<ImageSignature> &isig, const std::vector<TextSignature> &tsig);
 }
 #endif
 

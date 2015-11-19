@@ -97,10 +97,12 @@ static inline int change_elem(char c, char n)
  * \param[in]	tsig	text signature string
  * \return	a list of bounding boxes and the image signature of their content
  */
-const std::vector<std::pair<crn::Rect, crn::StringUTF8>> ori::Align(const std::vector<ImageSignature> &isig, const std::vector<TextSignature> &tsig)
+std::vector<std::pair<crn::Rect, crn::StringUTF8>> ori::Align(const std::vector<ImageSignature> &isig, const std::vector<TextSignature> &tsig)
 {
 	// edit distance
 	size_t s1 = isig.size(), s2 = tsig.size();
+	if (!s1 || !s2)
+		return std::vector<std::pair<crn::Rect, crn::StringUTF8>>{};
 	std::vector<std::vector<int> > d(s1 + 1, std::vector<int>(s2 + 1, 0));
 	for (size_t tmp = 1; tmp <= s1; ++tmp) d[tmp][0] = int(tmp);
 	for (size_t tmp = 1; tmp <= s2; ++tmp) d[0][tmp] = int(tmp);
@@ -222,7 +224,7 @@ const std::vector<std::pair<crn::Rect, crn::StringUTF8>> ori::Align(const std::v
 			}
 
 			// create segment (with no signature)
-			align.push_back(std::make_pair(isig[imgnum].bbox, crn::StringUTF8{}));
+			align.emplace_back(isig[imgnum].bbox, crn::StringUTF8{});
 			//std::cout << isig[imgnum].bbox.ToString() << std::endl;
 			istart = iend = imgnum;
 		}

@@ -172,11 +172,10 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 		prog->SetMaxCount(int(elems.size()));
 	auto lastview = Id{};
 	auto view = View{};
-	Glib::RefPtr<Gdk::Pixbuf> pb;
-	std::vector<Id> clustpath;
-	std::vector<Glib::RefPtr<Gdk::Pixbuf>> clustimg;
-	std::vector<std::vector<int>> clustproj;
-	std::vector<crn::String> clustsig;
+	auto pb = Glib::RefPtr<Gdk::Pixbuf>{};
+	auto clustpath = std::vector<Id>{};
+	auto clustimg = std::vector<Glib::RefPtr<Gdk::Pixbuf>>{};
+	auto clustsig = std::vector<crn::String>{};
 	for (const auto &wp : elems)
 	{
 		const auto vid = doc.GetPosition(wp).view;
@@ -199,8 +198,8 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 				contour.emplace_back(bbox.GetLeft(), bbox.GetTop());
 				contour.emplace_back(bbox.GetLeft(), bbox.GetBottom());
 				frontier = 2;
-				contour.emplace_back(bbox.GetRight(), bbox.GetTop());
 				contour.emplace_back(bbox.GetRight(), bbox.GetBottom());
+				contour.emplace_back(bbox.GetRight(), bbox.GetTop());
 			}
 			else
 			{
@@ -227,7 +226,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 
 			// add word
 			if (!wpb->get_has_alpha())
-				wpb = wpb->add_alpha(true,255,255,255);
+				wpb = wpb->add_alpha(true, 255, 255, 255);
 			auto* pixs = wpb->get_pixels();
 			const auto rowstrides = wpb->get_rowstride();
 			const auto channels = wpb->get_n_channels();
@@ -250,18 +249,18 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 						x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
 
 				}
-				for (auto k = 0; k <= x; ++k)
+				for (auto k = 0; k < x; ++k)
 					pixs[k * channels + j * rowstrides + 3] = 0;
 			}
 			for (auto j = size_t (0); j < wpb->get_height(); ++j)
 			{
-				int x;
+				auto x = max_x - min_x;
 				for(auto i = frontier; i < contour.size() - 1; ++i)
 				{
-					const auto x1 = contour[i].X - min_x;
-					const auto y1 = contour[i].Y - min_y;
-					const auto x2 = contour[i + 1].X - min_x;
-					const auto y2 = contour[i + 1].Y - min_y;
+					const auto x2 = contour[i].X - min_x;
+					const auto y2 = contour[i].Y - min_y;
+					const auto x1 = contour[i + 1].X - min_x;
+					const auto y1 = contour[i + 1].Y - min_y;
 					if (j == y2)
 						x = x2;
 					if (j == y1)
@@ -269,7 +268,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 					if ((j < y2) && (j > y1))
 						x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
 				}
-				for(int k = x; k < wpb->get_width(); ++k)
+				for (auto k = x + 1; k < wpb->get_width(); ++k)
 					pixs[k * channels + j * rowstrides + 3] = 0;
 			}
 			if (view.IsValid(wp).IsFalse())

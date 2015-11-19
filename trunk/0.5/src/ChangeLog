@@ -1,7 +1,19 @@
+2015-11-19 Yann LEYDIER <yann@leydier.info>
+	* ValidationPanel: Removed threads. Tooltips are now computed in the main
+	loop.
+
+2015-11-18 Yann LEYDIER <yann@leydier.info>
+	* Document (Save, GetDistanceMatrix, SetDistanceMatrix): Added.
+	* View (GetZoneImage): Added.
+	* GUI (display_search): Bugfix.
+	* Validation (read_word): Bugfix.
+	* Align: Bugfix.
+
 2015-11-17 Yann LEYDIER <yann@leydier.info>
 	* Glyph: Added.
 	* Document (GetGlyph, AddGlyph, CollectCharacters): Added.
 	* View (GetClusters): Added.
+	* CharacterDialog: Added.
 
 2015-11-16 Yann LEYDIER <yann@leydier.info>
 	* trunk: Version 0.5.

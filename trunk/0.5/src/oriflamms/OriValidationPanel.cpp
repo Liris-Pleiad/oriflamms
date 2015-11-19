@@ -36,8 +36,7 @@ ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bo
 	modified(false),
 	doc(docu),
 	active_mouse(active_m),
-	tipwin(Gtk::WINDOW_POPUP),
-	tipthread(nullptr)
+	tipwin(Gtk::WINDOW_POPUP)
 {
 	Gtk::HBox *hbox(Gtk::manage(new Gtk::HBox));
 	add(*hbox);
@@ -65,7 +64,7 @@ ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bo
 	scroll.get_adjustment()->set_page_increment(100);
 	scroll.signal_value_changed().connect(sigc::mem_fun(this, &ValidationPanel::refresh));
 
-	set_has_tooltip();
+	da.set_has_tooltip();
 	tipwin.set_name("gtk-tooltip");
 	hbox = Gtk::manage(new Gtk::HBox);
 	tipwin.add(*hbox);
@@ -73,8 +72,9 @@ ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bo
 	hbox->pack_start(tiplab, false, true, 2);
 	tipwin.show_all_children();
 	tipsig.connect(sigc::mem_fun(this, &ValidationPanel::set_tooltip_img));
-	signal_query_tooltip().connect(sigc::mem_fun(this, &ValidationPanel::tooltip));
+	da.signal_query_tooltip().connect(sigc::mem_fun(this, &ValidationPanel::tooltip));
 	signal_hide().connect(sigc::mem_fun(tipwin, &Gtk::Widget::hide));
+	Glib::signal_timeout().connect(sigc::mem_fun(this, &ValidationPanel::load_tooltip_img), 200);
 
 	show_all();
 }
@@ -350,10 +350,11 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 			{
 				if (w.first.id != tipword)
 				{
+					std::lock_guard<std::mutex> tiplock{tipmutex};
 					tipword = w.first.id;
 
 					const auto &wordpath = doc.GetPosition(tipword);
-					crn::StringUTF8 msg;
+					auto msg = crn::StringUTF8{};
 					msg += _("View") + " "_s + wordpath.view + "\n";
 					msg += _("Page") + " "_s + wordpath.page + "\n";
 					msg += _("Column") + " "_s += wordpath.column + "\n";
@@ -361,12 +362,8 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 					msg += _("Word") + " "_s + tipword;
 					tiplab.set_text(msg.CStr());
 
-					tipimg.set(Gtk::Stock::REFRESH, Gtk::ICON_SIZE_DIALOG);
-					try
-					{
-						tipthread = Glib::Thread::create(sigc::mem_fun(this, &ValidationPanel::load_tooltip_img), true);
-					}
-					catch (Glib::ThreadError&) { }
+					if (tipword != loadedtip)
+						tipimg.set(Gtk::Stock::REFRESH, Gtk::ICON_SIZE_DIALOG);
 				}
 
 				Glib::RefPtr<Gdk::Window> win(da.get_window());
@@ -385,19 +382,26 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 	return false;
 }
 
-void ValidationPanel::load_tooltip_img()
+bool ValidationPanel::load_tooltip_img()
 {
-	const auto &oriview = doc.GetView(doc.GetPosition(tipword).view);
-	const auto &oriword = oriview.GetWord(tipword);
+	std::lock_guard<std::mutex> tiplock{tipmutex};
+	if (tipword.IsEmpty() || tipword == loadedtip)
+		return true;
+	loadedtip.Swap(tipword);
+	tipword = "";
+
+	const auto &oriview = doc.GetView(doc.GetPosition(loadedtip).view);
+	const auto &oriword = oriview.GetWord(loadedtip);
 	const auto &orizone = oriview.GetZone(oriword.GetZone());
 	const auto &bbox = orizone.GetPosition();
 	if (!bbox.IsValid())
-		return;
+		return true;
+	
 	auto pb = Gdk::Pixbuf::create_from_file(oriview.GetImageName().CStr());
 	tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, bbox.GetWidth()+40, bbox.GetHeight());
 	pb->copy_area(bbox.GetLeft()-20, bbox.GetTop(), bbox.GetWidth()+40, bbox.GetHeight(), tippb, 0, 0);
 	//if (!tippb->get_has_alpha())
-		//tippb = tippb->add_alpha(true, 255, 255, 255);
+	//tippb = tippb->add_alpha(true, 255, 255, 255);
 	guint8* pixs = tippb->get_pixels();
 	const auto &contour = orizone.GetContour();
 	auto frontier = size_t(2);
@@ -478,12 +482,13 @@ void ValidationPanel::load_tooltip_img()
 			}
 		}
 	tipsig.emit();
+	return true;
 }
 
 void ValidationPanel::set_tooltip_img()
 {
-	tipthread = nullptr;
 	tipwin.resize(1, 1);
+	std::lock_guard<std::mutex> tiplock{tipmutex};
 	tipimg.set(tippb);
 }
 
