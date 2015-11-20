@@ -69,8 +69,11 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	auto *hbox3 = Gtk::manage(new Gtk::HBox);
 	tab->attach(*hbox3, 1, 2, 1, 2, Gtk::FILL, Gtk::FILL);
 	hbox3->pack_start(compute_clusters, false, false, 0);
+	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clustering));
 	hbox3->pack_start(show_clusters, false, false, 0);
+	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::show_clust));
 	tab->attach(clear_clusters, 2, 3, 1, 2, Gtk::FILL, Gtk::FILL);
+	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clear_clust));
 
 	add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
 	//add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
@@ -207,5 +210,20 @@ void CharacterDialog::delete_dm()
 	dm_ok.hide();
 	clear_dm.set_sensitive(false);
 	compute_clusters.set_sensitive(false);
+}
+
+void CharacterDialog::clustering()
+{
+	// TODO
+}
+
+void CharacterDialog::show_clust()
+{
+	// TODO
+}
+
+void CharacterDialog::clear_clust()
+{
+	// TODO
 }
 

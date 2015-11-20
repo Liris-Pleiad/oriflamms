@@ -32,6 +32,9 @@ namespace ori
 			void compute_gm(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog);
 			void compute_gsc(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog);
 			void delete_dm();
+			void clustering();
+			void show_clust();
+			void clear_clust();
 
 			Document &doc;
 			std::map<crn::String, std::unordered_map<Id, std::vector<Id>>> characters;
