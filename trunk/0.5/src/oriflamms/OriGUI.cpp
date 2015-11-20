@@ -77,10 +77,10 @@ GUI::GUI():
 	actions->get_action("show-characters")->set_accel_path("<Oriflamms>/DisplayMenu/Characters");
 	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::mem_fun(this,&GUI::edit_overlays));
 	actions->get_action("edit")->set_accel_path("<Oriflamms>/DisplayMenu/Edit");
-	
+
 	// Validation menu
 	actions->add(Gtk::Action::create("valid-menu", _("_Validation"), _("Validation")));
-	
+
 	actions->add(Gtk::Action::create("valid-words", Gtk::Stock::SPELL_CHECK, _("Validate _words"), _("Validate words")), sigc::mem_fun(this, &GUI::validate));
 
 	actions->add(Gtk::Action::create("valid-propagate", Gtk::Stock::REFRESH, _("_Propagate validation"), _("Propagate validation")), sigc::mem_fun(this, &GUI::propagate_validation));
@@ -347,52 +347,55 @@ void GUI::load_project()
 				GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
 			}
 		}
-		catch (ExceptionTEISelection &ex)
-		{
-			auto dir = crn::IO::Directory(dial.get_current_folder().c_str() / "texts"_p);
-			for (const auto fname : dir.GetFiles())
-				if (fname.EndsWith("-c.xml"))
-				{
-					auto fname2 = fname;
-					fname2[fname2.Size() - 5] = 'w';
-					TEIImporter impdial{fname, fname2, *this};
-					if (impdial.run() == Gtk::RESPONSE_ACCEPT)
-					{
-						impdial.hide();
-						impdial.export_selected_elements().Save(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p);
-						try
-						{
-							//doc = std::make_unique<Document>(dial.get_current_folder().c_str());
-							GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
-							pw.set_terminate_on_exception(false);
-							auto i = pw.add_progress_bar("");
-							doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
-							if (!doc)
-								throw 1;
-
-							const auto &error = doc->ErrorReport();
-							if (error.IsNotEmpty())
-							{
-								GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
-							}
-						}
-						catch (crn::Exception &ex)
-						{
-							GtkCRN::App::show_exception(ex, false);
-						}
-					}
-					else
-					{
-						GtkCRN::App::show_exception(ex, false);
-					}
-				}
-		}
 		catch (crn::Exception &ex)
 		{
 			doc.reset();
 			GtkCRN::App::show_exception(ex, false);
 		}
-		catch (int) { }
+		catch (int)
+		{
+			if (!crn::IO::Access(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p, crn::IO::EXISTS))
+			{
+				auto dir = crn::IO::Directory(dial.get_current_folder().c_str() / "texts"_p);
+				for (const auto fname : dir.GetFiles())
+					if (fname.EndsWith("-c.xml"))
+					{
+						auto fname2 = fname;
+						fname2[fname2.Size() - 5] = 'w';
+						TEIImporter impdial{fname, fname2, *this};
+						if (impdial.run() == Gtk::RESPONSE_ACCEPT)
+						{
+							impdial.hide();
+							impdial.export_selected_elements().Save(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p);
+							try
+							{
+								//doc = std::make_unique<Document>(dial.get_current_folder().c_str());
+								GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
+								pw.set_terminate_on_exception(false);
+								auto i = pw.add_progress_bar("");
+								doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
+								if (!doc)
+									throw 1;
+
+								const auto &error = doc->ErrorReport();
+								if (error.IsNotEmpty())
+								{
+									GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
+								}
+							}
+							catch (crn::Exception &ex)
+							{
+								GtkCRN::App::show_exception(ex, false);
+							}
+						}
+						else
+						{
+							GtkCRN::App::show_message(_("Aborted"), Gtk::MESSAGE_ERROR);
+						}
+					}
+
+			}
+		}
 
 		GtkCRN::ProgressWindow pw(_("Loading…"), this, true);
 		auto i = pw.add_progress_bar(_("Page"));
@@ -871,7 +874,7 @@ void GUI::edit_overlays()
 	wc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wchar(img.get_overlay_config(charOverlay));
 	//wchar.editable = mod; TODO
-	
+
 	if (view_depth == ViewDepth::Column)
 	{
 		if (mod)
@@ -941,7 +944,7 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	// clean old overlay items
 	try { img.remove_overlay_item(wordsOverlay, itemid); } catch (...) { }
 	try { img.remove_overlay_item(wordsOverlayUn, itemid); } catch (...) { }
-	try { img.remove_overlay_item(wordsOverlayOk, itemid); } catch (...) { } 
+	try { img.remove_overlay_item(wordsOverlayOk, itemid); } catch (...) { }
 	try { img.remove_overlay_item(wordsOverlayKo, itemid); } catch (...) { }
 
 	const auto &word = current_view.GetWord(wordid);
@@ -1185,9 +1188,9 @@ void GUI::align_all()
 
 void GUI::validate()
 {
-	validation_win = std::make_unique<Validation>(*this, *doc, 
-			Glib::RefPtr<Gtk::RadioAction>::cast_dynamic(actions->get_action("validation-batch"))->get_active(), 
-			true, std::bind(std::mem_fn(&GUI::set_need_save), this), 
+	validation_win = std::make_unique<Validation>(*this, *doc,
+			Glib::RefPtr<Gtk::RadioAction>::cast_dynamic(actions->get_action("validation-batch"))->get_active(),
+			true, std::bind(std::mem_fn(&GUI::set_need_save), this),
 			std::bind(std::mem_fn(&GUI::tree_selection_changed), this, false));
 	validation_win->show();
 }
