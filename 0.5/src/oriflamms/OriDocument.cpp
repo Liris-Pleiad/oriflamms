@@ -1,5 +1,5 @@
 /* Copyright 2015 Université Paris Descartes
- * 
+ *
  * file: OriDocument.cpp
  * \author Yann LEYDIER
  */
@@ -201,7 +201,7 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 		link_groups.emplace(WORDLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", WORDLINKS);
 	if (link_groups.find(CHARLINKS) == link_groups.end())
 		link_groups.emplace(CHARLINKS, el.PushBackElement("linkGrp")).first->second.SetAttribute("type", CHARLINKS);
-	
+
 	// read or create ONTOLINKDIR/projname_id-links.xml for links between characters and classes
 	const auto ontolinksdocpath = base / ONTOLINKDIR / projname + "_" + crn::Path{id} + "-ontolinks.xml";
 	try
@@ -295,7 +295,7 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 			for (const auto &lid : p.second.GetLines())
 				line_links.emplace(lid, std::make_pair(p.first, cnt++));
 		}
-		save();
+		//save();
 	}
 }
 
@@ -524,7 +524,7 @@ crn::Block& View::GetBlock() const
 
 const std::vector<Id>& View::GetPages() const noexcept { return pimpl->struc.pageorder; }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 const Page& View::GetPage(const Id &page_id) const
@@ -535,7 +535,7 @@ const Page& View::GetPage(const Id &page_id) const
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 Page& View::GetPage(const Id &page_id)
@@ -550,7 +550,7 @@ const std::unordered_map<Id, Column>& View::GetColumns() const
 {
 	return pimpl->struc.columns;
 }
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 const Column& View::GetColumn(const Id &col_id) const
@@ -561,7 +561,7 @@ const Column& View::GetColumn(const Id &col_id) const
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 Column& View::GetColumn(const Id &col_id)
@@ -572,7 +572,7 @@ Column& View::GetColumn(const Id &col_id)
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	col_id	the id of a column
  * \return all graphical lines of the column
@@ -604,7 +604,7 @@ void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &c
 	}
 	// add line
 	col.emplace_back(std::make_shared<crn::LinearInterpolation>(pts.begin(), pts.end()), h);
-	std::sort(col.begin(), col.end(), 
+	std::sort(col.begin(), col.end(),
 			[](const GraphicalLine &l1, const GraphicalLine &l2)
 			{
 				return l1.GetFront().Y < l2.GetFront().Y;
@@ -624,7 +624,7 @@ void View::RemoveGraphicalLine(const Id &col_id, size_t index)
 	col.erase(col.begin() + index);
 }
 
-/*! Removes all aligned coordinates in a column 
+/*! Removes all aligned coordinates in a column
  * \param[in]	col_id	the id of the column
  */
 void View::ClearAlignment(const Id &col_id)
@@ -649,7 +649,7 @@ const std::unordered_map<Id, Line>& View::GetLines() const
 {
 	return pimpl->struc.lines;
 }
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 const Line& View::GetLine(const Id &line_id) const
@@ -660,7 +660,7 @@ const Line& View::GetLine(const Id &line_id) const
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 Line& View::GetLine(const Id &line_id)
@@ -671,7 +671,7 @@ Line& View::GetLine(const Id &line_id)
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  * \throws	crn::ExceptionDomain	no graphical line associated to the text line
  * \param[in]	line_id	the id of a line
@@ -689,7 +689,7 @@ const GraphicalLine& View::GetGraphicalLine(const Id &line_id) const
 	return pimpl->medlines[it->second.first][it->second.second];
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  * \throws	crn::ExceptionDomain	no graphical line associated to the text line
  * \param[in]	line_id	the id of a line
@@ -707,7 +707,7 @@ GraphicalLine& View::GetGraphicalLine(const Id &line_id)
 	return pimpl->medlines[it->second.first][it->second.second];
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	line_id	the id of a line
  * \return	the median line's index
@@ -724,7 +724,7 @@ const std::unordered_map<Id, Word>& View::GetWords() const
 {
 	return pimpl->struc.words;
 }
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 const Word& View::GetWord(const Id &word_id) const
@@ -735,7 +735,7 @@ const Word& View::GetWord(const Id &word_id) const
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  */
 Word& View::GetWord(const Id &word_id)
@@ -746,7 +746,7 @@ Word& View::GetWord(const Id &word_id)
 	return it->second;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	word_id	the id of a word
  * \returns the validation state of the word
@@ -759,7 +759,7 @@ const crn::Prop3& View::IsValid(const Id &word_id) const
 	return it->second.ok;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	word_id	the id of a word
  * \param[in]	val	the validation state of the word
@@ -772,9 +772,9 @@ void View::SetValid(const Id &word_id, const crn::Prop3 &val)
 	it->second.ok = val;
 }
 
-/*! 
+/*!
  * \param[in]	word_id	the id of the word
- * \return the alignable characters in word 
+ * \return the alignable characters in word
  */
 crn::String View::GetAlignableText(const Id &word_id) const
 {
@@ -787,7 +787,7 @@ crn::String View::GetAlignableText(const Id &word_id) const
 	return str;
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	invalid word id
  * \param[in]	word_id	the id of the word
  * \return	the list of glyph Ids associated to a word
@@ -800,7 +800,7 @@ const std::vector<Id>& View::GetClusters(const Id &word_id) const
 	return it->second;
 }
 
-/*! 
+/*!
  * \param[in]	word_id	the id of the word
  * \return	the list of glyph Ids associated to a word
  */
@@ -814,7 +814,7 @@ const std::unordered_map<Id, Character>& View::GetCharacters() const
 return pimpl->struc.characters;
 }
 
-/*! 
+/*!
 * \throws	crn::ExceptionNotFound	invalid id
 */
 const Character& View::GetCharacter(const Id &char_id) const
@@ -825,7 +825,7 @@ if (it == pimpl->struc.characters.end())
 return it->second;
 }
 
-/*! 
+/*!
 * \throws	crn::ExceptionNotFound	invalid id
 */
 Character& View::GetCharacter(const Id &char_id)
@@ -836,7 +836,7 @@ if (it == pimpl->struc.characters.end())
 return it->second;
 }
 
-/*! 
+/*!
 * \throws	crn::ExceptionNotFound	invalid id
 */
 const Zone& View::GetZone(const Id &zone_id) const
@@ -847,7 +847,7 @@ if (it == pimpl->zones.end())
 return it->second;
 }
 
-/*! 
+/*!
 * \throws	crn::ExceptionNotFound	invalid id
 */
 Zone& View::GetZone(const Id &zone_id)
@@ -1256,7 +1256,7 @@ void View::AlignLine(AlignConfig conf, const Id &line_id, crn::Progress *prog)
 		auto in = false;
 		for (auto w : crn::Range(line.GetWords()))
 		{
-			if (!GetZone(GetWord(line.GetWords()[w]).GetZone()).GetPosition().IsValid() || 
+			if (!GetZone(GetWord(line.GetWords()[w]).GetZone()).GetPosition().IsValid() ||
 					!IsValid(line.GetWords()[w]).IsTrue())
 			{
 				if (!in)
@@ -1633,7 +1633,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 			el = el.GetNextSiblingElement("glyph");
 		}
 	}
-	catch (int) 
+	catch (int)
 	{
 		report += name + "_ontology.xml";
 		report += ": ";
@@ -1694,7 +1694,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 			el = el.GetNextSiblingElement("dm");
 		}
 	}
-	catch (std::exception &ex) 
+	catch (std::exception &ex)
 	{
 		report += "char_dm.xml";
 		report += ": ";
@@ -2728,7 +2728,7 @@ void Document::ExportStats(const crn::Path &fname)
 	ods.Save();
 }
 
-/*! 
+/*!
  * \throws	crn::ExceptionNotFound	the distance matrix was not computed for this character
  * \param[in]	character	the character string
  * \return	the distance matrix for the character
