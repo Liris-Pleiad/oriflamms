@@ -9,10 +9,14 @@
 #include <CRNFeature/CRNGradientMatching.h>
 #include <CRNFeature/CRNGradientShapeContext.h>
 #include <GtkCRNProgressWindow.h>
+#include <GdkCRNPixbuf.h>
 #include <CRNi18n.h>
 
 using namespace ori;
 
+/////////////////////////////////////////////////////////////////////////////////
+// CharacterDialog
+/////////////////////////////////////////////////////////////////////////////////
 CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	Gtk::Dialog(_("Characters"), parent, true),
 	doc(docu),
@@ -71,9 +75,9 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	hbox3->pack_start(compute_clusters, false, false, 0);
 	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clustering));
 	hbox3->pack_start(show_clusters, false, false, 0);
-	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::show_clust));
+	show_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::show_clust));
 	tab->attach(clear_clusters, 2, 3, 1, 2, Gtk::FILL, Gtk::FILL);
-	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clear_clust));
+	clear_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clear_clust));
 
 	add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
 	//add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
@@ -120,6 +124,7 @@ void CharacterDialog::update_buttons()
 		// XXX tmp
 		compute_clusters.show();
 	}
+		show_clusters.show(); // XXX
 }
 
 void CharacterDialog::compute_distmat()
@@ -136,7 +141,7 @@ void CharacterDialog::compute_distmat()
 			false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO}.run();
 
 	GtkCRN::ProgressWindow pw(_("Computing distance matrix..."), this, true);
-	auto pid = pw.add_progress_bar("");
+	const auto pid = pw.add_progress_bar("");
 
 	if (res == Gtk::RESPONSE_YES)
 	{ // gradient matching
@@ -219,11 +224,81 @@ void CharacterDialog::clustering()
 
 void CharacterDialog::show_clust()
 {
-	// TODO
+	auto row = *tv.get_selection()->get_selected();
+	const auto character = crn::String{Glib::ustring{row[columns.value]}.c_str()};
+	CharacterTree{character, doc, *this}.run();
 }
 
 void CharacterDialog::clear_clust()
 {
 	// TODO
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+// CharacterTree
+/////////////////////////////////////////////////////////////////////////////////
+CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &parent):
+	Gtk::Dialog(_("Character tree"), parent, true),
+	character(c),
+	doc(docu),
+	panel(docu, c.CStr(), false)
+{
+	set_default_size(900, 700);
+	maximize();
+
+	auto *hbox = Gtk::manage(new Gtk::HBox);
+	get_vbox()->pack_start(*hbox, true, true, 4);
+
+	// left panel
+	auto *sw = Gtk::manage(new Gtk::ScrolledWindow);
+	hbox->pack_start(*sw, false, true, 4);
+	sw->set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC);
+
+	store = Gtk::TreeStore::create(columns);
+	tv.set_model(store);
+	tv.append_column(_("Cluster"), columns.value);
+	tv.append_column(_("Count"), columns.count);
+	sw->add(tv);
+
+	// right panel
+	hbox->pack_start(panel, true, true, 4);
+
+	add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
+	//add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
+	std::vector<int> altbut;
+	//altbut.push_back(Gtk::RESPONSE_ACCEPT);
+	altbut.push_back(Gtk::RESPONSE_CANCEL);
+	set_alternative_button_order_from_array(altbut);	
+	//set_default_response(Gtk::RESPONSE_ACCEPT);
+
+	GtkCRN::ProgressWindow pw(_("Collecting data..."), this, true);
+	const auto pid = pw.add_progress_bar("");
+	pw.run(sigc::bind(sigc::mem_fun(this, &CharacterTree::init), pw.get_crn_progress(pid)));
+
+	show_all_children();
+}
+
+void CharacterTree::init(crn::Progress *prog)
+{
+	const auto &dm = doc.GetDistanceMatrix(character);
+	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
+	for (const auto &cid : dm.first)
+		charperview[doc.GetPosition(cid).view].push_back(cid);
+	if (prog)
+		prog->SetMaxCount(dm.first.size());
+	for (const auto &v : charperview)
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &cid : v.second)
+		{
+			auto b = view.GetZoneImage(view.GetCharacter(cid).GetZone());
+			auto pb = GdkCRN::PixbufFromCRNImage(*b->GetRGB());
+			if (!pb->get_has_alpha())
+				pb = pb->add_alpha(true, 255, 255, 255);
+			images.push_back(pb);
+			if (prog)
+				prog->Advance();
+		}
+	}
 }
 

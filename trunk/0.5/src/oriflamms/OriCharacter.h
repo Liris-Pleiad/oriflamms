@@ -10,6 +10,7 @@
 #include <oriflamms_config.h>
 #include <gtkmm.h>
 #include <OriDocument.h>
+#include <OriValidationPanel.h>
 
 namespace ori
 {
@@ -48,6 +49,31 @@ namespace ori
 			Gtk::Button compute_clusters;
 			Gtk::Button show_clusters;
 			Gtk::Button clear_clusters;
+	};
+
+	class CharacterTree: public Gtk::Dialog
+	{
+		public:
+			CharacterTree(const crn::String &c, Document &docu, Gtk::Window &parent);
+		private:
+			class model: public Gtk::TreeModel::ColumnRecord
+			{
+				public:
+					model() { add(value); add(count); }
+					Gtk::TreeModelColumn<Glib::ustring> value;
+					Gtk::TreeModelColumn<size_t> count;
+			};
+
+			void init(crn::Progress *prog);
+
+			crn::String character;
+			Document &doc;
+
+			Gtk::TreeView tv;
+			Glib::RefPtr<Gtk::TreeStore> store;
+			model columns;
+			ValidationPanel panel;
+			std::vector<Glib::RefPtr<Gdk::Pixbuf>> images;
 	};
 }
 
