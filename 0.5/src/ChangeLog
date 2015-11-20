@@ -1,7 +1,7 @@
 2015-11-19 Yann LEYDIER <yann@leydier.info>
 	* ValidationPanel: Removed threads. Tooltips are now computed in the main
 	loop.
-	* CharacterDialog: Added clustering.
+	* CharacterDialog: Added distances matrices.
 
 2015-11-18 Yann LEYDIER <yann@leydier.info>
 	* Document (Save, GetDistanceMatrix, SetDistanceMatrix): Added.

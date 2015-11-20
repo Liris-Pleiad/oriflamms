@@ -5,7 +5,9 @@
  */
 
 #include <OriCharacter.h>
+#include <iostream>
 #include <CRNFeature/CRNGradientMatching.h>
+#include <CRNFeature/CRNGradientShapeContext.h>
 #include <GtkCRNProgressWindow.h>
 #include <CRNi18n.h>
 
@@ -174,13 +176,15 @@ void CharacterDialog::compute_gm(const crn::String &character, const std::vector
 void CharacterDialog::compute_gsc(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog)
 {
 	prog->SetMaxCount(2 * ids.size());
-	//auto grad = std::vector<crn::GradientModel>{};
+	using GSCF = crn::GradientShapeContext<8, 3, 8>;
+	using GSC = std::vector<GSCF::SC>;
+	auto grad = std::vector<GSC>{};
 	for (const auto &v : characters[character])
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &c : v.second)
 		{
-			//grad.emplace_back(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient());
+			grad.push_back(GSCF::CreateRatio(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient(), 6, 1));
 			prog->Advance();
 		}
 	}
@@ -188,7 +192,7 @@ void CharacterDialog::compute_gsc(const crn::String &character, const std::vecto
 	{
 		for (auto j = i + 1; j < ids.size(); ++j)
 		{
-			//dm[i][j] = dm[j][i] = crn::Distance(grad[i], grad[j], 0);
+			dm[i][j] = dm[j][i] = GSCF::Distance(grad[i], grad[j]);
 		}
 		prog->Advance();
 	}
