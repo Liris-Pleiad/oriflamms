@@ -316,7 +316,7 @@ namespace ori
 
 			void Save() const;
 
-			const ElementPosition& GetPosition(const Id &elem_id) const { return positions.find(elem_id)->second; }
+			const ElementPosition& GetPosition(const Id &elem_id) const;
 
 			const std::vector<Id>& GetViews() const noexcept { return views; }
 			View GetView(const Id &id);

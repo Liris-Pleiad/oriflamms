@@ -1799,7 +1799,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 
 						for (const auto &cid : word.GetCharacters())
 						{ // characters
-							positions.emplace(wid, ElementPosition{id, p.first, cid, lid, wid});
+							positions.emplace(cid, ElementPosition{id, p.first, cid, lid, wid});
 
 							auto &cha = v.GetCharacter(cid);
 							if (cha.GetZone().IsEmpty())
@@ -1919,6 +1919,14 @@ void Document::Save() const
 		el.PushBackText(idlist);
 	}
 	dmdoc.Save(base / ORIDIR / "char_dm.xml");
+}
+
+const ElementPosition& Document::GetPosition(const Id &elem_id) const
+{
+	auto it = positions.find(elem_id);
+	if (it == positions.end())
+		throw crn::ExceptionNotFound("Document::GetPosition(): "_s + _("invalid id: ") + elem_id);
+	return it->second;
 }
 
 View Document::GetView(const Id &id)
