@@ -1557,6 +1557,8 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += ex.what();
 		report += "\n";
 	}
+	if (prog)
+		prog->SetMaxCount(milestones.size() + 3);
 	// check if milestones are well ordered
 	auto cnt = 1;
 	auto msok = true;
@@ -1591,6 +1593,8 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += ex.what();
 		report += "\n";
 	}
+	if (prog)
+		prog->Advance();
 
 	// read global ontology file
 	try
@@ -1656,6 +1660,8 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		el.PushBackText(_("Allograph declaration"));
 		local_onto.Save(base / ONTODIR / name + "_ontology.xml");
 	}
+	if (prog)
+		prog->Advance();
 
 	// read distance matrices
 	try
@@ -1695,6 +1701,8 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		report += ex.what();
 		report += "\n";
 	}
+	if (prog)
+		prog->Advance();
 
 	// read all files
 	for (const auto &id : views)
@@ -1881,6 +1889,8 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		} // pages
 		if (need_lines)
 			v.detectLines();
+		if (prog)
+			prog->Advance();
 	}
 }
 

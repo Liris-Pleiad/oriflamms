@@ -2,6 +2,7 @@
 	* ValidationPanel: Removed threads. Tooltips are now computed in the main
 	loop.
 	* CharacterDialog: Added distances matrices.
+	* GUI (load_project): Now shows a progress bar.
 
 2015-11-18 Yann LEYDIER <yann@leydier.info>
 	* Document (Save, GetDistanceMatrix, SetDistanceMatrix): Added.

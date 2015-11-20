@@ -315,6 +315,10 @@ void GUI::about()
 	dial.run();
 }
 
+static std::unique_ptr<Document> createdoc(const crn::Path &p, crn::Progress *prog)
+{
+	return std::make_unique<Document>(p, prog);
+}
 void GUI::load_project()
 {
 	Gtk::FileChooserDialog dial(*this, _("Open project"), Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER);
@@ -330,7 +334,13 @@ void GUI::load_project()
 		dial.hide();
 		try
 		{
-			doc = std::make_unique<Document>(dial.get_current_folder().c_str());
+			GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
+			pw.set_terminate_on_exception(false);
+			auto i = pw.add_progress_bar("");
+			doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
+			if (!doc)
+				throw 1;
+			//doc = std::make_unique<Document>(dial.get_current_folder().c_str());
 			const auto &error = doc->ErrorReport();
 			if (error.IsNotEmpty())
 			{
@@ -352,7 +362,14 @@ void GUI::load_project()
 						impdial.export_selected_elements().Save(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p);
 						try
 						{
-							doc = std::make_unique<Document>(dial.get_current_folder().c_str());
+							//doc = std::make_unique<Document>(dial.get_current_folder().c_str());
+							GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
+							pw.set_terminate_on_exception(false);
+							auto i = pw.add_progress_bar("");
+							doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
+							if (!doc)
+								throw 1;
+
 							const auto &error = doc->ErrorReport();
 							if (error.IsNotEmpty())
 							{
@@ -375,11 +392,12 @@ void GUI::load_project()
 			doc.reset();
 			GtkCRN::App::show_exception(ex, false);
 		}
+		catch (int) { }
 
 		GtkCRN::ProgressWindow pw(_("Loading…"), this, true);
-		size_t i = pw.add_progress_bar(_("Page"));
+		auto i = pw.add_progress_bar(_("Page"));
 		pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-		store = pw.run<Glib::RefPtr<Gtk::TreeStore> >(sigc::bind(sigc::mem_fun(this, &GUI::fill_tree), pw.get_crn_progress(i)));
+		store = pw.run<Glib::RefPtr<Gtk::TreeStore>>(sigc::bind(sigc::mem_fun(this, &GUI::fill_tree), pw.get_crn_progress(i)));
 		tv.set_model(store);
 		setup_window();
 
