@@ -1042,7 +1042,7 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		const auto &line = current_view.GetLine(path.line).GetWords();
 		auto it = std::find(line.begin(), line.end(), id);
 		// need to update previous word?
-		if (it != line.begin());
+		if (it != line.begin())
 		{
 			const auto &pp = *(it - 1);
 			const auto &pzone = current_view.GetZone(current_view.GetWord(pp).GetZone());
@@ -1302,7 +1302,7 @@ void GUI::manage_entities()
 void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 {
 	panel->clear();
-	const auto str = crn::StringUTF8(entry->get_text().c_str());
+	const auto str = crn::String(entry->get_text().c_str());
 	if (str.IsNotEmpty())
 		for (const auto &vid : doc->GetViews())
 		{ // for each view

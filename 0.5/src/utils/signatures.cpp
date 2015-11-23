@@ -16,6 +16,7 @@ int main(void)
 	sig[U'A'] = ",l";
 	sig[U'B'] = "ll";
 	sig[U'C'] = "('"; // ll  l,'  'l,  ,l'  ll  ,'  l'  l  ,'  l,'  l',  ll  l'  'l  l'  ll'  l'  'l  l  ll  l'
+	sig[U'Ç'] = "('";
 	sig[U'D'] = "l)"; // l'  ,',  ll  ,','  ,','  l,  ,l'  l'  ,','  ,''  ll  ll  ,'l  l'  ,',  ,',  ,','  ll  ,'',  ,'l  ll  ll
 	sig[U'E'] = "l'"; // ','  l'  ll  l'  ','  l',  'l  l'  l'  ll  ,'  ll  'l  l',  l'
 	sig[U'F'] = ""; // TODO NOT FOUND
@@ -40,6 +41,7 @@ int main(void)
 	sig[U'a'] = ",l";
 	sig[U'b'] = "l)"; // l,  ll  ll  ll  ll
 	sig[U'c'] = "('";
+	sig[U'ç'] = "('";
 	sig[U'd'] = "(,";
 	sig[U'e'] = "('";
 	sig[U'f'] = "l'";
