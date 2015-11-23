@@ -338,6 +338,7 @@ void ValidationPanel::full_refresh()
 bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip)
 {
 	int offset = -int(scroll.get_adjustment()->get_value());
+	std::cout << x << ", " << y << " | " << offset << std::endl;
 	for (const ValidationPanel::ElementList::value_type &el : elements)
 	{
 

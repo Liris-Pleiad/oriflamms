@@ -1,3 +1,14 @@
+2015-11-23 Yann LEYDIER <yann@leydier.info>
+	* View (GetZoneImage): Bugfix.
+	* Glyph (LocalId, GlobalId): Added.
+	* Document (AddGlyph): Bugfix.
+	* GUI (display_search): Bugfix.
+	* View (AlignWordCharacters): Now adds a dummy signature when the character
+																has none.
+
+2015-11-20 Yann LEYDIER <yann@leydier.info>
+	* CharacterTree: Added.
+
 2015-11-19 Yann LEYDIER <yann@leydier.info>
 	* ValidationPanel: Removed threads. Tooltips are now computed in the main
 	loop.

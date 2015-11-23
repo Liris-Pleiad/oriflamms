@@ -1425,7 +1425,13 @@ void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &wo
 	auto wsig = std::vector<TextSignature>{};
 	for (const auto cid : word.GetCharacters())
 	{
-		auto csig = TextSignatureDB::Sign(GetCharacter(cid).GetText());
+		const auto ctxt = GetCharacter(cid).GetText();
+		auto csig = TextSignatureDB::Sign(ctxt);
+		if (csig.empty())
+		{
+			CRNWarning(cid + U" (" + ctxt + U"): " + _("empty signature."));
+			csig.emplace_back(true, 'l');
+		}
 		std::move(csig.begin(), csig.end(), std::back_inserter(wsig));
 	}
 
