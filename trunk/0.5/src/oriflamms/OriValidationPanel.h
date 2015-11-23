@@ -36,7 +36,7 @@ namespace ori
 			ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m);
 			virtual ~ValidationPanel() override { }
 
-			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &p, size_t pos = 0);
+			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, size_t pos = 0);
 			/*! \brief Erases all elements */
 			void clear()
 			{

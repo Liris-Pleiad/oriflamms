@@ -10,9 +10,11 @@
 #include <CRNFeature/CRNGradientShapeContext.h>
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
+#include <unordered_set>
 #include <CRNi18n.h>
 
 using namespace ori;
+using namespace crn::literals;
 
 /////////////////////////////////////////////////////////////////////////////////
 // CharacterDialog
@@ -219,7 +221,30 @@ void CharacterDialog::delete_dm()
 
 void CharacterDialog::clustering()
 {
+	const auto character = crn::String{Glib::ustring{(*tv.get_selection()->get_selected())[columns.value]}.c_str()};
 	// TODO
+
+	try
+	{
+		doc.AddGlyph("test" + crn::StringUTF8(character), "test", "", true);
+	}
+	catch (crn::ExceptionDomain&) {}
+	for (const auto &v : characters[character])
+	{
+		auto gid = crn::StringUTF8(character) + v.first;
+		try
+		{
+			doc.AddGlyph(gid, "test " + v.first, Glyph::LocalId("test" + crn::StringUTF8(character)), true);
+		}
+		catch (crn::ExceptionDomain&) {}
+		gid = Glyph::LocalId(gid);
+		auto view = doc.GetView(v.first);
+		for (const auto &cid : v.second)
+			view.GetClusters(cid).push_back(gid);
+	}
+	compute_clusters.hide();
+	show_clusters.show();
+	clear_clusters.set_sensitive(true);
 }
 
 void CharacterDialog::show_clust()
@@ -231,12 +256,31 @@ void CharacterDialog::show_clust()
 
 void CharacterDialog::clear_clust()
 {
-	// TODO
+	const auto character = crn::String{Glib::ustring{(*tv.get_selection()->get_selected())[columns.value]}.c_str()};
+	const auto &dm = doc.GetDistanceMatrix(character);
+	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
+	for (const auto &cid : dm.first)
+		charperview[doc.GetPosition(cid).view].push_back(cid);
+	for (const auto &v : charperview)
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &cid : v.second)
+		{
+			auto &glyphs = view.GetClusters(cid);
+			glyphs.erase(
+					std::remove_if(glyphs.begin(), glyphs.end(),
+						[this](const Id &id){ return doc.GetGlyph(id).IsAuto(); }), 
+					glyphs.end());
+		}
+	}
+	// TODO update gui
 }
 
 /////////////////////////////////////////////////////////////////////////////////
 // CharacterTree
 /////////////////////////////////////////////////////////////////////////////////
+static const auto UNLABELLED = _("Unlabelled");
+
 CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &parent):
 	Gtk::Dialog(_("Character tree"), parent, true),
 	character(c),
@@ -271,9 +315,38 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	set_alternative_button_order_from_array(altbut);	
 	//set_default_response(Gtk::RESPONSE_ACCEPT);
 
+	// create images
 	GtkCRN::ProgressWindow pw(_("Collecting data..."), this, true);
 	const auto pid = pw.add_progress_bar("");
 	pw.run(sigc::bind(sigc::mem_fun(this, &CharacterTree::init), pw.get_crn_progress(pid)));
+
+	// create tree
+	auto children = std::unordered_map<Id, std::vector<Id>>{};
+	auto topmost = std::unordered_set<Id>{};
+	for (const auto &c : clusters)
+	{
+		auto gid = c.first;
+		if (gid != UNLABELLED)
+		{
+			auto pgid = doc.GetGlyph(gid).GetParent();
+			while (pgid.IsNotEmpty())
+			{
+				children[pgid].push_back(gid);
+				gid = pgid;
+				pgid = doc.GetGlyph(pgid).GetParent();
+			}
+		}
+		topmost.emplace(gid);
+	}
+	for (const auto gid : topmost)
+	{
+		auto topit = store->append();
+		(*topit)[columns.value] = gid.CStr();
+		(*topit)[columns.count] = clusters[gid].size();
+		add_children(topit, gid, children);
+	}
+
+	tv.get_selection()->signal_changed().connect(sigc::mem_fun(this, &CharacterTree::sel_changed));
 
 	show_all_children();
 }
@@ -291,14 +364,61 @@ void CharacterTree::init(crn::Progress *prog)
 		auto view = doc.GetView(v.first);
 		for (const auto &cid : v.second)
 		{
+			// create image
 			auto b = view.GetZoneImage(view.GetCharacter(cid).GetZone());
 			auto pb = GdkCRN::PixbufFromCRNImage(*b->GetRGB());
 			if (!pb->get_has_alpha())
 				pb = pb->add_alpha(true, 255, 255, 255);
 			images.push_back(pb);
+
+			// fill clusters
+			const auto &glyphs = view.GetClusters(cid);
+			if (glyphs.empty())
+				clusters[UNLABELLED].push_back(cid);
+			else
+				for (const auto &gid : glyphs)
+				{
+					clusters[gid].push_back(cid);
+					auto pgid = doc.GetGlyph(gid).GetParent();
+					while (pgid.IsNotEmpty())
+					{
+						clusters[pgid].push_back(cid);
+						pgid = doc.GetGlyph(pgid).GetParent();
+					}
+				}
+
 			if (prog)
 				prog->Advance();
 		}
 	}
 }
+
+void CharacterTree::add_children(Gtk::TreeIter &it, const Id &gid, const std::unordered_map<Id, std::vector<Id>> &children)
+{
+	auto cit = children.find(gid);
+	if (cit == children.end())
+		return;
+	for (const auto &id : cit->second)
+	{
+		auto newit = store->append(it->children());
+		(*newit)[columns.value] = id.CStr();
+		(*newit)[columns.count] = clusters[id].size();
+		add_children(newit, id, children);
+	}
+}
+
+void CharacterTree::sel_changed()
+{
+	const auto gid = Id(Glib::ustring((*tv.get_selection()->get_selected())[columns.value]).c_str());
+	const auto &dm = doc.GetDistanceMatrix(character);
+	panel.lock();
+	panel.clear();
+	auto cnt = 0;
+	for (const auto &cid : clusters[gid])
+		panel.add_element(images[std::find(dm.first.begin(), dm.first.end(), cid) - dm.first.begin()], "", doc.GetPosition(cid).word, cnt++);
+	panel.unlock();
+	panel.full_refresh();
+}
+
+
 

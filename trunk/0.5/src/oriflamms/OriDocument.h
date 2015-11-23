@@ -226,14 +226,14 @@ namespace ori
 			void SetValid(const Id &word_id, const crn::Prop3 &val);
 			/*! \brief Returns the alignable characters in word */
 			crn::String GetAlignableText(const Id &word_id) const;
-			/*! \brief Returns the list of glyph Ids associated to a word */
-			const std::vector<Id>& GetClusters(const Id &word_id) const;
-			/*! \brief Returns the list of glyph Ids associated to a word */
-			std::vector<Id>& GetClusters(const Id &word_id);
 
 			const std::unordered_map<Id, Character>& GetCharacters() const;
 			const Character& GetCharacter(const Id &char_id) const;
 			Character& GetCharacter(const Id &char_id);
+			/*! \brief Returns the list of glyph Ids associated to a character */
+			const std::vector<Id>& GetClusters(const Id &char_id) const;
+			/*! \brief Returns the list of glyph Ids associated to a character */
+			std::vector<Id>& GetClusters(const Id &char_id);
 
 			const Zone& GetZone(const Id &zone_id) const;
 			Zone& GetZone(const Id &zone_id);
@@ -293,6 +293,12 @@ namespace ori
 			Glyph& operator=(Glyph&&) = default;
 
 			crn::StringUTF8 GetDescription() const;
+			Id GetParent() const;
+			void SetParent(const Id &parent_id);
+			bool IsAuto() const;
+
+			static Id LocalId(const Id &id);
+			static Id GlobalId(const Id &id);
 
 		private:
 			mutable crn::xml::Element el;
@@ -334,7 +340,7 @@ namespace ori
 			const Glyph& GetGlyph(const Id &id) const;
 			Glyph& GetGlyph(const Id &id);
 			/* \brief Adds a glyph to the local ontology file */
-			Glyph& AddGlyph(const Id &id, const crn::StringUTF8 &desc);
+			Glyph& AddGlyph(const Id &id, const crn::StringUTF8 &desc, const Id &parent = Id{}, bool automatic = false);
 
 			/*! \brief Exports statistics on alignment validation to an ODS file */
 			void ExportStats(const crn::Path &fname);
@@ -371,7 +377,8 @@ namespace ori
 			crn::Path base;
 			crn::StringUTF8 name;
 			crn::StringUTF8 report;
-			crn::xml::Document global_onto, local_onto;
+			crn::xml::Document global_onto;
+			mutable crn::xml::Document local_onto;
 			std::unique_ptr<crn::xml::Element> charDecl;
 	};
 

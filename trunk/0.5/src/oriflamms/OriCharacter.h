@@ -65,9 +65,12 @@ namespace ori
 			};
 
 			void init(crn::Progress *prog);
+			void add_children(Gtk::TreeIter &it, const Id &gid, const std::unordered_map<Id, std::vector<Id>> &children);
+			void sel_changed();
 
 			crn::String character;
 			Document &doc;
+			std::unordered_map<Id, std::vector<Id>> clusters;
 
 			Gtk::TreeView tv;
 			Glib::RefPtr<Gtk::TreeStore> store;
