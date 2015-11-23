@@ -258,12 +258,12 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	while (el)
 	{
 		const auto target = el.GetAttribute<crn::StringUTF8>("target").Split(" \t");
-		auto wid = Id{};
+		auto cid = Id{};
 		auto gids = std::vector<Id>{};
 		for (const auto &part : target)
 		{
 			if (part.StartsWith("txt:"))
-				wid = part.SubString(4);
+				cid = part.SubString(4);
 			else if (part.StartsWith(LOCALGLYPH))
 				gids.push_back(part);
 			else if (part.StartsWith(GLOBALGLYPH))
@@ -271,9 +271,9 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 			else
 				throw crn::ExceptionInvalidArgument(projname + "_" + id + "-ontolinks.xml: " + _("invalid target base."));
 		}
-		if (wid.IsEmpty())
+		if (cid.IsEmpty())
 			throw crn::ExceptionInvalidArgument(projname + "_" + id + "-ontolinks.xml: " + _("incomplete target."));
-		onto_links.emplace(std::move(wid), std::move(gids));
+		onto_links.emplace(std::move(cid), std::move(gids));
 
 		el = el.GetNextSiblingElement("link");
 	}
@@ -788,25 +788,26 @@ crn::String View::GetAlignableText(const Id &word_id) const
 }
 
 /*!
- * \throws	crn::ExceptionNotFound	invalid word id
- * \param[in]	word_id	the id of the word
- * \return	the list of glyph Ids associated to a word
+ * \param[in]	char_id	the id of the character
+ * \return	the list of glyph Ids associated to a character
  */
-const std::vector<Id>& View::GetClusters(const Id &word_id) const
+const std::vector<Id>& View::GetClusters(const Id &char_id) const
 {
-	auto it = pimpl->onto_links.find(word_id);
+	static const auto nullvector = std::vector<Id>{};
+
+	auto it = pimpl->onto_links.find(char_id);
 	if (it == pimpl->onto_links.end())
-		throw crn::ExceptionNotFound("View::GetClusters(): "_s + _("invalid word id."));
+		return nullvector;
 	return it->second;
 }
 
 /*!
- * \param[in]	word_id	the id of the word
- * \return	the list of glyph Ids associated to a word
+ * \param[in]	word_id	the id of the character
+ * \return	the list of glyph Ids associated to a character
  */
-std::vector<Id>& View::GetClusters(const Id &word_id)
+std::vector<Id>& View::GetClusters(const Id &char_id)
 {
-	return pimpl->onto_links[word_id];
+	return pimpl->onto_links[char_id];
 }
 
 const std::unordered_map<Id, Character>& View::GetCharacters() const
@@ -1017,13 +1018,13 @@ crn::SBlock View::GetZoneImage(const Id &zone_id) const
 	{
 		auto contour = zit->second.GetContour();
 		auto frontier = size_t(0);
-		if (!contour.empty())
+		if (contour.empty())
 		{
 			contour.emplace_back(pos.GetLeft(), pos.GetTop());
 			contour.emplace_back(pos.GetLeft(), pos.GetBottom());
 			frontier = 2;
-			contour.emplace_back(pos.GetRight(), pos.GetTop());
 			contour.emplace_back(pos.GetRight(), pos.GetBottom());
+			contour.emplace_back(pos.GetRight(), pos.GetTop());
 		}
 		else
 		{
@@ -1032,18 +1033,22 @@ crn::SBlock View::GetZoneImage(const Id &zone_id) const
 					break;
 		}
 
-		auto max_x = contour[frontier].X;
-		for (auto i = frontier; i < contour.size(); ++i)
-			if (contour[i].X > max_x)
-				max_x = contour[i].X;
+		auto min_x = std::numeric_limits<int>::max();
+		auto max_x = 0;
+		auto min_y = std::numeric_limits<int>::max();
+		auto max_y = 0;
 
-		auto min_x = contour.front().X;
-		for (auto i = size_t(0); i < frontier; ++i)
+		for (auto i : crn::Range(contour))
+		{
 			if (contour[i].X < min_x)
 				min_x = contour[i].X;
-
-		const auto min_y = contour.front().Y;
-		const auto max_y = contour[frontier].Y;
+			if (contour[i].X > max_x)
+				max_x = contour[i].X;
+			if (contour[i].Y < min_y)
+				min_y = contour[i].Y;
+			if (contour[i].Y > max_y)
+				max_y = contour[i].Y;
+		}
 
 		auto img = b.AddChildAbsolute(U"zones", {min_x, min_y, max_x, max_y}, zone_id);
 
@@ -1495,6 +1500,48 @@ crn::StringUTF8 Glyph::GetDescription() const
 	return el.GetFirstChildElement("desc").GetFirstChildText();
 }
 
+/*! \return	the id of the parent glyph (with prefix) or empty string */
+Id Glyph::GetParent() const
+{
+	auto note = el.GetFirstChildElement("note");
+	if (!note)
+		return "";
+	const auto str = note.GetFirstChildText();
+	if (!str.StartsWith("parent="))
+		return "";
+	return str.SubString(7);
+}
+
+/*! \para[in]	parent_id	the id of the parent glyph (with prefix) or empty string */
+void Glyph::SetParent(const Id &parent_id)
+{
+	auto note = el.GetFirstChildElement("note");
+	if (!note)
+	{
+		if (parent_id.IsEmpty())
+			return;
+		note = el.PushBackElement("note");
+	}
+	note.Clear();
+	if (parent_id.IsNotEmpty())
+		note.PushBackText("parent=" + parent_id);
+}
+
+bool Glyph::IsAuto() const
+{
+	return el.GetAttribute<crn::StringUTF8>("change", true) == "#auto";
+}
+
+Id Glyph::LocalId(const Id &id)
+{
+	return LOCALGLYPH + id;
+}
+
+Id Glyph::GlobalId(const Id &id)
+{
+	return GLOBALGLYPH + id;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Document
 //////////////////////////////////////////////////////////////////////////////////
@@ -1610,7 +1657,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		el = el.GetFirstChildElement("glyph");
 		while (el)
 		{
-			glyphs.emplace(GLOBALGLYPH + el.GetAttribute<Id>("xml:id"), Glyph{el});
+			glyphs.emplace(Glyph::GlobalId(el.GetAttribute<Id>("xml:id")), Glyph{el});
 			el = el.GetNextSiblingElement("glyph");
 		}
 	}
@@ -1629,7 +1676,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		el = charDecl->GetFirstChildElement("glyph");
 		while (el)
 		{
-			glyphs.emplace(LOCALGLYPH + el.GetAttribute<Id>("xml:id"), Glyph{el});
+			glyphs.emplace(Glyph::LocalId(el.GetAttribute<Id>("xml:id")), Glyph{el});
 			el = el.GetNextSiblingElement("glyph");
 		}
 	}
@@ -1901,6 +1948,7 @@ Document::~Document()
 
 void Document::Save() const
 {
+	local_onto.Save();
 	// save distance matrices
 	auto dmdoc = crn::xml::Document{};
 	auto root = dmdoc.PushBackElement("charsdm");
@@ -2043,7 +2091,7 @@ const Glyph& Document::GetGlyph(const Id &id) const
 {
 	auto it = glyphs.find(id);
 	if (it == glyphs.end())
-		throw crn::ExceptionNotFound("Document::GetGlyph(): "_s + _("invalid glyph id."));
+		throw crn::ExceptionNotFound("Document::GetGlyph(): "_s + _("invalid glyph id: ") + id);
 	return it->second;
 }
 
@@ -2051,23 +2099,31 @@ Glyph& Document::GetGlyph(const Id &id)
 {
 	auto it = glyphs.find(id);
 	if (it == glyphs.end())
-		throw crn::ExceptionNotFound("Document::GetGlyph(): "_s + _("invalid glyph id."));
+		throw crn::ExceptionNotFound("Document::GetGlyph(): "_s + _("invalid glyph id: ") + id);
 	return it->second;
 }
 
 /* Adds a glyph to the local ontology file
+ * \throws	crn::ExceptionDomain the glyph already exists
  * \param[in]	id	the id of the new glyph
  * \param[in]	desc	a description for the glyph
- * \return	a reference to the new glyph
+ * \param[in]	parent	the id of the parent glyph (with prefix) or empty string (default = empty)
+ * \param[in]	automatic	was the glyph automatically created? (default = false)
+ * \return	the new glyph
  */
-Glyph& Document::AddGlyph(const Id &id, const crn::StringUTF8 &desc)
+Glyph& Document::AddGlyph(const Id &id, const crn::StringUTF8 &desc, const Id &parent, bool automatic)
 {
-	if (glyphs.find(id) != glyphs.end())
-		throw crn::ExceptionNotFound("Document::AddGlyph(): "_s + _("the glyph already exists."));
+	const auto lid = Glyph::LocalId(id);
+	if (glyphs.find(lid) != glyphs.end())
+		throw crn::ExceptionDomain("Document::AddGlyph(): "_s + _("the glyph already exists: ") + id);
 	auto el = charDecl->PushBackElement("glyph");
 	el.SetAttribute("xml:id", id);
 	el.PushBackElement("desc").PushBackText(desc);
-	return glyphs.emplace(LOCALGLYPH + id, Glyph{el}).first->second;
+	if (parent.IsNotEmpty())
+		el.PushBackElement("note").PushBackText("parent=" + parent);
+	if (automatic)
+		el.SetAttribute("change", "#auto");
+	return glyphs.emplace(lid, Glyph{el}).first->second;
 }
 
 static crn::xml::Element addcell(crn::xml::Element &row)

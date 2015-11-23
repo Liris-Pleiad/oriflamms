@@ -82,12 +82,12 @@ ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bo
 /*! Adds an element to the panel
  * \param[in]	pb	the image to be displayed
  * \param[in]	cluster	the element's class name
- * \param[in]	p	the path of the word containing the element
+ * \param[in]	word_id	the path of the word containing the element
  * \param[in]	pos	the position of the element in the word
  */
-void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &p, size_t pos)
+void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, size_t pos)
 {
-	elements[cluster].emplace(ElementId{p, pos}, pb);
+	elements[cluster].emplace(ElementId{word_id, pos}, pb);
 	nelem += 1;
 }
 
