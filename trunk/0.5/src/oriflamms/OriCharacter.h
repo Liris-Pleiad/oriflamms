@@ -65,18 +65,30 @@ namespace ori
 			};
 
 			void init(crn::Progress *prog);
+			void refresh_tv();
 			void add_children(Gtk::TreeIter &it, const Id &gid, const std::unordered_map<Id, std::vector<Id>> &children);
 			void sel_changed();
+			void on_remove_chars(ValidationPanel::ElementList words);
+			void on_unremove_chars(ValidationPanel::ElementList words);
+			void change_label();
+			void remove_from_cluster();
+			void cut(const Id &gid);
+			void cut_cluster();
 
 			crn::String character;
 			Document &doc;
-			std::unordered_map<Id, std::vector<Id>> clusters;
+			std::unordered_map<Id, std::vector<Id>> clusters; // glyph id -> { character id }
+			Id current_glyph;
 
 			Gtk::TreeView tv;
 			Glib::RefPtr<Gtk::TreeStore> store;
 			model columns;
 			ValidationPanel panel;
-			std::vector<Glib::RefPtr<Gdk::Pixbuf>> images;
+			ValidationPanel kopanel;
+			std::unordered_map<Id, Glib::RefPtr<Gdk::Pixbuf>> images;
+			Gtk::Button relabel;
+			Gtk::Button cutcluster;
+			Gtk::Button unlabel;
 	};
 }
 

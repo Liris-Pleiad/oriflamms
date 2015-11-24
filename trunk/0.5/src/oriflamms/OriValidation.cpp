@@ -349,15 +349,15 @@ void Validation::on_remove_words(ValidationPanel::ElementList words)
 	auto work = std::unordered_map<Id, std::vector<ValidationPanel::ElementCluster::value_type>>{};
 	for (const auto &el : words)
 		for (const auto &w : el.second)
-			work[doc.GetPosition(w.first.id).view].push_back(w);
+			work[doc.GetPosition(w.first.word_id).view].push_back(w);
 
 	for (const auto &v : work)
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &w : v.second)
 		{
-			view.SetValid(w.first.id, false);
-			kowords.add_element(w.second, kowords.label_ko, w.first.id);
+			view.SetValid(w.first.word_id, false);
+			kowords.add_element(w.second, kowords.label_ko, w.first.word_id);
 		}
 	}
 
@@ -370,15 +370,15 @@ void Validation::on_unremove_words(ValidationPanel::ElementList words)
 	auto work = std::unordered_map<Id, std::vector<ValidationPanel::ElementCluster::value_type>>{};
 	for (const auto &el : words)
 		for (const auto &w : el.second)
-			work[doc.GetPosition(w.first.id).view].push_back(w);
+			work[doc.GetPosition(w.first.word_id).view].push_back(w);
 
 	for (const auto &v : work)
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &w : v.second)
 		{
-			view.SetValid(w.first.id, true);
-			okwords.add_element(w.second, kowords.label_ko, w.first.id);
+			view.SetValid(w.first.word_id, true);
+			okwords.add_element(w.second, kowords.label_ko, w.first.word_id);
 		}
 	}
 
@@ -429,7 +429,7 @@ void Validation::conclude_word()
 	const std::set<ValidationPanel::ElementId> validcontent(okwords.GetContent());
 	auto work = std::unordered_map<Id, std::vector<Id>>{};
 	for (const auto &w : validcontent)
-		work[doc.GetPosition(w.id).view].push_back(w.id);
+		work[doc.GetPosition(w.word_id).view].push_back(w.word_id);
 
 	if (okwords.IsModified())
 	{
@@ -448,7 +448,7 @@ void Validation::conclude_word()
 		{
 			// store for later
 			for (const auto &w : validcontent)
-				needconfirm.insert(w.id);
+				needconfirm.insert(w.word_id);
 		}
 		else
 		{
