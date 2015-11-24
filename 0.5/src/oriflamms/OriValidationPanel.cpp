@@ -85,9 +85,9 @@ ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bo
  * \param[in]	word_id	the path of the word containing the element
  * \param[in]	pos	the position of the element in the word
  */
-void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, size_t pos)
+void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, const Id &char_id)
 {
-	elements[cluster].emplace(ElementId{word_id, pos}, pb);
+	elements[cluster].emplace(ElementId{word_id, char_id}, pb);
 	nelem += 1;
 }
 
@@ -338,7 +338,6 @@ void ValidationPanel::full_refresh()
 bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip)
 {
 	int offset = -int(scroll.get_adjustment()->get_value());
-	std::cout << x << ", " << y << " | " << offset << std::endl;
 	for (const ValidationPanel::ElementList::value_type &el : elements)
 	{
 
@@ -347,12 +346,12 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 			const crn::Point2DInt &pos(positions[w.first]);
 			crn::Rect bbox(pos.X, pos.Y + offset,
 					pos.X + w.second->get_width(), pos.Y + offset + w.second->get_height());
-			if (bbox.Contains(x, y + offset))
+			if (bbox.Contains(x, y))
 			{
-				if (w.first.id != tipword)
+				if (w.first.word_id != tipword)
 				{
 					std::lock_guard<std::mutex> tiplock{tipmutex};
-					tipword = w.first.id;
+					tipword = w.first.word_id;
 
 					const auto &wordpath = doc.GetPosition(tipword);
 					auto msg = crn::StringUTF8{};
@@ -361,6 +360,8 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 					msg += _("Column") + " "_s += wordpath.column + "\n";
 					msg += _("Line") + " "_s + wordpath.line + "\n";
 					msg += _("Word") + " "_s + tipword;
+					if (w.first.char_id.IsNotEmpty())
+						msg += "\n"_s + _("Character") + " "_s + w.first.char_id;
 					tiplab.set_text(msg.CStr());
 
 					if (tipword != loadedtip)

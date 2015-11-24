@@ -20,13 +20,13 @@ namespace ori
 		public:
 			struct ElementId
 			{
-				ElementId(const Id &wid, size_t p = 0): id(wid), pos(p) {}
-				Id id;
-				size_t pos;
-				inline bool operator<(const ElementId &other) const
+				ElementId(const Id &wid, const Id &cid = ""): word_id(wid), char_id(cid) {}
+				Id word_id;
+				Id char_id;
+				inline bool operator<(const ElementId &other) const noexcept
 				{
-					if (id < other.id) return true;
-					else if (id == other.id) return pos < other.pos;
+					if (word_id < other.word_id) return true;
+					else if (word_id == other.word_id) return char_id < other.char_id;
 					else return false;
 				}
 			};
@@ -36,7 +36,7 @@ namespace ori
 			ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m);
 			virtual ~ValidationPanel() override { }
 
-			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, size_t pos = 0);
+			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, const Id &char_id = "");
 			/*! \brief Erases all elements */
 			void clear()
 			{
@@ -56,6 +56,8 @@ namespace ori
 			void lock() noexcept { locked = true; };
 			/*! \brief Reactivates the refreshing of the panel */
 			void unlock() noexcept { locked = false; }
+
+			const ElementList& get_elements() const noexcept { return elements; }
 
 			/*! \brief Signal called when an Element (or a bunch of Elements) was clicked on by the user */
 			sigc::signal<void, ElementList> signal_removed() { return removed; }

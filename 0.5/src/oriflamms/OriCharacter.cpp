@@ -10,6 +10,7 @@
 #include <CRNFeature/CRNGradientShapeContext.h>
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
+#include "genetic.hpp"
 #include <unordered_set>
 #include <CRNi18n.h>
 
@@ -101,8 +102,7 @@ void CharacterDialog::update_buttons()
 		dm_ok.hide();
 		compute_dm.hide();
 		clear_dm.set_sensitive(false);
-		compute_clusters.hide();
-		show_clusters.hide();
+		compute_clusters.set_sensitive(false);
 		clear_clusters.set_sensitive(false);
 	}
 	else
@@ -115,6 +115,7 @@ void CharacterDialog::update_buttons()
 			dm_ok.show();
 			clear_dm.set_sensitive(true);
 			compute_clusters.set_sensitive(true);
+			clear_clusters.set_sensitive(true);
 		}
 		catch (crn::ExceptionNotFound&)
 		{
@@ -122,11 +123,9 @@ void CharacterDialog::update_buttons()
 			dm_ok.hide();
 			clear_dm.set_sensitive(false);
 			compute_clusters.set_sensitive(false);
+			clear_clusters.set_sensitive(false);
 		}
-		// XXX tmp
-		compute_clusters.show();
 	}
-		show_clusters.show(); // XXX
 }
 
 void CharacterDialog::compute_distmat()
@@ -154,10 +153,7 @@ void CharacterDialog::compute_distmat()
 		pw.run(sigc::bind(sigc::mem_fun(this, &CharacterDialog::compute_gsc), character, ids, std::ref(dm), pw.get_crn_progress(pid)));
 	}
 	doc.SetDistanceMatrix(character, std::move(ids), std::move(dm));
-	compute_dm.hide();
-	dm_ok.show();
-	clear_dm.set_sensitive(true);
-	compute_clusters.set_sensitive(true);
+	update_buttons();
 }
 
 void CharacterDialog::compute_gm(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog)
@@ -213,10 +209,7 @@ void CharacterDialog::delete_dm()
 	auto row = *tv.get_selection()->get_selected();
 	const auto character = crn::String{Glib::ustring{row[columns.value]}.c_str()};
 	doc.EraseDistanceMatrix(character);
-	compute_dm.show();
-	dm_ok.hide();
-	clear_dm.set_sensitive(false);
-	compute_clusters.set_sensitive(false);
+	update_buttons();
 }
 
 void CharacterDialog::clustering()
@@ -242,9 +235,6 @@ void CharacterDialog::clustering()
 		for (const auto &cid : v.second)
 			view.GetClusters(cid).push_back(gid);
 	}
-	compute_clusters.hide();
-	show_clusters.show();
-	clear_clusters.set_sensitive(true);
 }
 
 void CharacterDialog::show_clust()
@@ -285,7 +275,11 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	Gtk::Dialog(_("Character tree"), parent, true),
 	character(c),
 	doc(docu),
-	panel(docu, c.CStr(), false)
+	panel(docu, c.CStr(), true),
+	kopanel(docu, _("Put aside"), true),
+	relabel(_("Set label")),
+	cutcluster(_("Cut cluster in two")),
+	unlabel(_("Remove from class"))
 {
 	set_default_size(900, 700);
 	maximize();
@@ -305,7 +299,29 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	sw->add(tv);
 
 	// right panel
-	hbox->pack_start(panel, true, true, 4);
+	auto *hpan = Gtk::manage(new Gtk::HPaned);
+	hbox->pack_start(*hpan, true, true, 4);
+	auto *vbox = Gtk::manage(new Gtk::VBox);
+	hpan->add1(*vbox);
+	auto *hbox2 = Gtk::manage(new Gtk::HBox);
+	vbox->pack_start(*hbox2, false, true, 4);
+	hbox2->pack_start(relabel, false, false, 4);
+	relabel.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::change_label));
+	relabel.set_sensitive(false); // TODO
+	hbox2->pack_start(cutcluster, false, false, 4);
+	cutcluster.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::cut_cluster));
+	vbox->pack_start(panel, true, true, 4);
+	panel.signal_removed().connect(sigc::mem_fun(this, &CharacterTree::on_remove_chars));
+
+	vbox = Gtk::manage(new Gtk::VBox);
+	hpan->add2(*vbox);
+	hbox2 = Gtk::manage(new Gtk::HBox);
+	vbox->pack_start(*hbox2, false, true, 4);
+	hbox2->pack_start(unlabel, false, false, 4);
+	unlabel.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::remove_from_cluster));
+	vbox->pack_start(kopanel, true, true, 4);
+	kopanel.signal_removed().connect(sigc::mem_fun(this, &CharacterTree::on_unremove_chars));
+	hpan->set_position(600);
 
 	add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
 	//add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
@@ -320,32 +336,7 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	const auto pid = pw.add_progress_bar("");
 	pw.run(sigc::bind(sigc::mem_fun(this, &CharacterTree::init), pw.get_crn_progress(pid)));
 
-	// create tree
-	auto children = std::unordered_map<Id, std::vector<Id>>{};
-	auto topmost = std::unordered_set<Id>{};
-	for (const auto &c : clusters)
-	{
-		auto gid = c.first;
-		if (gid != UNLABELLED)
-		{
-			auto pgid = doc.GetGlyph(gid).GetParent();
-			while (pgid.IsNotEmpty())
-			{
-				children[pgid].push_back(gid);
-				gid = pgid;
-				pgid = doc.GetGlyph(pgid).GetParent();
-			}
-		}
-		topmost.emplace(gid);
-	}
-	for (const auto gid : topmost)
-	{
-		auto topit = store->append();
-		(*topit)[columns.value] = gid.CStr();
-		(*topit)[columns.count] = clusters[gid].size();
-		add_children(topit, gid, children);
-	}
-
+	refresh_tv();
 	tv.get_selection()->signal_changed().connect(sigc::mem_fun(this, &CharacterTree::sel_changed));
 
 	show_all_children();
@@ -369,9 +360,28 @@ void CharacterTree::init(crn::Progress *prog)
 			auto pb = GdkCRN::PixbufFromCRNImage(*b->GetRGB());
 			if (!pb->get_has_alpha())
 				pb = pb->add_alpha(true, 255, 255, 255);
-			images.push_back(pb);
+			images.emplace(cid, pb);
 
-			// fill clusters
+			if (prog)
+				prog->Advance();
+		}
+	}
+}
+
+void CharacterTree::refresh_tv()
+{
+	const auto &dm = doc.GetDistanceMatrix(character);
+	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
+	for (const auto &cid : dm.first)
+		charperview[doc.GetPosition(cid).view].push_back(cid);
+
+	// fill clusters
+	clusters.clear();
+	for (const auto &v : charperview)
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &cid : v.second)
+		{
 			const auto &glyphs = view.GetClusters(cid);
 			if (glyphs.empty())
 				clusters[UNLABELLED].push_back(cid);
@@ -386,11 +396,39 @@ void CharacterTree::init(crn::Progress *prog)
 						pgid = doc.GetGlyph(pgid).GetParent();
 					}
 				}
-
-			if (prog)
-				prog->Advance();
 		}
 	}
+
+	// compute tree structure
+	auto children = std::unordered_map<Id, std::vector<Id>>{};
+	auto topmost = std::unordered_set<Id>{};
+	for (const auto &c : clusters)
+	{
+		auto gid = c.first;
+		if (gid != UNLABELLED)
+		{
+			auto pgid = doc.GetGlyph(gid).GetParent();
+			while (pgid.IsNotEmpty())
+			{
+				children[pgid].push_back(gid);
+				gid = pgid;
+				pgid = doc.GetGlyph(pgid).GetParent();
+			}
+		}
+		topmost.emplace(gid);
+	}
+
+	// create tree
+	store->clear();
+	for (const auto gid : topmost)
+	{
+		auto topit = store->append();
+		(*topit)[columns.value] = gid.CStr();
+		(*topit)[columns.count] = clusters[gid].size();
+		add_children(topit, gid, children);
+	}
+
+	tv.expand_all();
 }
 
 void CharacterTree::add_children(Gtk::TreeIter &it, const Id &gid, const std::unordered_map<Id, std::vector<Id>> &children)
@@ -409,16 +447,259 @@ void CharacterTree::add_children(Gtk::TreeIter &it, const Id &gid, const std::un
 
 void CharacterTree::sel_changed()
 {
-	const auto gid = Id(Glib::ustring((*tv.get_selection()->get_selected())[columns.value]).c_str());
-	const auto &dm = doc.GetDistanceMatrix(character);
 	panel.lock();
 	panel.clear();
-	auto cnt = 0;
-	for (const auto &cid : clusters[gid])
-		panel.add_element(images[std::find(dm.first.begin(), dm.first.end(), cid) - dm.first.begin()], "", doc.GetPosition(cid).word, cnt++);
+	auto it = tv.get_selection()->get_selected();
+	if (it)
+	{
+		current_glyph = Id(Glib::ustring((*it)[columns.value]).c_str());
+		const auto &dm = doc.GetDistanceMatrix(character);
+		for (const auto &cid : clusters[current_glyph])
+			panel.add_element(images[cid], ""/*doc.GetPosition(cid).view*/, doc.GetPosition(cid).word, cid);
+	}
+	else
+		current_glyph = "";
 	panel.unlock();
+	panel.full_refresh();
+	kopanel.clear();
+	kopanel.full_refresh();
+}
+
+void CharacterTree::on_remove_chars(ValidationPanel::ElementList words)
+{
+	for (const auto &el : words)
+		for (const auto &w : el.second)
+			kopanel.add_element(w.second, ValidationPanel::label_ko, w.first.word_id, w.first.char_id);
+	kopanel.full_refresh();
+}
+
+void CharacterTree::on_unremove_chars(ValidationPanel::ElementList words)
+{
+	for (const auto &el : words)
+		for (const auto &w : el.second)
+			panel.add_element(w.second, ""/*doc.GetPosition(cid).view*/, w.first.word_id, w.first.char_id);
 	panel.full_refresh();
 }
 
+void CharacterTree::change_label()
+{
+}
 
+void CharacterTree::remove_from_cluster()
+{
+	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
+	for (const auto &el : kopanel.get_elements())
+		for (const auto &w : el.second)
+			charperview[doc.GetPosition(w.first.char_id).view].push_back(w.first.char_id);
+
+	for (const auto &v : charperview)
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &cid : v.second)
+		{ // remove current
+			auto &glyphs = view.GetClusters(cid);
+			glyphs.erase(std::remove(glyphs.begin(), glyphs.end(), current_glyph), glyphs.end());
+		}
+	}
+	kopanel.clear();
+	refresh_tv();
+}
+
+static std::multimap<double, std::vector<size_t>> run_genetic(const crn::SquareMatrixDouble &dm)
+{
+	auto rng = std::default_random_engine{};
+	// create cluster population
+	auto population = std::vector<std::vector<size_t>>(100, std::vector<size_t>(dm.GetRows()));
+	auto ran = std::uniform_int_distribution<size_t>{0, 1};
+	for (auto &idv : population)
+		for (auto &gene : idv)
+			gene = ran(rng);
+
+	// optimize the clusters!
+	auto bestclustering = Genetic(population.begin(), population.end(),
+			[](const std::vector<size_t> &idv1, const std::vector<size_t> &idv2, std::default_random_engine &rng)
+			{
+				auto ran = std::uniform_real_distribution<double>{0, 1};
+				auto children = CrossOver{}(idv1, idv2, rng);
+				if (ran(rng) < 0.1)
+				{ // mutate
+					children.first[size_t(ran(rng) * double(children.first.size() - 1))] ^= 1;
+				}
+				if (ran(rng) < 0.1)
+				{ // mutate
+					children.second[size_t(ran(rng) * double(children.second.size() - 1))] ^= 1;
+				}
+				return children;
+			},
+			[&dm](const std::vector<size_t> &idv)
+			{
+				// gather cluster indices
+				auto c0 = std::vector<size_t>();
+				auto c1 = std::vector<size_t>();
+				for (auto i : crn::Range(idv))
+					if (idv[i] == 0)
+						c0.push_back(i);
+					else
+						c1.push_back(i);
+
+				if (c0.size() < 3)
+					return std::numeric_limits<double>::max();
+
+				/*
+				auto m0 = std::vector<double>(c0.size(), 0.0);
+				for (auto i : crn::Range(c0))
+					for (auto j : crn::Range(c0))
+						if (i != j)
+							m0[i] += dm[c0[i]][c0[j]];
+				auto disp0 = std::accumulate(m0.begin(), m0.end(), 0.0) / double(m0.size() - 1) / double(m0.size()); // mean mean distance to others
+				return disp0 / log(double(c0.size()));
+*/
+				//if (c0.empty() || c1.empty()) // no empty class allowed (for now)
+				if ((c0.size() < 2) || (c1.size() < 2)) // at least 2 individuals per class (to allow computation of distance to neighbours)
+					return std::numeric_limits<double>::max();
+
+				auto m0 = std::vector<double>(c0.size(), 0.0);
+				for (auto i : crn::Range(c0))
+					for (auto j : crn::Range(c0))
+						if (i != j)
+							m0[i] += dm[c0[i]][c0[j]];
+				auto center0 = c0[std::min_element(m0.begin(), m0.end()) - m0.begin()]; // centroid
+				//auto disp0 = *std::max_element(m0.begin(), m0.end()) / double(m0.size() - 1); // max mean distance to others
+				auto disp0 = std::accumulate(m0.begin(), m0.end(), 0.0) / double(m0.size() - 1) / double(m0.size()); // mean mean distance to others
+				auto m1 = std::vector<double>(c1.size(), 0.0);
+				for (auto i : crn::Range(c1))
+					for (auto j : crn::Range(c1))
+						if (i != j)
+							m1[i] += dm[c1[i]][c1[j]];
+				//auto disp1 = *std::min_element(m1.begin(), m1.end()) / double(m1.size() - 1); // min mean distance to others
+				auto disp1 = std::accumulate(m1.begin(), m1.end(), 0.0) / double(m1.size() - 1) / double(m1.size()); // mean mean distance to others
+				//std::sort(m1.begin(), m1.end());
+				//auto disp1 = m1[m1.size() / 2] / double(m1.size() - 1); // median mean distance to others
+				//auto disp10 = std::numeric_limits<double>::max(); // min distance to centroid0
+				auto disp10 = 0.0; // mean distance to centroid0
+				for (auto i : c1)
+				{
+					//disp10 = crn::Min(disp10, dm[i][center0]);
+					disp10 += dm[i][center0];
+				}
+				disp10 /= double(c1.size());
+				/*
+				if (!disp1 || !disp10)
+					return std::numeric_limits<double>::max();
+
+				// disp0 must be low (ie its most outlying element is not too far from the others)
+				// disp1 must be high (ie the elements in cluster 1 are far from each other)
+				// disp10 must be high (ie cluster 1 is far from cluster 0)
+				return disp0 / disp1 / disp10;
+*/
+				auto center1 = c1[std::min_element(m1.begin(), m1.end()) - m1.begin()];
+				// Davies-Bouldin
+				auto d0 = 0.0;
+				for (auto i : c0)
+					d0 += dm[center0][i];
+				if (!c0.empty())
+					d0 /= double(c0.size());
+				auto d1 = 0.0;
+				for (auto i : c1)
+					d1 += dm[center1][i];
+				if (!c1.empty())
+					d1 /= double(c1.size());
+				return (d0 + d1) / dm[center0][center1];
+				//return (d0 + d1) / dm[center0][center1] * disp0;
+				//return (d0 + d1) / dm[center0][center1] / disp1;
+				/*
+				// Dunn
+				auto dmin = std::numeric_limits<double>::max();
+				auto dmax = 0.0;
+				for (auto i : crn::Range(idv))
+				for (auto j = i + 1; j < idv.size(); ++j)
+				if (idv[i] == idv[j])
+				{ // same class
+				dmax = crn::Max(dmax, dm.At(i, j));
+				}
+				else
+				{ // different class
+				dmin = crn::Min(dmin, dm.At(i, j));
+				}
+				//return dmin / dmax / disp1;
+				return dmin / dmax;
+				*/
+			},
+		GenerationCounter{1000},
+		rng);
+	return bestclustering;
+}
+
+void CharacterTree::cut(const Id &gid)
+{
+	// compute distance matrix for selected characters
+	const auto nelem = clusters[gid].size();
+	const auto &dm = doc.GetDistanceMatrix(character);
+	auto indices = std::vector<size_t>{};
+	indices.reserve(nelem);
+	for (const auto &cid : clusters[gid])
+		indices.push_back(std::find(dm.first.begin(), dm.first.end(), cid) - dm.first.begin());
+	auto distmat = crn::SquareMatrixDouble{nelem};
+	for (auto row : crn::Range(size_t(0), nelem))
+		for (auto col : crn::Range(size_t(0), nelem))
+			distmat[row][col] = dm.second[indices[row]][indices[col]];
+
+	// cut in two
+	auto res = run_genetic(distmat);
+	const auto bestclustering = res.begin()->second;
+
+	// create new glyphs
+	auto newglyphs = std::array<Id, 2>{};
+	auto cnt = 0;
+	auto gidbase = gid;
+	auto parent = gid;
+	if (gidbase == UNLABELLED)
+	{
+		gidbase = character.CStr();
+		parent = "";
+	}
+	else
+	{ // TODO remove prefix
+	}
+	for (auto &ngid : newglyphs)
+	{
+		auto ok = false;
+		while (!ok)
+		{
+			ngid = gid + "-"_s + cnt++;
+			try
+			{
+				doc.AddGlyph(ngid, _("Subclass for ") + gidbase, parent, true);
+				ngid = Glyph::LocalId(ngid);
+				ok = true;
+			}
+			catch (...) { }
+		}
+	}
+
+	// add new glyphs to characters
+	auto work = std::unordered_map<Id, std::unordered_map<Id, Id>>{};
+	for (auto tmp : crn::Range(bestclustering))
+	{
+		const auto cid = clusters[gid][tmp];
+		work[doc.GetPosition(cid).view][cid] = newglyphs[bestclustering[tmp]];
+	}
+	for (const auto &v : work)
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &c : v.second)
+			view.GetClusters(c.first).push_back(c.second);
+	}
+
+	refresh_tv();
+}
+
+void CharacterTree::cut_cluster()
+{
+	auto it = tv.get_selection()->get_selected();
+	if (it)
+	{
+		cut(Id(Glib::ustring((*it)[columns.value]).c_str()));
+	}
+}
 

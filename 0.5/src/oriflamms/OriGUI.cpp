@@ -86,7 +86,7 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("valid-propagate", Gtk::Stock::REFRESH, _("_Propagate validation"), _("Propagate validation")), sigc::mem_fun(this, &GUI::propagate_validation));
 	actions->add(Gtk::Action::create("valid-stats", Gtk::Stock::PRINT, _("_Statistics"), _("Statistics")), sigc::mem_fun(this, &GUI::stats));
 
-	actions->add(Gtk::Action::create("chars-classif",Gtk::Stock::SELECT_FONT,_("Characters"), _("Characters")), sigc::mem_fun(this,&GUI::show_chars));
+	actions->add(Gtk::Action::create("chars-classif",Gtk::Stock::SELECT_FONT,_("_Characters"), _("Characters")), sigc::mem_fun(this,&GUI::show_chars));
 
 	actions->add(Gtk::Action::create("find-string",Gtk::Stock::FIND,_("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
 
@@ -1439,12 +1439,12 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 					if (view.IsValid(w.first).IsFalse())
 					{
 						// add to reject list
-						panel->add_element(wpb, panel->label_ko, w.first, pos);
+						panel->add_element(wpb, panel->label_ko, w.first, w.second.GetCharacters()[pos]);
 					}
 					else if (view.IsValid(w.first).IsTrue())
-						panel->add_element(wpb, panel->label_ok, w.first, pos);
+						panel->add_element(wpb, panel->label_ok, w.first, w.second.GetCharacters()[pos]);
 					else
-						panel->add_element(wpb, panel->label_unknown, w.first, pos);
+						panel->add_element(wpb, panel->label_unknown, w.first, w.second.GetCharacters()[pos]);
 
 				}
 			}
