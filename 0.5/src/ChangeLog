@@ -1,3 +1,6 @@
+2015-11-25 Yann LEYDIER <yann@leydier.info>
+	* CharacterTree (cut, auto_cut): Added.
+
 2015-11-24 Yann LEYDIER <yann@leydier.info>
 	* ValidationPanel (tooltip): Bugfix.
 	* CharacterTree: Added second panel.

@@ -1,3 +1,4 @@
+../oriflamms/genetic.hpp
 ../oriflamms/OriFeatures.cpp
 ../oriflamms/OriEntityDialog.cpp
 ../oriflamms/OriCharacter.h
