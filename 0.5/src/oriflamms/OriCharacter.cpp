@@ -10,6 +10,7 @@
 #include <CRNFeature/CRNGradientShapeContext.h>
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
+#include <GtkCRNApp.h>
 #include "genetic.hpp"
 #include <unordered_set>
 #include <CRNi18n.h>
@@ -27,9 +28,7 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	dm_ok(_(("OK"))),
 	compute_dm(_("Compute")),
 	clear_dm(Gtk::Stock::CLEAR),
-	compute_clusters(_("Compute")),
-	show_clusters(_("Show")),
-	clear_clusters(Gtk::Stock::CLEAR)
+	show_clusters(_("Show and edit clusters"))
 {
 	set_default_size(0, 600);
 
@@ -66,21 +65,17 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	tab->attach(*Gtk::manage(new Gtk::Label(_("Distance matrix"))), 0, 1, 0, 1, Gtk::FILL, Gtk::FILL);
 	auto *hbox2 = Gtk::manage(new Gtk::HBox);
 	tab->attach(*hbox2, 1, 2, 0, 1, Gtk::FILL, Gtk::FILL);
-	hbox2->pack_start(dm_ok, false, false, 0);
-	hbox2->pack_start(compute_dm, false, false, 0);
+	hbox2->pack_start(dm_ok, true, false, 0);
+	hbox2->pack_start(compute_dm, true, false, 0);
 	compute_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::compute_distmat));
 	tab->attach(clear_dm, 2, 3, 0, 1, Gtk::FILL, Gtk::FILL);
 	clear_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::delete_dm));
 
-	tab->attach(*Gtk::manage(new Gtk::Label(_("Clusters"))), 0, 1, 1, 2, Gtk::FILL, Gtk::FILL);
+	tab->attach(*Gtk::manage(new Gtk::Label(_("Clustering"))), 0, 1, 1, 2, Gtk::FILL, Gtk::FILL);
 	auto *hbox3 = Gtk::manage(new Gtk::HBox);
 	tab->attach(*hbox3, 1, 2, 1, 2, Gtk::FILL, Gtk::FILL);
-	hbox3->pack_start(compute_clusters, false, false, 0);
-	compute_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clustering));
 	hbox3->pack_start(show_clusters, false, false, 0);
 	show_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::show_clust));
-	tab->attach(clear_clusters, 2, 3, 1, 2, Gtk::FILL, Gtk::FILL);
-	clear_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::clear_clust));
 
 	add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
 	//add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
@@ -102,8 +97,7 @@ void CharacterDialog::update_buttons()
 		dm_ok.hide();
 		compute_dm.hide();
 		clear_dm.set_sensitive(false);
-		compute_clusters.set_sensitive(false);
-		clear_clusters.set_sensitive(false);
+		show_clusters.set_sensitive(false);
 	}
 	else
 	{
@@ -114,16 +108,14 @@ void CharacterDialog::update_buttons()
 			compute_dm.hide();
 			dm_ok.show();
 			clear_dm.set_sensitive(true);
-			compute_clusters.set_sensitive(true);
-			clear_clusters.set_sensitive(true);
+			show_clusters.set_sensitive(true);
 		}
 		catch (crn::ExceptionNotFound&)
 		{
 			compute_dm.show();
 			dm_ok.hide();
 			clear_dm.set_sensitive(false);
-			compute_clusters.set_sensitive(false);
-			clear_clusters.set_sensitive(false);
+			show_clusters.set_sensitive(false);
 		}
 	}
 }
@@ -212,58 +204,11 @@ void CharacterDialog::delete_dm()
 	update_buttons();
 }
 
-void CharacterDialog::clustering()
-{
-	const auto character = crn::String{Glib::ustring{(*tv.get_selection()->get_selected())[columns.value]}.c_str()};
-	// TODO
-
-	try
-	{
-		doc.AddGlyph("test" + crn::StringUTF8(character), "test", "", true);
-	}
-	catch (crn::ExceptionDomain&) {}
-	for (const auto &v : characters[character])
-	{
-		auto gid = crn::StringUTF8(character) + v.first;
-		try
-		{
-			doc.AddGlyph(gid, "test " + v.first, Glyph::LocalId("test" + crn::StringUTF8(character)), true);
-		}
-		catch (crn::ExceptionDomain&) {}
-		gid = Glyph::LocalId(gid);
-		auto view = doc.GetView(v.first);
-		for (const auto &cid : v.second)
-			view.GetClusters(cid).push_back(gid);
-	}
-}
-
 void CharacterDialog::show_clust()
 {
 	auto row = *tv.get_selection()->get_selected();
 	const auto character = crn::String{Glib::ustring{row[columns.value]}.c_str()};
 	CharacterTree{character, doc, *this}.run();
-}
-
-void CharacterDialog::clear_clust()
-{
-	const auto character = crn::String{Glib::ustring{(*tv.get_selection()->get_selected())[columns.value]}.c_str()};
-	const auto &dm = doc.GetDistanceMatrix(character);
-	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
-	for (const auto &cid : dm.first)
-		charperview[doc.GetPosition(cid).view].push_back(cid);
-	for (const auto &v : charperview)
-	{
-		auto view = doc.GetView(v.first);
-		for (const auto &cid : v.second)
-		{
-			auto &glyphs = view.GetClusters(cid);
-			glyphs.erase(
-					std::remove_if(glyphs.begin(), glyphs.end(),
-						[this](const Id &id){ return doc.GetGlyph(id).IsAuto(); }), 
-					glyphs.end());
-		}
-	}
-	// TODO update gui
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -277,14 +222,23 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	doc(docu),
 	panel(docu, c.CStr(), true),
 	kopanel(docu, _("Put aside"), true),
-	relabel(_("Set label")),
-	cutcluster(_("Cut cluster in two")),
-	unlabel(_("Remove from class"))
+	clear_clusters(_("Delete automatic clusters")),
+	label_ok(_("Add glyph")),
+	label_ko(_("Add glyph")),
+	cut_ok(_("Cut in two")),
+	cut_ko(_("Cut in two")),
+	remove_ok(_("Remove from class")),
+	remove_ko(_("Remove from class"))
 {
 	set_default_size(900, 700);
 	maximize();
 
 	auto *hbox = Gtk::manage(new Gtk::HBox);
+	get_vbox()->pack_start(*hbox, false, true, 4);
+	hbox->pack_start(clear_clusters, false, true, 4);
+	clear_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::clear_clustering));
+
+	hbox = Gtk::manage(new Gtk::HBox);
 	get_vbox()->pack_start(*hbox, true, true, 4);
 
 	// left panel
@@ -305,11 +259,12 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	hpan->add1(*vbox);
 	auto *hbox2 = Gtk::manage(new Gtk::HBox);
 	vbox->pack_start(*hbox2, false, true, 4);
-	hbox2->pack_start(relabel, false, false, 4);
-	relabel.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::change_label));
-	relabel.set_sensitive(false); // TODO
-	hbox2->pack_start(cutcluster, false, false, 4);
-	cutcluster.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::cut_cluster));
+	hbox2->pack_start(label_ok, false, false, 4);
+	label_ok.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &CharacterTree::change_label), std::ref(panel)));
+	hbox2->pack_start(cut_ok, false, false, 4);
+	cut_ok.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &CharacterTree::cut_cluster), std::ref(panel)));
+	hbox2->pack_start(remove_ok, false, false, 4);
+	remove_ok.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &CharacterTree::remove_from_cluster), std::ref(panel)));
 	vbox->pack_start(panel, true, true, 4);
 	panel.signal_removed().connect(sigc::mem_fun(this, &CharacterTree::on_remove_chars));
 
@@ -317,8 +272,12 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	hpan->add2(*vbox);
 	hbox2 = Gtk::manage(new Gtk::HBox);
 	vbox->pack_start(*hbox2, false, true, 4);
-	hbox2->pack_start(unlabel, false, false, 4);
-	unlabel.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::remove_from_cluster));
+	hbox2->pack_start(label_ko, false, false, 4);
+	label_ko.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &CharacterTree::change_label), std::ref(kopanel)));
+	hbox2->pack_start(cut_ko, false, false, 4);
+	cut_ko.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &CharacterTree::cut_cluster), std::ref(kopanel)));
+	hbox2->pack_start(remove_ko, false, false, 4);
+	remove_ko.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &CharacterTree::remove_from_cluster), std::ref(kopanel)));
 	vbox->pack_start(kopanel, true, true, 4);
 	kopanel.signal_removed().connect(sigc::mem_fun(this, &CharacterTree::on_unremove_chars));
 	hpan->set_position(600);
@@ -384,15 +343,15 @@ void CharacterTree::refresh_tv()
 		{
 			const auto &glyphs = view.GetClusters(cid);
 			if (glyphs.empty())
-				clusters[UNLABELLED].push_back(cid);
+				clusters[UNLABELLED].insert(cid);
 			else
 				for (const auto &gid : glyphs)
 				{
-					clusters[gid].push_back(cid);
+					clusters[gid].insert(cid);
 					auto pgid = doc.GetGlyph(gid).GetParent();
 					while (pgid.IsNotEmpty())
 					{
-						clusters[pgid].push_back(cid);
+						clusters[pgid].insert(cid);
 						pgid = doc.GetGlyph(pgid).GetParent();
 					}
 				}
@@ -400,8 +359,8 @@ void CharacterTree::refresh_tv()
 	}
 
 	// compute tree structure
-	auto children = std::unordered_map<Id, std::vector<Id>>{};
-	auto topmost = std::unordered_set<Id>{};
+	auto children = std::map<Id, std::set<Id>>{};
+	auto topmost = std::set<Id>{};
 	for (const auto &c : clusters)
 	{
 		auto gid = c.first;
@@ -410,7 +369,7 @@ void CharacterTree::refresh_tv()
 			auto pgid = doc.GetGlyph(gid).GetParent();
 			while (pgid.IsNotEmpty())
 			{
-				children[pgid].push_back(gid);
+				children[pgid].insert(gid);
 				gid = pgid;
 				pgid = doc.GetGlyph(pgid).GetParent();
 			}
@@ -431,7 +390,7 @@ void CharacterTree::refresh_tv()
 	tv.expand_all();
 }
 
-void CharacterTree::add_children(Gtk::TreeIter &it, const Id &gid, const std::unordered_map<Id, std::vector<Id>> &children)
+void CharacterTree::add_children(Gtk::TreeIter &it, const Id &gid, const std::map<Id, std::set<Id>> &children)
 {
 	auto cit = children.find(gid);
 	if (cit == children.end())
@@ -481,14 +440,63 @@ void CharacterTree::on_unremove_chars(ValidationPanel::ElementList words)
 	panel.full_refresh();
 }
 
-void CharacterTree::change_label()
+void CharacterTree::change_label(ValidationPanel &p)
 {
+	Gtk::Dialog dial(_("Add glyph"), *this, true);
+	dial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+	dial.add_button(Gtk::Stock::OK, Gtk::RESPONSE_ACCEPT);
+	std::vector<int> altbut;
+	altbut.push_back(Gtk::RESPONSE_ACCEPT);
+	altbut.push_back(Gtk::RESPONSE_CANCEL);
+	dial.set_alternative_button_order_from_array(altbut);	
+	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
+	Gtk::HBox hbox;
+	dial.get_vbox()->pack_start(hbox, false, true, 4);
+	Gtk::Button addbut(Gtk::Stock::ADD);
+	hbox.pack_start(addbut, false, true, 4);
+	Gtk::Button addbut2(_("Add sub-class"));
+	hbox.pack_start(addbut2, false, true, 4);
+	Gtk::ScrolledWindow sw;
+	sw.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC);
+	dial.get_vbox()->pack_start(sw, true, true, 4);
+	GlyphSelection gsel{doc};
+	addbut.signal_clicked().connect(sigc::bind(sigc::mem_fun(gsel, &GlyphSelection::add_glyph_dialog), Id{}, &dial));
+	addbut2.signal_clicked().connect(sigc::bind(sigc::mem_fun(gsel, &GlyphSelection::add_subglyph_dialog), &dial));
+	sw.add(gsel);
+	dial.get_vbox()->show_all_children();
+	dial.set_default_size(300, 500);
+	if (dial.run() == Gtk::RESPONSE_ACCEPT)
+	{
+		dial.hide();
+		const auto gid = gsel.get_selected_id();
+		if (gid.IsEmpty())
+		{ // TODO make the ok button insensitive if nothing is selected
+			GtkCRN::App::show_message(_("No glyph selected."), Gtk::MESSAGE_ERROR);
+			return;
+		}
+
+		auto charperview = std::unordered_map<Id, std::vector<Id>>{};
+		for (const auto &el : p.get_elements())
+			for (const auto &w : el.second)
+				charperview[doc.GetPosition(w.first.char_id).view].push_back(w.first.char_id);
+		
+		for (const auto &v : charperview)
+		{
+			auto view = doc.GetView(v.first);
+			for (const auto &cid : v.second)
+				view.GetClusters(cid).push_back(gid);
+		}
+
+		panel.clear();
+		kopanel.clear();
+		refresh_tv();
+	}
 }
 
-void CharacterTree::remove_from_cluster()
+void CharacterTree::remove_from_cluster(ValidationPanel &p)
 {
 	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
-	for (const auto &el : kopanel.get_elements())
+	for (const auto &el : p.get_elements())
 		for (const auto &w : el.second)
 			charperview[doc.GetPosition(w.first.char_id).view].push_back(w.first.char_id);
 
@@ -501,6 +509,7 @@ void CharacterTree::remove_from_cluster()
 			glyphs.erase(std::remove(glyphs.begin(), glyphs.end(), current_glyph), glyphs.end());
 		}
 	}
+	panel.clear();
 	kopanel.clear();
 	refresh_tv();
 }
@@ -630,43 +639,44 @@ static std::multimap<double, std::vector<size_t>> run_genetic(const crn::SquareM
 	return bestclustering;
 }
 
-void CharacterTree::cut(const Id &gid)
+void CharacterTree::cut(const Id &gid, const std::vector<Id> &chars, crn::Progress *prog)
 {
+	prog->SetMaxCount(4);
+
 	// compute distance matrix for selected characters
-	const auto nelem = clusters[gid].size();
+	const auto nelem = chars.size();
 	const auto &dm = doc.GetDistanceMatrix(character);
 	auto indices = std::vector<size_t>{};
 	indices.reserve(nelem);
-	for (const auto &cid : clusters[gid])
+	for (const auto &cid : chars)
 		indices.push_back(std::find(dm.first.begin(), dm.first.end(), cid) - dm.first.begin());
 	auto distmat = crn::SquareMatrixDouble{nelem};
 	for (auto row : crn::Range(size_t(0), nelem))
 		for (auto col : crn::Range(size_t(0), nelem))
 			distmat[row][col] = dm.second[indices[row]][indices[col]];
+	prog->Advance();
 
 	// cut in two
 	auto res = run_genetic(distmat);
 	const auto bestclustering = res.begin()->second;
+	prog->Advance();
 
 	// create new glyphs
 	auto newglyphs = std::array<Id, 2>{};
 	auto cnt = 0;
-	auto gidbase = gid;
+	auto gidbase = Glyph::BaseId(gid);
 	auto parent = gid;
 	if (gidbase == UNLABELLED)
 	{
 		gidbase = character.CStr();
 		parent = "";
 	}
-	else
-	{ // TODO remove prefix
-	}
 	for (auto &ngid : newglyphs)
 	{
 		auto ok = false;
 		while (!ok)
 		{
-			ngid = gid + "-"_s + cnt++;
+			ngid = gidbase + "-"_s + cnt++;
 			try
 			{
 				doc.AddGlyph(ngid, _("Subclass for ") + gidbase, parent, true);
@@ -676,13 +686,14 @@ void CharacterTree::cut(const Id &gid)
 			catch (...) { }
 		}
 	}
+	prog->Advance();
 
 	// add new glyphs to characters
 	auto work = std::unordered_map<Id, std::unordered_map<Id, Id>>{};
-	for (auto tmp : crn::Range(bestclustering))
+	auto tmp = size_t(0);
+	for (const auto & cid : chars)
 	{
-		const auto cid = clusters[gid][tmp];
-		work[doc.GetPosition(cid).view][cid] = newglyphs[bestclustering[tmp]];
+		work[doc.GetPosition(cid).view][cid] = newglyphs[bestclustering[tmp++]];
 	}
 	for (const auto &v : work)
 	{
@@ -690,16 +701,147 @@ void CharacterTree::cut(const Id &gid)
 		for (const auto &c : v.second)
 			view.GetClusters(c.first).push_back(c.second);
 	}
-
-	refresh_tv();
+	prog->Advance();
 }
 
-void CharacterTree::cut_cluster()
+void CharacterTree::cut_cluster(ValidationPanel &p)
 {
 	auto it = tv.get_selection()->get_selected();
 	if (it)
 	{
-		cut(Id(Glib::ustring((*it)[columns.value]).c_str()));
+		auto ids = std::vector<Id>{};
+		for (const auto &el : p.get_elements())
+			for (const auto &w : el.second)
+				ids.push_back(w.first.char_id);
+
+		GtkCRN::ProgressWindow pw(_("Clustering..."), this, true);
+		const auto pid = pw.add_progress_bar("");
+		pw.run(sigc::bind(sigc::mem_fun(this, &CharacterTree::cut), Id(Glib::ustring((*it)[columns.value]).c_str()), ids, pw.get_crn_progress(pid)));
+
+		refresh_tv();
 	}
+}
+
+void CharacterTree::clear_clustering()
+{
+	const auto &dm = doc.GetDistanceMatrix(character);
+	auto charperview = std::unordered_map<Id, std::vector<Id>>{};
+	for (const auto &cid : dm.first)
+		charperview[doc.GetPosition(cid).view].push_back(cid);
+	for (const auto &v : charperview)
+	{
+		auto view = doc.GetView(v.first);
+		for (const auto &cid : v.second)
+		{
+			auto &glyphs = view.GetClusters(cid);
+			glyphs.erase(
+					std::remove_if(glyphs.begin(), glyphs.end(),
+						[this](const Id &id){ return doc.GetGlyph(id).IsAuto(); }), 
+					glyphs.end());
+		}
+	}
+	
+	refresh_tv();
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+// GlyphSelection
+/////////////////////////////////////////////////////////////////////////////////
+GlyphSelection::GlyphSelection(Document &docu):
+	doc(docu)
+{
+	store = Gtk::ListStore::create(columns);
+	const auto &glyphs = doc.GetGlyphs();
+	for (const auto &g : glyphs)
+		add_glyph(g.first, g.second);
+
+	set_model(store);
+	append_column(_("Global"), columns.global);
+	append_column(_("Id"), columns.id);
+	append_column(_("Auto"), columns.automatic);
+	append_column(_("Description"), columns.desc);
+	get_column(0)->set_sort_column(columns.global);
+	get_column(1)->set_sort_column(columns.id);
+	get_column(2)->set_sort_column(columns.automatic);
+}
+
+Id GlyphSelection::get_selected_id()
+{
+	auto it = get_selection()->get_selected();
+	if (!it)
+		return "";
+	const auto id = Id(Glib::ustring((*it)[columns.id]).c_str());
+	if ((*it)[columns.global])
+		return Glyph::GlobalId(id);
+	else
+		return Glyph::LocalId(id);
+}
+
+void GlyphSelection::add_glyph(const Id &gid, const Glyph &g)
+{
+	auto row = *store->append();
+	row[columns.id] = Glyph::BaseId(gid).CStr();
+	row[columns.global] = Glyph::IsGlobal(gid);
+	row[columns.desc] = g.GetDescription().CStr();
+	row[columns.automatic] = g.IsAuto();
+}
+
+void GlyphSelection::add_glyph_dialog(const Id &parent_id, Gtk::Window *parent)
+{
+	Gtk::Dialog dial(_("Add glyph"), true);
+	if (parent)
+		dial.set_transient_for(*parent);
+	dial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+	dial.add_button(Gtk::Stock::OK, Gtk::RESPONSE_ACCEPT);
+	std::vector<int> altbut;
+	altbut.push_back(Gtk::RESPONSE_ACCEPT);
+	altbut.push_back(Gtk::RESPONSE_CANCEL);
+	dial.set_alternative_button_order_from_array(altbut);	
+	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
+	Gtk::Table tab(3, 2);
+	dial.get_vbox()->pack_start(tab, false, true, 4);
+	tab.set_col_spacings(4);
+	tab.attach(*Gtk::manage(new Gtk::Label(_("Id"))), 0, 1, 0, 1, Gtk::FILL, Gtk::FILL);
+	Gtk::Entry ident;
+	tab.attach(ident, 1, 2, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL);
+	tab.attach(*Gtk::manage(new Gtk::Label(_("Description"))), 0, 1, 1, 2, Gtk::FILL, Gtk::FILL);
+	Gtk::Entry descent;
+	tab.attach(descent, 1, 2, 1, 2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL);
+	tab.attach(*Gtk::manage(new Gtk::Label(_("Parent"))), 0, 1, 2, 3, Gtk::FILL, Gtk::FILL);
+	if (parent_id.IsNotEmpty())
+		tab.attach(*Gtk::manage(new Gtk::Label(parent_id.CStr())), 1, 2, 2, 3, Gtk::FILL, Gtk::FILL);
+
+	dial.get_vbox()->show_all_children();
+	if (dial.run() == Gtk::RESPONSE_ACCEPT)
+	{
+		dial.hide();
+		const auto id = Id(ident.get_text().c_str());
+		if (id.IsEmpty())
+		{
+			GtkCRN::App::show_message(_("Invalid id."), Gtk::MESSAGE_ERROR);
+			return;
+		}
+		try
+		{
+			doc.GetGlyph(Glyph::LocalId(id));
+			GtkCRN::App::show_message(_("The id is already used in local database."), Gtk::MESSAGE_ERROR);
+			return;
+		}
+		catch (...) { }
+		try
+		{
+			doc.GetGlyph(Glyph::GlobalId(id));
+			GtkCRN::App::show_message(_("The id is already used in global database."), Gtk::MESSAGE_ERROR);
+			return;
+		}
+		catch (...) { }
+		const auto &glyph = doc.AddGlyph(id, descent.get_text().c_str(), parent_id, false);
+		add_glyph(Glyph::LocalId(id) , glyph);
+	}
+}
+
+void GlyphSelection::add_subglyph_dialog(Gtk::Window *parent)
+{
+	add_glyph_dialog(get_selected_id(), parent);
 }
 

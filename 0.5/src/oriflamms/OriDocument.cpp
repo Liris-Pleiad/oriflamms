@@ -273,6 +273,9 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 		}
 		if (cid.IsEmpty())
 			throw crn::ExceptionInvalidArgument(projname + "_" + id + "-ontolinks.xml: " + _("incomplete target."));
+
+		std::sort(gids.begin(), gids.end());
+		gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
 		onto_links.emplace(std::move(cid), std::move(gids));
 
 		el = el.GetNextSiblingElement("link");
@@ -1546,6 +1549,26 @@ Id Glyph::LocalId(const Id &id)
 Id Glyph::GlobalId(const Id &id)
 {
 	return GLOBALGLYPH + id;
+}
+
+Id Glyph::BaseId(const Id &id)
+{
+	if (IsLocal(id))
+		return id.SubString(LOCALGLYPH.Size());
+	else if (IsGlobal(id))
+		return id.SubString(GLOBALGLYPH.Size());
+	else
+		return id;
+}
+
+bool Glyph::IsLocal(const Id &id)
+{
+	return id.StartsWith(LOCALGLYPH);
+}
+
+bool Glyph::IsGlobal(const Id &id)
+{
+	return id.StartsWith(GLOBALGLYPH);
 }
 
 //////////////////////////////////////////////////////////////////////////////////

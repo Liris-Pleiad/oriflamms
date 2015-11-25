@@ -1,6 +1,7 @@
 2015-11-24 Yann LEYDIER <yann@leydier.info>
 	* ValidationPanel (tooltip): Bugfix.
 	* CharacterTree: Added second panel.
+	* GlyphSelection: Added.
 
 2015-11-23 Yann LEYDIER <yann@leydier.info>
 	* View (GetZoneImage): Bugfix.

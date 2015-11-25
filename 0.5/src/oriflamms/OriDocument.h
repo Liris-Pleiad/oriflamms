@@ -299,6 +299,9 @@ namespace ori
 
 			static Id LocalId(const Id &id);
 			static Id GlobalId(const Id &id);
+			static Id BaseId(const Id &id);
+			static bool IsLocal(const Id &id);
+			static bool IsGlobal(const Id &id);
 
 		private:
 			mutable crn::xml::Element el;
@@ -341,6 +344,7 @@ namespace ori
 			Glyph& GetGlyph(const Id &id);
 			/* \brief Adds a glyph to the local ontology file */
 			Glyph& AddGlyph(const Id &id, const crn::StringUTF8 &desc, const Id &parent = Id{}, bool automatic = false);
+			const std::unordered_map<Id, Glyph>& GetGlyphs() const noexcept { return glyphs; }
 
 			/*! \brief Exports statistics on alignment validation to an ODS file */
 			void ExportStats(const crn::Path &fname);
