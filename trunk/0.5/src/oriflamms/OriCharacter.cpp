@@ -13,6 +13,7 @@
 #include <GtkCRNApp.h>
 #include "genetic.hpp"
 #include <unordered_set>
+#include <CRNAI/CRN2Means.h>
 #include <CRNi18n.h>
 
 using namespace ori;
@@ -223,6 +224,7 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	panel(docu, c.CStr(), true),
 	kopanel(docu, _("Put aside"), true),
 	clear_clusters(_("Delete automatic clusters")),
+	auto_clusters(_("Create automatic clusters")),
 	label_ok(_("Add glyph")),
 	label_ko(_("Add glyph")),
 	cut_ok(_("Cut in two")),
@@ -235,6 +237,8 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 
 	auto *hbox = Gtk::manage(new Gtk::HBox);
 	get_vbox()->pack_start(*hbox, false, true, 4);
+	hbox->pack_start(auto_clusters, false, true, 4);
+	auto_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::auto_clustering));
 	hbox->pack_start(clear_clusters, false, true, 4);
 	clear_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::clear_clustering));
 
@@ -639,9 +643,10 @@ static std::multimap<double, std::vector<size_t>> run_genetic(const crn::SquareM
 	return bestclustering;
 }
 
-void CharacterTree::cut(const Id &gid, const std::vector<Id> &chars, crn::Progress *prog)
+std::pair<Id, Id> CharacterTree::cut(const Id &gid, const std::vector<Id> &chars, crn::Progress *prog)
 {
-	prog->SetMaxCount(4);
+	if (prog)
+		prog->SetMaxCount(4);
 
 	// compute distance matrix for selected characters
 	const auto nelem = chars.size();
@@ -654,12 +659,29 @@ void CharacterTree::cut(const Id &gid, const std::vector<Id> &chars, crn::Progre
 	for (auto row : crn::Range(size_t(0), nelem))
 		for (auto col : crn::Range(size_t(0), nelem))
 			distmat[row][col] = dm.second[indices[row]][indices[col]];
-	prog->Advance();
+	if (prog)
+		prog->Advance();
 
 	// cut in two
 	auto res = run_genetic(distmat);
 	const auto bestclustering = res.begin()->second;
-	prog->Advance();
+	if (prog)
+		prog->Advance();
+
+	// check if there are really two classes
+	auto class0 = size_t(0);
+	for (auto c : bestclustering)
+		if (c == bestclustering.front())
+			class0 += 1;
+	if (class0 == 0 || class0 == bestclustering.size())
+	{
+		if (prog)
+		{
+			prog->Advance();
+			prog->Advance();
+		}
+		return std::make_pair(Id{}, Id{});
+	}
 
 	// create new glyphs
 	auto newglyphs = std::array<Id, 2>{};
@@ -686,7 +708,8 @@ void CharacterTree::cut(const Id &gid, const std::vector<Id> &chars, crn::Progre
 			catch (...) { }
 		}
 	}
-	prog->Advance();
+	if (prog)
+		prog->Advance();
 
 	// add new glyphs to characters
 	auto work = std::unordered_map<Id, std::unordered_map<Id, Id>>{};
@@ -699,9 +722,14 @@ void CharacterTree::cut(const Id &gid, const std::vector<Id> &chars, crn::Progre
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &c : v.second)
+		{
 			view.GetClusters(c.first).push_back(c.second);
+			clusters[c.second].insert(c.first);
+		}
 	}
-	prog->Advance();
+	if (prog)
+		prog->Advance();
+	return std::make_pair(newglyphs[0], newglyphs[1]);
 }
 
 void CharacterTree::cut_cluster(ValidationPanel &p)
@@ -716,7 +744,7 @@ void CharacterTree::cut_cluster(ValidationPanel &p)
 
 		GtkCRN::ProgressWindow pw(_("Clustering..."), this, true);
 		const auto pid = pw.add_progress_bar("");
-		pw.run(sigc::bind(sigc::mem_fun(this, &CharacterTree::cut), Id(Glib::ustring((*it)[columns.value]).c_str()), ids, pw.get_crn_progress(pid)));
+		pw.run(sigc::hide_return(sigc::bind(sigc::mem_fun(this, &CharacterTree::cut), Id(Glib::ustring((*it)[columns.value]).c_str()), ids, pw.get_crn_progress(pid))));
 
 		refresh_tv();
 	}
@@ -740,8 +768,88 @@ void CharacterTree::clear_clustering()
 					glyphs.end());
 		}
 	}
-	
 	refresh_tv();
+}
+
+void CharacterTree::auto_clustering()
+{
+	GtkCRN::ProgressWindow pw(_("Clustering..."), this, true);
+	const auto pid = pw.add_progress_bar("");
+	pw.run(sigc::bind(sigc::mem_fun(this, &CharacterTree::auto_cut), pw.get_crn_progress(pid)));
+
+	doc.Save();
+	refresh_tv();
+}
+
+static double split_score(const std::vector<Id> &sel, std::unordered_map<Id, size_t> &indices, const crn::SquareMatrixDouble &distmat)
+{
+	if (sel.size() <= 1)
+		return 0.0;
+	auto d = std::vector<double>{};
+	for (auto i : crn::Range(sel))
+		for (auto j = i + 1; j < sel.size(); ++j)
+			d.push_back(distmat[indices[sel[i]]][indices[sel[j]]]);
+	if (d.size() == 1)
+		return d.front();
+	return crn::TwoMeans(d.begin(), d.end()).second;
+}
+void CharacterTree::auto_cut(crn::Progress *prog)
+{
+	static constexpr auto NCLUST = size_t(37);
+	
+	if (prog)
+		prog->SetMaxCount(NCLUST);
+
+	const auto &distmat = doc.GetDistanceMatrix(character);
+	auto indices = std::unordered_map<Id, size_t>{};
+	for (auto tmp = size_t(0); tmp < distmat.first.size(); ++tmp)
+		indices.emplace(distmat.first[tmp], tmp);
+		
+	auto baseid = "auto_"_s + character.CStr();
+	try { doc.AddGlyph(baseid, _("Base class for automatic clustering of ") + crn::StringUTF8(character), "", true); } catch (...) { }
+	baseid = Glyph::LocalId(baseid);
+
+	auto selectionset = std::unordered_map<crn::StringUTF8, std::vector<Id>>{};
+	selectionset[baseid] = distmat.first;
+	auto done = std::unordered_map<crn::StringUTF8, std::vector<Id>>{};
+	auto split = std::multimap<double, crn::StringUTF8, std::greater<double>>{};
+	split.emplace(split_score(selectionset[baseid], indices, distmat.second), baseid);
+
+	while (selectionset.size() + done.size() < NCLUST)
+	{
+		// find cluster to cut
+		const auto bestit = split.begin();
+		if (bestit->first == 0.0)
+			break;
+		const auto bestsel = bestit->second;
+
+		const auto &selection = selectionset[bestsel];
+
+		const auto newglyphs = cut(bestsel, selection, nullptr);
+
+		if (newglyphs.first.IsNotEmpty() && newglyphs.second.IsNotEmpty())
+		{
+			auto newsel = std::vector<Id>{};
+			newsel.insert(newsel.end(), clusters[newglyphs.first].begin(), clusters[newglyphs.first].end());
+			split.emplace(split_score(newsel, indices, distmat.second), newglyphs.first);
+			selectionset[newglyphs.first] = std::move(newsel);
+
+			newsel = std::vector<Id>{};
+			newsel.insert(newsel.end(), clusters[newglyphs.second].begin(), clusters[newglyphs.second].end());
+			split.emplace(split_score(newsel, indices, distmat.second), newglyphs.second);
+			selectionset[newglyphs.second] = std::move(newsel);
+		}
+		done[bestsel] = std::move(selectionset[bestsel]);
+		selectionset.erase(bestsel);
+		split.erase(bestit);
+
+		if (prog)
+			prog->Advance();
+
+		if (split.empty())
+			break;
+	}
+	
 }
 
 /////////////////////////////////////////////////////////////////////////////////

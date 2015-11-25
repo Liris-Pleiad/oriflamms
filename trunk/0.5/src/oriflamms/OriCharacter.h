@@ -68,9 +68,11 @@ namespace ori
 			void on_unremove_chars(ValidationPanel::ElementList words);
 			void change_label(ValidationPanel &p);
 			void remove_from_cluster(ValidationPanel &p);
-			void cut(const Id &gid, const std::vector<Id> &chars, crn::Progress *prog);
+			std::pair<Id, Id> cut(const Id &gid, const std::vector<Id> &chars, crn::Progress *prog);
 			void cut_cluster(ValidationPanel &p);
 			void clear_clustering();
+			void auto_clustering();
+			void auto_cut(crn::Progress *prog);
 
 			crn::String character;
 			Document &doc;
@@ -84,6 +86,7 @@ namespace ori
 			ValidationPanel kopanel;
 			std::unordered_map<Id, Glib::RefPtr<Gdk::Pixbuf>> images;
 			Gtk::Button clear_clusters;
+			Gtk::Button auto_clusters;
 			Gtk::Button label_ok;
 			Gtk::Button label_ko;
 			Gtk::Button cut_ok;
