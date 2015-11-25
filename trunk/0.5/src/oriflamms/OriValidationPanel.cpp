@@ -374,7 +374,7 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 				tipwin.resize(1, 1);
 				int rx, ry;
 				win->get_root_coords(x, y, rx, ry);
-				tipwin.move(rx, ry);
+				tipwin.move(rx + 4, ry + 4);
 				tipwin.show();
 				return false;
 			}
