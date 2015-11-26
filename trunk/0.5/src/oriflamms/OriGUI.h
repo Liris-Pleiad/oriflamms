@@ -53,6 +53,7 @@ namespace ori
 			void display_update_word(const Id &wordid, const crn::Option<int> &newleft = crn::Option<int>(), const crn::Option<int> &newright = crn::Option<int>());
 			void clear_sig();
 			void show_chars();
+			void go_to();
 
 			void propagate_validation();
 			void find_string();
