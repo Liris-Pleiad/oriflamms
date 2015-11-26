@@ -1,3 +1,7 @@
+2015-11-26 Yann LEYDIER <yann@leydier.info>
+	* GUI (go_to): Added.
+	* GUI (find_string, display_search): Bugfix.
+
 2015-11-25 Yann LEYDIER <yann@leydier.info>
 	* CharacterTree (cut, auto_cut): Added.
 
@@ -11,8 +15,8 @@
 	* Glyph (LocalId, GlobalId): Added.
 	* Document (AddGlyph): Bugfix.
 	* GUI (display_search): Bugfix.
-	* View (AlignWordCharacters): Now adds a dummy signature when the character
-																has none.
+	* View (AlignWordCharacters): Now adds a dummy signature when the 
+																character has none.
 
 2015-11-20 Yann LEYDIER <yann@leydier.info>
 	* CharacterTree: Added.

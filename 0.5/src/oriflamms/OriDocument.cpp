@@ -1788,7 +1788,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		// index and compute boxes if needed
 		for (auto &p : v.pimpl->struc.pages)
 		{ // for each page
-			positions.emplace(p.first, id);
+			positions.emplace(p.first, ElementPosition{id, p.first});
 
 			if (p.second.GetZone().IsEmpty())
 			{
@@ -1815,7 +1815,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 			auto pbox = crn::Rect{};
 			for (auto &cid : p.second.GetColumns())
 			{ // columns
-				positions.emplace(cid, ElementPosition{id, p.first});
+				positions.emplace(cid, ElementPosition{id, p.first, cid});
 
 				auto &col = v.GetColumn(cid);
 				if (col.GetZone().IsEmpty())
@@ -1835,7 +1835,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 				auto cbox = crn::Rect{};
 				for (auto &lid : col.GetLines())
 				{ // lines
-					positions.emplace(lid, ElementPosition{id, p.first, cid});
+					positions.emplace(lid, ElementPosition{id, p.first, cid, lid});
 
 					auto &line = v.GetLine(lid);
 					if (line.GetZone().IsEmpty())
@@ -1856,7 +1856,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 					auto medianline = std::vector<crn::Point2DInt>{};
 					for (auto &wid : line.GetWords())
 					{ // words
-						positions.emplace(wid, ElementPosition{id, p.first, cid, lid});
+						positions.emplace(wid, ElementPosition{id, p.first, cid, lid, wid});
 
 						auto &word = v.GetWord(wid);
 						if (word.GetZone().IsEmpty())

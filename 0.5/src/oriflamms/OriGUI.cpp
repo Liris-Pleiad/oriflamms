@@ -58,6 +58,8 @@ GUI::GUI():
 	Gtk::AccelMap::add_entry("<Oriflamms>/DisplayMenu/Characters", k, mod);
 	Gtk::AccelGroup::parse("<control>e", k, mod);
 	Gtk::AccelMap::add_entry("<Oriflamms>/DisplayMenu/Edit", k, mod);
+	Gtk::AccelGroup::parse("<control>g", k, mod);
+	Gtk::AccelMap::add_entry("<Oriflamms>/DisplayMenu/Goto", k, mod);
 
 	// File menu
 	actions->add(Gtk::Action::create("load-project", Gtk::Stock::OPEN, _("_Open project"), _("Open project")), sigc::mem_fun(this, &GUI::load_project));
@@ -78,6 +80,10 @@ GUI::GUI():
 	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::mem_fun(this,&GUI::edit_overlays));
 	actions->get_action("edit")->set_accel_path("<Oriflamms>/DisplayMenu/Edit");
 
+	actions->add(Gtk::Action::create("find-string", Gtk::Stock::FIND, _("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
+	actions->add(Gtk::Action::create("go-to", Gtk::Stock::GOTO_LAST, _("_Go to"), _("Go to")), sigc::mem_fun(this,&GUI::go_to));
+	actions->get_action("go-to")->set_accel_path("<Oriflamms>/DisplayMenu/Goto");
+
 	// Validation menu
 	actions->add(Gtk::Action::create("valid-menu", _("_Validation"), _("Validation")));
 
@@ -87,8 +93,6 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("valid-stats", Gtk::Stock::PRINT, _("_Statistics"), _("Statistics")), sigc::mem_fun(this, &GUI::stats));
 
 	actions->add(Gtk::Action::create("chars-classif",Gtk::Stock::SELECT_FONT,_("_Characters"), _("Characters")), sigc::mem_fun(this,&GUI::show_chars));
-
-	actions->add(Gtk::Action::create("find-string",Gtk::Stock::FIND,_("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
 
 	// Alignment menu
 	actions->add(Gtk::Action::create("align-menu", _("_Alignment"), _("Alignment")));
@@ -140,6 +144,7 @@ GUI::GUI():
 		"			<menuitem action='show-characters'/>"
 		"			<separator/>"
 		"			<menuitem action='find-string'/>"
+		"			<menuitem action='go-to'/>"
 		"		</menu>"
 		"		<menu action='structure-menu'>"
 		"			<menuitem action='edit'/>"
@@ -1315,7 +1320,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 				if (!wzone.GetPosition().IsValid())
 					continue;
 				// look for searched string
-				const auto &text = w.second.GetText();
+				const auto &text = view.GetAlignableText(w.first);//w.second.GetText();
 				auto pos = text.Find(str);
 				while (pos != text.NPos())
 				{ // found
@@ -1328,10 +1333,24 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 							};
 					AtScopeExit(at_exit); // find next occurrence before looping
 
-					const auto &fczone = view.GetZone(view.GetCharacter(w.second.GetCharacters()[pos]).GetZone());
+					const auto str0 = text.SubString(0, pos + 1);
+					auto cpos0 = size_t(0);
+					auto tstr = U""_s;
+					for (; cpos0 < w.second.GetCharacters().size(); ++cpos0)
+					{
+						tstr += view.GetCharacter(w.second.GetCharacters()[cpos0]).GetText();
+						if (tstr.Size() > str0.Size())
+							tstr.Crop(0, str0.Size());
+						if (tstr == str0)
+							break;
+					}
+					if (cpos0 >= w.second.GetCharacters().size())
+						cpos0 = w.second.GetCharacters().size() - 1;
+					const auto &fczone = view.GetZone(view.GetCharacter(w.second.GetCharacters()[cpos0]).GetZone());
 					if (!fczone.GetPosition().IsValid())
 						continue;
-					const auto &bczone = view.GetZone(view.GetCharacter(w.second.GetCharacters()[pos + str.Size() - 1]).GetZone());
+					const auto cpos1 = crn::Min(cpos0 + str.Size() - 1, w.second.GetCharacters().size() - 1);
+					const auto &bczone = view.GetZone(view.GetCharacter(w.second.GetCharacters()[cpos1]).GetZone());
 					if (!bczone.GetPosition().IsValid())
 						continue;
 					// retrieve frontiers
@@ -1439,12 +1458,12 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 					if (view.IsValid(w.first).IsFalse())
 					{
 						// add to reject list
-						panel->add_element(wpb, panel->label_ko, w.first, w.second.GetCharacters()[pos]);
+						panel->add_element(wpb, panel->label_ko, w.first, w.second.GetCharacters()[cpos0]);
 					}
 					else if (view.IsValid(w.first).IsTrue())
-						panel->add_element(wpb, panel->label_ok, w.first, w.second.GetCharacters()[pos]);
+						panel->add_element(wpb, panel->label_ok, w.first, w.second.GetCharacters()[cpos0]);
 					else
-						panel->add_element(wpb, panel->label_unknown, w.first, w.second.GetCharacters()[pos]);
+						panel->add_element(wpb, panel->label_unknown, w.first, w.second.GetCharacters()[cpos0]);
 
 				}
 			}
@@ -1454,7 +1473,9 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 
 void GUI::find_string()
 {
-	Gtk::Dialog dialog(_("Find string"),this);
+	if (!doc)
+		return;
+	Gtk::Dialog dialog(_("Find string"), this);
 	dialog.maximize();
 	dialog.add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CLOSE);
 	Gtk::Entry* entry = Gtk::manage(new Gtk::Entry);
@@ -1482,3 +1503,91 @@ void GUI::show_chars()
 	CharacterDialog dial(*doc, *this);
 	dial.run();
 }
+
+void GUI::go_to()
+{
+	if (!doc)
+		return;
+	Gtk::Dialog dial(_("Go to id"), this, true);
+	dial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+	dial.add_button(Gtk::Stock::OK, Gtk::RESPONSE_ACCEPT);
+	std::vector<int> altbut;
+	altbut.push_back(Gtk::RESPONSE_ACCEPT);
+	altbut.push_back(Gtk::RESPONSE_CANCEL);
+	dial.set_alternative_button_order_from_array(altbut);	
+	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
+	Gtk::HBox hbox;
+	dial.get_vbox()->pack_start(hbox, false, true, 4);
+	hbox.pack_start(*Gtk::manage(new Gtk::Label(_("Id"))), false, true, 4);
+	Gtk::Entry ident;
+	ident.set_activates_default(true);
+	hbox.pack_start(ident, true, true, 4);
+	dial.get_vbox()->show_all_children();
+	
+	if (dial.run() == Gtk::RESPONSE_ACCEPT)
+	{
+		dial.hide();
+		const auto id = Id{ident.get_text().c_str()};
+		try
+		{
+			const auto &pos = doc->GetPosition(id);
+			for (auto vr : store->children())
+			{
+				if (vr.get_value(columns.id).c_str() == pos.view)
+				{
+					if (pos.page.IsEmpty())
+					{
+						tv.expand_to_path(Gtk::TreePath(vr));
+						tv.get_selection()->select(vr);
+						return;
+					}
+					else
+					{
+						for (auto pr : vr.children())
+						{
+							if (pr.get_value(columns.id).c_str() == pos.page)
+							{
+								if (pos.column.IsEmpty())
+								{
+									tv.expand_to_path(Gtk::TreePath(pr));
+									tv.get_selection()->select(pr);
+									return;
+								}
+								else
+								{
+									for (auto cr : pr.children())
+									{
+										if (cr.get_value(columns.id).c_str() == pos.column)
+										{
+											if (pos.line.IsEmpty())
+											{
+												tv.expand_to_path(Gtk::TreePath(cr));
+												tv.get_selection()->select(cr);
+												return;
+											}
+											else
+											{
+												for (auto lr : cr.children())
+												{
+													if (lr.get_value(columns.id).c_str() == pos.line)
+													{
+														tv.expand_to_path(Gtk::TreePath(lr));
+														tv.get_selection()->select(lr);
+														return;
+													}
+												} // for each line
+											}
+										} // found column
+									} // for each column
+								}
+							} // page found
+						} // for each page
+					}
+				} // view found
+			} // for each view
+		}
+		catch (...) { }
+		GtkCRN::App::show_message(_("Not found."), Gtk::MESSAGE_INFO);
+	}
+}
+
