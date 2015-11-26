@@ -1,0 +1,1138 @@
+# French translations for oriflamms package.
+# Copyright (C) 2013-2015 INSA-Lyon & IRHT & Université Paris Descartes
+# This file is distributed under the same license as the oriflamms package.
+# Yann LEYDIER <yann@leydier.info>, 2013-2015, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: oriflamms 0.5\n"
+"Report-Msgid-Bugs-To: yann@leydier.info\n"
+"POT-Creation-Date: 2015-11-26 11:55+0100\n"
+"PO-Revision-Date: 2015-11-26 11:55+0100\n"
+"Last-Translator: Yann LEYDIER <yann@leydier.info>\n"
+"Language-Team: French <>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Gtranslator 2.91.6\n"
+
+#: ../oriflamms/OriEntityDialog.cpp:16
+msgid "Entity manager"
+msgstr "Gestionnaire d'entités"
+
+#: ../oriflamms/OriEntityDialog.cpp:31
+msgid "Add _file"
+msgstr "Ajouter un _fichier"
+
+#: ../oriflamms/OriEntityDialog.cpp:35
+msgid "Add _entity"
+msgstr "Ajouter une _entité"
+
+#: ../oriflamms/OriEntityDialog.cpp:39
+msgid "_Delete entity"
+msgstr "_Supprimer l'entité"
+
+#: ../oriflamms/OriEntityDialog.cpp:65
+msgid "Entity"
+msgstr "Entité"
+
+#: ../oriflamms/OriEntityDialog.cpp:66
+msgid "XML value"
+msgstr "Valeur XML"
+
+#: ../oriflamms/OriEntityDialog.cpp:67
+msgid "Unicode value"
+msgstr "Valeur Unicode"
+
+#: ../oriflamms/OriEntityDialog.cpp:94
+msgid "Please choose a entity file to add"
+msgstr "Veuillez sélectionner un fichier d'entités à ajouter"
+
+#: ../oriflamms/OriEntityDialog.cpp:98
+msgid "_Overwrite existing entities"
+msgstr "_Écraser les entités existantes"
+
+#: ../oriflamms/OriEntityDialog.cpp:115
+msgid "Add entity"
+msgstr "Ajouter une entité"
+
+#: ../oriflamms/OriEntityDialog.cpp:127
+msgid "Name"
+msgstr "Nom"
+
+#: ../oriflamms/OriEntityDialog.cpp:133
+msgid "Value"
+msgstr "Valeur"
+
+#: ../oriflamms/OriEntityManager.cpp:62
+msgid "Cannot open file."
+msgstr "Impossible d'ouvrir le fichier."
+
+#: ../oriflamms/OriEntityManager.cpp:213
+msgid "not an Oriflamms entity file."
+msgstr "ce n'est pas un fichier d'entités Oriflamms."
+
+#: ../oriflamms/OriGUI.cpp:65
+msgid "_Open project"
+msgstr "_Ouvrir un projet"
+
+#: ../oriflamms/OriGUI.cpp:65 ../oriflamms/OriGUI.cpp:329
+msgid "Open project"
+msgstr "Ouvrir un projet"
+
+#: ../oriflamms/OriGUI.cpp:66
+msgid "_Save project"
+msgstr "_Sauvegarder le projet"
+
+#: ../oriflamms/OriGUI.cpp:66
+msgid "Save project"
+msgstr "Sauvegarder le projet"
+
+#: ../oriflamms/OriGUI.cpp:69
+msgid "_Display"
+msgstr "_Affichage"
+
+#: ../oriflamms/OriGUI.cpp:69
+msgid "Display"
+msgstr "Affichage"
+
+#: ../oriflamms/OriGUI.cpp:72
+msgid "Show _image"
+msgstr "Afficher l'_image"
+
+#: ../oriflamms/OriGUI.cpp:72
+msgid "Show image"
+msgstr "Afficher l'image"
+
+#: ../oriflamms/OriGUI.cpp:74
+msgid "Show _lines"
+msgstr "Afficher les _lignes"
+
+#: ../oriflamms/OriGUI.cpp:74
+msgid "Show lines"
+msgstr "Afficher les lignes"
+
+#: ../oriflamms/OriGUI.cpp:76
+msgid "Show _words"
+msgstr "Afficher les _mots"
+
+#: ../oriflamms/OriGUI.cpp:76
+msgid "Show words"
+msgstr "Afficher les mots"
+
+#: ../oriflamms/OriGUI.cpp:78
+msgid "Show _characters"
+msgstr "Afficher les _caractères"
+
+#: ../oriflamms/OriGUI.cpp:78
+msgid "Show characters"
+msgstr "Afficher les caractères"
+
+#: ../oriflamms/OriGUI.cpp:80
+msgid "_Edit"
+msgstr "_Modifier"
+
+#: ../oriflamms/OriGUI.cpp:80
+msgid "Edit"
+msgstr "Modifier"
+
+#: ../oriflamms/OriGUI.cpp:83
+msgid "_Find string"
+msgstr "_Rechercher une chaîne"
+
+#: ../oriflamms/OriGUI.cpp:83 ../oriflamms/OriGUI.cpp:1478
+msgid "Find string"
+msgstr "Rechercher une chaîne"
+
+#: ../oriflamms/OriGUI.cpp:84
+msgid "_Go to"
+msgstr "_Aller à"
+
+#: ../oriflamms/OriGUI.cpp:84
+msgid "Go to"
+msgstr "Aller à"
+
+#: ../oriflamms/OriGUI.cpp:88
+msgid "_Validation"
+msgstr "_Validation"
+
+#: ../oriflamms/OriGUI.cpp:88 ../oriflamms/OriValidation.cpp:34
+msgid "Validation"
+msgstr "Validation"
+
+#: ../oriflamms/OriGUI.cpp:90
+msgid "Validate _words"
+msgstr "Valider les _mots"
+
+#: ../oriflamms/OriGUI.cpp:90
+msgid "Validate words"
+msgstr "Valider les mots"
+
+#: ../oriflamms/OriGUI.cpp:92
+msgid "_Propagate validation"
+msgstr "_Propager la validation"
+
+#: ../oriflamms/OriGUI.cpp:92
+msgid "Propagate validation"
+msgstr "Propager la validation"
+
+#: ../oriflamms/OriGUI.cpp:93
+msgid "_Statistics"
+msgstr "_Statistiques"
+
+#: ../oriflamms/OriGUI.cpp:93
+msgid "Statistics"
+msgstr "Statistiques"
+
+#: ../oriflamms/OriGUI.cpp:95
+msgid "_Characters"
+msgstr "_Caractères"
+
+#: ../oriflamms/OriGUI.cpp:95 ../oriflamms/OriCharacter.cpp:26
+msgid "Characters"
+msgstr "Caractères"
+
+#: ../oriflamms/OriGUI.cpp:98
+msgid "_Alignment"
+msgstr "A_lignement"
+
+#: ../oriflamms/OriGUI.cpp:98 ../oriflamms/OriAlignDialog.cpp:25
+msgid "Alignment"
+msgstr "Alignement"
+
+#: ../oriflamms/OriGUI.cpp:100
+msgid "_Clear image signatures"
+msgstr "_Effacer les signatures image"
+
+#: ../oriflamms/OriGUI.cpp:100
+msgid "Clear image signatures"
+msgstr "Effacer les signatures image"
+
+#: ../oriflamms/OriGUI.cpp:101
+msgid "Align _all"
+msgstr "_Tout aligner"
+
+#: ../oriflamms/OriGUI.cpp:101
+msgid "Align all"
+msgstr "Tout aligner"
+
+#: ../oriflamms/OriGUI.cpp:102
+msgid "Align _selection"
+msgstr "Aligner la _sélection"
+
+#: ../oriflamms/OriGUI.cpp:102
+msgid "Align selection"
+msgstr "Aligner la sélection"
+
+#: ../oriflamms/OriGUI.cpp:105
+msgid "_Structure"
+msgstr "_Structure"
+
+#: ../oriflamms/OriGUI.cpp:105
+msgid "Structure"
+msgstr "Structure"
+
+#: ../oriflamms/OriGUI.cpp:106
+msgid "Add _line"
+msgstr "Ajouter une _ligne"
+
+#: ../oriflamms/OriGUI.cpp:106
+msgid "Add line"
+msgstr "Ajouter une ligne"
+
+#: ../oriflamms/OriGUI.cpp:110
+msgid "_Options"
+msgstr "_Options"
+
+#: ../oriflamms/OriGUI.cpp:110
+msgid "Options"
+msgstr "Options"
+
+#: ../oriflamms/OriGUI.cpp:112
+msgid "_Unit validation"
+msgstr "Validation à l'_unité"
+
+#: ../oriflamms/OriGUI.cpp:113
+msgid "_Batch validation"
+msgstr "Validation par _lot"
+
+#: ../oriflamms/OriGUI.cpp:114
+msgid "Change _font"
+msgstr "Changer de _police"
+
+#: ../oriflamms/OriGUI.cpp:114
+msgid "Change font"
+msgstr "Changer de police"
+
+#: ../oriflamms/OriGUI.cpp:115
+msgid "Manage _entities"
+msgstr "Gestionnaire d'_entités"
+
+#: ../oriflamms/OriGUI.cpp:115
+msgid "Manage entities"
+msgstr "Gestionnaire d'entités"
+
+#: ../oriflamms/OriGUI.cpp:118
+msgid "_Add point"
+msgstr "_Ajouter un point"
+
+#: ../oriflamms/OriGUI.cpp:118
+msgid "Add point"
+msgstr "Ajouter un point"
+
+#: ../oriflamms/OriGUI.cpp:119
+msgid "_Remove point"
+msgstr "_Supprimer le point"
+
+#: ../oriflamms/OriGUI.cpp:119
+msgid "Remove point"
+msgstr "Supprimer le point"
+
+#: ../oriflamms/OriGUI.cpp:120
+msgid "_Delete line"
+msgstr "_Supprimer la ligne"
+
+#: ../oriflamms/OriGUI.cpp:120
+msgid "Delete line"
+msgstr "Supprimer la ligne"
+
+#: ../oriflamms/OriGUI.cpp:218 ../oriflamms/OriGUI.cpp:1180
+#: ../oriflamms/OriValidationPanel.cpp:358
+msgid "View"
+msgstr "Vue"
+
+#: ../oriflamms/OriGUI.cpp:219
+msgid "TEI"
+msgstr "TEI"
+
+#: ../oriflamms/OriGUI.cpp:220
+msgid "Images"
+msgstr "Images"
+
+#: ../oriflamms/OriGUI.cpp:311
+msgid "Text alignment between TEI xml and images"
+msgstr "Alignement de texte en fichiers XML TEI et images"
+
+#: ../oriflamms/OriGUI.cpp:342 ../oriflamms/OriGUI.cpp:378
+msgid "Reading files…"
+msgstr "Lecture des fichiers…"
+
+#: ../oriflamms/OriGUI.cpp:398
+msgid "Aborted"
+msgstr "Annulé"
+
+#: ../oriflamms/OriGUI.cpp:405
+msgid "Loading…"
+msgstr "Chargement…"
+
+#: ../oriflamms/OriGUI.cpp:406 ../oriflamms/OriGUI.cpp:669
+#: ../oriflamms/OriValidationPanel.cpp:359
+msgid "Page"
+msgstr "Page"
+
+#: ../oriflamms/OriGUI.cpp:561
+msgid "The line was not added because its skew is too high."
+msgstr "La ligne n'a pas été ajoutée car sa pente est trop grande."
+
+#: ../oriflamms/OriGUI.cpp:583 ../oriflamms/OriGUI.cpp:599
+#: ../oriflamms/OriGUI.cpp:687 ../oriflamms/OriGUI.cpp:690
+msgid "line(s)"
+msgstr "ligne(s)"
+
+#: ../oriflamms/OriGUI.cpp:662
+msgid "page(s)"
+msgstr "page(s)"
+
+#: ../oriflamms/OriGUI.cpp:674
+msgid "column(s)"
+msgstr "colonne(s)"
+
+#: ../oriflamms/OriGUI.cpp:681 ../oriflamms/OriGUI.cpp:1135
+#: ../oriflamms/OriGUI.cpp:1182 ../oriflamms/OriValidationPanel.cpp:360
+msgid "Column"
+msgstr "Colonne"
+
+#: ../oriflamms/OriGUI.cpp:700 ../oriflamms/OriGUI.cpp:1137
+#: ../oriflamms/OriGUI.cpp:1149 ../oriflamms/OriGUI.cpp:1184
+#: ../oriflamms/OriValidationPanel.cpp:361
+msgid "Line"
+msgstr "Ligne"
+
+#: ../oriflamms/OriGUI.cpp:705
+msgid "word(s)"
+msgstr "mot(s)"
+
+#: ../oriflamms/OriGUI.cpp:1022 ../oriflamms/OriGUI.cpp:1126
+#: ../oriflamms/OriGUI.cpp:1179
+msgid "Aligning…"
+msgstr "Alignement…"
+
+#: ../oriflamms/OriGUI.cpp:1233
+msgid "The quick bꝛown fox jumpſ over the lazy dog."
+msgstr "Le vif goupil bꝛun ſaute par deſſus le chien roſſard."
+
+#: ../oriflamms/OriGUI.cpp:1250
+msgid "Export statistics to…"
+msgstr "Exporter les statistiques vers…"
+
+#: ../oriflamms/OriGUI.cpp:1259
+msgid "ODS files"
+msgstr "Fichiers ODS"
+
+#: ../oriflamms/OriGUI.cpp:1277
+msgid "Are you sure you wish to flush the images' signatures?"
+msgstr "Êtes-vous sûr de vouloir effacer les signatures des images ?"
+
+#: ../oriflamms/OriGUI.cpp:1281
+msgid "Flushing signatures…"
+msgstr "Effacement des signatures…"
+
+#: ../oriflamms/OriGUI.cpp:1290
+msgid "Propagating validation…"
+msgstr "Propagation de la validation…"
+
+#: ../oriflamms/OriGUI.cpp:1492
+msgid "Found"
+msgstr "Trouvé"
+
+#: ../oriflamms/OriGUI.cpp:1511
+msgid "Go to id"
+msgstr "Chercher identifiant"
+
+#: ../oriflamms/OriGUI.cpp:1521 ../oriflamms/OriCharacter.cpp:868
+#: ../oriflamms/OriCharacter.cpp:912
+msgid "Id"
+msgstr "Id"
+
+#: ../oriflamms/OriGUI.cpp:1590
+msgid "Not found."
+msgstr "Non trouvé."
+
+#: ../oriflamms/OriCharacter.cpp:30
+msgid "Compute"
+msgstr "Calculer"
+
+#: ../oriflamms/OriCharacter.cpp:32
+msgid "Show and edit clusters"
+msgstr "Voir et modifier les classes"
+
+#: ../oriflamms/OriCharacter.cpp:46 ../oriflamms/OriValidationPanel.cpp:364
+msgid "Character"
+msgstr "Caractère"
+
+#: ../oriflamms/OriCharacter.cpp:47 ../oriflamms/OriCharacter.cpp:256
+#: ../oriflamms/OriValidation.cpp:49
+msgid "Count"
+msgstr "Compte"
+
+#: ../oriflamms/OriCharacter.cpp:66
+msgid "Distance matrix"
+msgstr "Matrice de distance"
+
+#: ../oriflamms/OriCharacter.cpp:75
+msgid "Clustering"
+msgstr "Classification"
+
+#: ../oriflamms/OriCharacter.cpp:134
+msgid "Are all the occurrences of this character approximately the same size?"
+msgstr ""
+"Toutes les occurrences de ce caractère ont-elles approximativement la même "
+"taille ?"
+
+#: ../oriflamms/OriCharacter.cpp:137
+msgid "Computing distance matrix..."
+msgstr "Calcul de la matrice de distance..."
+
+#: ../oriflamms/OriCharacter.cpp:218
+msgid "Unlabelled"
+msgstr "Sans étiquette"
+
+#: ../oriflamms/OriCharacter.cpp:221
+msgid "Character tree"
+msgstr "Arbre de caractères"
+
+#: ../oriflamms/OriCharacter.cpp:225
+msgid "Put aside"
+msgstr "Mis de côté"
+
+#: ../oriflamms/OriCharacter.cpp:226
+msgid "Delete automatic clusters"
+msgstr "Effacer les classes automatiques"
+
+#: ../oriflamms/OriCharacter.cpp:227
+msgid "Create automatic clusters"
+msgstr "Créer des classes automatiquement"
+
+#: ../oriflamms/OriCharacter.cpp:228 ../oriflamms/OriCharacter.cpp:229
+#: ../oriflamms/OriCharacter.cpp:449 ../oriflamms/OriCharacter.cpp:899
+msgid "Add glyph"
+msgstr "Ajouter un glyphe"
+
+#: ../oriflamms/OriCharacter.cpp:230 ../oriflamms/OriCharacter.cpp:231
+msgid "Cut in two"
+msgstr "Couper en deux"
+
+#: ../oriflamms/OriCharacter.cpp:232 ../oriflamms/OriCharacter.cpp:233
+msgid "Remove from class"
+msgstr "Enlever de la classe"
+
+#: ../oriflamms/OriCharacter.cpp:255
+msgid "Cluster"
+msgstr "Classe"
+
+#: ../oriflamms/OriCharacter.cpp:298
+msgid "Collecting data..."
+msgstr "Récupération des données..."
+
+#: ../oriflamms/OriCharacter.cpp:461
+msgid "Add sub-class"
+msgstr "Ajouter une sous-classe"
+
+#: ../oriflamms/OriCharacter.cpp:478
+msgid "No glyph selected."
+msgstr "Aucun glyphe sélectionné."
+
+#: ../oriflamms/OriCharacter.cpp:704
+msgid "Subclass for "
+msgstr "Sous-classe de "
+
+#: ../oriflamms/OriCharacter.cpp:745 ../oriflamms/OriCharacter.cpp:776
+msgid "Clustering..."
+msgstr "Classification..."
+
+#: ../oriflamms/OriCharacter.cpp:809
+msgid "Base class for automatic clustering of "
+msgstr "Classe de base pour la classification automatique de "
+
+#: ../oriflamms/OriCharacter.cpp:867 ../oriflamms/OriDocument.cpp:2489
+msgid "Global"
+msgstr "Global"
+
+#: ../oriflamms/OriCharacter.cpp:869
+msgid "Auto"
+msgstr "Auto"
+
+#: ../oriflamms/OriCharacter.cpp:870 ../oriflamms/OriCharacter.cpp:915
+msgid "Description"
+msgstr "Description"
+
+#: ../oriflamms/OriCharacter.cpp:918
+msgid "Parent"
+msgstr "Parent"
+
+#: ../oriflamms/OriCharacter.cpp:929
+msgid "Invalid id."
+msgstr "Identifiant de invalide."
+
+#: ../oriflamms/OriCharacter.cpp:935
+msgid "The id is already used in local database."
+msgstr "L'identifiant est déjà utilisé dans la base locale."
+
+#: ../oriflamms/OriCharacter.cpp:942
+msgid "The id is already used in global database."
+msgstr "L'identifiant est déjà utilisé dans la base globale."
+
+#: ../oriflamms/OriDocument.cpp:101
+msgid "null rectangle."
+msgstr "rectangle vide."
+
+#: ../oriflamms/OriDocument.cpp:112
+msgid "the contour has less than 3 points."
+msgstr "le contour a moins de 3 points."
+
+#: ../oriflamms/OriDocument.cpp:167
+msgid "no facsimile element."
+msgstr "pas d'élément facsimile."
+
+#: ../oriflamms/OriDocument.cpp:170
+msgid "no surface element."
+msgstr "pas d'élément surface."
+
+#: ../oriflamms/OriDocument.cpp:173
+msgid "no graphic element."
+msgstr "pas d'élément graphic."
+
+#: ../oriflamms/OriDocument.cpp:184 ../oriflamms/OriDocument.cpp:247
+msgid "no text element."
+msgstr "pas d'élément text."
+
+#: ../oriflamms/OriDocument.cpp:187 ../oriflamms/OriDocument.cpp:250
+msgid "no body element."
+msgstr "pas d'élément body."
+
+#: ../oriflamms/OriDocument.cpp:190 ../oriflamms/OriDocument.cpp:253
+msgid "no ab element."
+msgstr "pas d'élément ab."
+
+#: ../oriflamms/OriDocument.cpp:193
+msgid "no linkGrp element for the surfaces."
+msgstr "pas d'élément linkGrp pour les surfaces."
+
+#: ../oriflamms/OriDocument.cpp:219
+msgid "Allograph links"
+msgstr "Liens des allographes"
+
+#: ../oriflamms/OriDocument.cpp:222 ../oriflamms/OriDocument.cpp:1730
+msgid "Created by Oriflamms."
+msgstr "Créé par Oriflamms."
+
+#: ../oriflamms/OriDocument.cpp:256
+msgid "no linkGrp element."
+msgstr "pas d'élément linkGrp."
+
+#: ../oriflamms/OriDocument.cpp:272 ../oriflamms/OriDocument.cpp:342
+msgid "invalid target base."
+msgstr "base de cible invalide."
+
+#: ../oriflamms/OriDocument.cpp:275 ../oriflamms/OriDocument.cpp:345
+msgid "incomplete target."
+msgstr "cible incomplète."
+
+#: ../oriflamms/OriDocument.cpp:353
+msgid "target points to an unknown page: "
+msgstr "la cible pointe vers une page inconnue : "
+
+#: ../oriflamms/OriDocument.cpp:355 ../oriflamms/OriDocument.cpp:364
+#: ../oriflamms/OriDocument.cpp:373 ../oriflamms/OriDocument.cpp:382
+#: ../oriflamms/OriDocument.cpp:391
+msgid "target points to an unknown zone: "
+msgstr "la cible pointe vers une zone inconnue : "
+
+#: ../oriflamms/OriDocument.cpp:362
+msgid "target points to an unknown column: "
+msgstr "la cible pointe vers une colonne inconnue : "
+
+#: ../oriflamms/OriDocument.cpp:371
+msgid "target points to an unknown line: "
+msgstr "la cible pointe vers une ligne inconnue : "
+
+#: ../oriflamms/OriDocument.cpp:380
+msgid "target points to an unknown word: "
+msgstr "la cible pointe vers un mot inconnu : "
+
+#: ../oriflamms/OriDocument.cpp:389
+msgid "target points to an unknown character: "
+msgstr "la cible pointe vers un caractère inconnu : "
+
+#: ../oriflamms/OriDocument.cpp:408
+msgid "Not an Oriflamms data file: "
+msgstr "Pas un fichier de données Oriflamms : "
+
+#: ../oriflamms/OriDocument.cpp:412
+msgid "No validation element in "
+msgstr "Pas d'élément validation dans "
+
+#: ../oriflamms/OriDocument.cpp:422
+msgid "No medlines element in "
+msgstr "Pas d'élément medlines dans "
+
+#: ../oriflamms/OriDocument.cpp:435
+msgid "No lineLinks element in "
+msgstr "Pas d'élément lineLinks dans "
+
+#: ../oriflamms/OriDocument.cpp:537 ../oriflamms/OriDocument.cpp:548
+msgid "Invalid page id: "
+msgstr "Identifiant de page invalide : "
+
+#: ../oriflamms/OriDocument.cpp:563 ../oriflamms/OriDocument.cpp:574
+#: ../oriflamms/OriDocument.cpp:587
+msgid "Invalid column id: "
+msgstr "Identifiant de colonne invalide : "
+
+#: ../oriflamms/OriDocument.cpp:626
+msgid "index is greater than the number of lines."
+msgstr "l'index est plus grand que le nombre de lignes."
+
+#: ../oriflamms/OriDocument.cpp:662 ../oriflamms/OriDocument.cpp:673
+#: ../oriflamms/OriDocument.cpp:687 ../oriflamms/OriDocument.cpp:705
+#: ../oriflamms/OriDocument.cpp:722
+msgid "Invalid line id: "
+msgstr "Identifiant de ligne invalide : "
+
+#: ../oriflamms/OriDocument.cpp:690 ../oriflamms/OriDocument.cpp:708
+msgid "No graphical line associated to text line: "
+msgstr "Pas de ligne graphique associée à la ligne de texte : "
+
+#: ../oriflamms/OriDocument.cpp:737 ../oriflamms/OriDocument.cpp:748
+#: ../oriflamms/OriDocument.cpp:761 ../oriflamms/OriDocument.cpp:774
+#: ../oriflamms/OriDocument.cpp:1118 ../oriflamms/OriDocument.cpp:1147
+#: ../oriflamms/OriDocument.cpp:1175 ../oriflamms/OriDocument.cpp:1188
+#: ../oriflamms/OriDocument.cpp:1199
+msgid "Invalid word id: "
+msgstr "Identifiant de mot invalide : "
+
+#: ../oriflamms/OriDocument.cpp:828 ../oriflamms/OriDocument.cpp:839
+msgid "Invalid character id: "
+msgstr "Identifiant de caractère invalide : "
+
+#: ../oriflamms/OriDocument.cpp:850 ../oriflamms/OriDocument.cpp:861
+#: ../oriflamms/OriDocument.cpp:895 ../oriflamms/OriDocument.cpp:933
+#: ../oriflamms/OriDocument.cpp:992 ../oriflamms/OriDocument.cpp:1010
+msgid "Invalid zone id: "
+msgstr "Identifiant de zone invalide : "
+
+#: ../oriflamms/OriDocument.cpp:1013
+msgid "Uninitialized zone id: "
+msgstr "identifiant de zone non-initialisé : "
+
+#: ../oriflamms/OriDocument.cpp:1134 ../oriflamms/OriDocument.cpp:1163
+msgid "uninitialized zone: "
+msgstr "zone non-initialisée : "
+
+#: ../oriflamms/OriDocument.cpp:1335
+msgid "the last word is located before the first."
+msgstr "le dernier mot est situé avant le premier."
+
+#: ../oriflamms/OriDocument.cpp:1338
+msgid "out of range."
+msgstr "en dehors des limites."
+
+#: ../oriflamms/OriDocument.cpp:1391
+msgid "Range align misfit."
+msgstr "Alignement entre les bornes incomplet."
+
+#: ../oriflamms/OriDocument.cpp:1435
+msgid "empty signature."
+msgstr "signature vide."
+
+#: ../oriflamms/OriDocument.cpp:1618
+msgid "Cannot find main transcription filename."
+msgstr "Impossible de trouver le nom du fichier de transcription principal."
+
+#: ../oriflamms/OriDocument.cpp:1652
+msgid "milestones are not numbered correctly: "
+msgstr "les milestones ne sont pas numérotés correctement : "
+
+#: ../oriflamms/OriDocument.cpp:1716
+msgid "malformed file."
+msgstr "fichier mal formé."
+
+#: ../oriflamms/OriDocument.cpp:1727 ../oriflamms/OriDocument.cpp:1736
+msgid "Allograph declaration"
+msgstr "Déclaration des allographes"
+
+#: ../oriflamms/OriDocument.cpp:1755
+msgid "missing id list."
+msgstr "liste d'identifiants introuvable."
+
+#: ../oriflamms/OriDocument.cpp:1765
+msgid "missing distance matrix."
+msgstr "matrice de distance introuvable."
+
+#: ../oriflamms/OriDocument.cpp:2005
+msgid "invalid id: "
+msgstr "identifiant invalide : "
+
+#: ../oriflamms/OriDocument.cpp:2015
+msgid "Cannot find view with id "
+msgstr "Impossible de trouver la vue : "
+
+#: ../oriflamms/OriDocument.cpp:2123 ../oriflamms/OriDocument.cpp:2131
+msgid "invalid glyph id: "
+msgstr "identifiant de glyphe invalide : "
+
+#: ../oriflamms/OriDocument.cpp:2147
+msgid "the glyph already exists: "
+msgstr "le glyphe existe déjà : "
+
+#: ../oriflamms/OriDocument.cpp:2491
+msgid "Document name"
+msgstr "Nom du document"
+
+#: ../oriflamms/OriDocument.cpp:2494
+msgid "Number of pages"
+msgstr "Nombre de pages"
+
+#: ../oriflamms/OriDocument.cpp:2500
+msgid "Validated words"
+msgstr "Mots validés"
+
+#: ../oriflamms/OriDocument.cpp:2504
+msgid "Rejected words"
+msgstr "Mots rejetés"
+
+#: ../oriflamms/OriDocument.cpp:2508
+msgid "Unchecked words"
+msgstr "Mots non-vérifiés"
+
+#: ../oriflamms/OriDocument.cpp:2512 ../oriflamms/OriDocument.cpp:2550
+#: ../oriflamms/OriDocument.cpp:2580 ../oriflamms/OriDocument.cpp:2609
+#: ../oriflamms/OriDocument.cpp:2638 ../oriflamms/OriDocument.cpp:2671
+#: ../oriflamms/OriDocument.cpp:2704 ../oriflamms/OriDocument.cpp:2733
+#: ../oriflamms/OriDocument.cpp:2762 ../oriflamms/OriDocument.cpp:2795
+msgid "Total"
+msgstr "Total"
+
+#: ../oriflamms/OriDocument.cpp:2515 ../oriflamms/OriDocument.cpp:2554
+#: ../oriflamms/OriDocument.cpp:2584 ../oriflamms/OriDocument.cpp:2613
+#: ../oriflamms/OriDocument.cpp:2642 ../oriflamms/OriDocument.cpp:2675
+#: ../oriflamms/OriDocument.cpp:2708 ../oriflamms/OriDocument.cpp:2737
+#: ../oriflamms/OriDocument.cpp:2766 ../oriflamms/OriDocument.cpp:2799
+msgid "Accuracy on checked words"
+msgstr "Exactitude sur les mots vérifiés"
+
+#: ../oriflamms/OriDocument.cpp:2520
+msgid "Number of lines"
+msgstr "Nombre de lignes"
+
+#: ../oriflamms/OriDocument.cpp:2523
+msgid "Lines containing errors"
+msgstr "Lignes contenant des erreurs"
+
+#: ../oriflamms/OriDocument.cpp:2527
+msgid "Number of manually corrected lines"
+msgstr "Nombre de lignes corrigées manuellement"
+
+#: ../oriflamms/OriDocument.cpp:2531
+msgid "Number of manually corrected words"
+msgstr "Nombre de mots corrigés manuellement"
+
+#: ../oriflamms/OriDocument.cpp:2535
+msgid "Mean word correction length"
+msgstr "Longueur moyenne des corrections de mots"
+
+#: ../oriflamms/OriDocument.cpp:2538
+msgid "Mean word correction absolute length"
+msgstr "Moyenne des valeurs absolues des corrections de mots"
+
+#: ../oriflamms/OriDocument.cpp:2543
+msgid "Image"
+msgstr "Image"
+
+#: ../oriflamms/OriDocument.cpp:2545
+msgid "Page id"
+msgstr "Id de la page"
+
+#: ../oriflamms/OriDocument.cpp:2546
+msgid "Image name"
+msgstr "Nom de l'image"
+
+#: ../oriflamms/OriDocument.cpp:2547 ../oriflamms/OriDocument.cpp:2551
+#: ../oriflamms/OriDocument.cpp:2577 ../oriflamms/OriDocument.cpp:2581
+#: ../oriflamms/OriDocument.cpp:2606 ../oriflamms/OriDocument.cpp:2610
+#: ../oriflamms/OriDocument.cpp:2635 ../oriflamms/OriDocument.cpp:2639
+#: ../oriflamms/OriDocument.cpp:2668 ../oriflamms/OriDocument.cpp:2672
+#: ../oriflamms/OriDocument.cpp:2701 ../oriflamms/OriDocument.cpp:2705
+#: ../oriflamms/OriDocument.cpp:2730 ../oriflamms/OriDocument.cpp:2734
+#: ../oriflamms/OriDocument.cpp:2759 ../oriflamms/OriDocument.cpp:2763
+#: ../oriflamms/OriDocument.cpp:2792 ../oriflamms/OriDocument.cpp:2796
+msgid "Validated"
+msgstr "Validé"
+
+#: ../oriflamms/OriDocument.cpp:2548 ../oriflamms/OriDocument.cpp:2552
+#: ../oriflamms/OriDocument.cpp:2578 ../oriflamms/OriDocument.cpp:2582
+#: ../oriflamms/OriDocument.cpp:2607 ../oriflamms/OriDocument.cpp:2611
+#: ../oriflamms/OriDocument.cpp:2636 ../oriflamms/OriDocument.cpp:2640
+#: ../oriflamms/OriDocument.cpp:2669 ../oriflamms/OriDocument.cpp:2673
+#: ../oriflamms/OriDocument.cpp:2702 ../oriflamms/OriDocument.cpp:2706
+#: ../oriflamms/OriDocument.cpp:2731 ../oriflamms/OriDocument.cpp:2735
+#: ../oriflamms/OriDocument.cpp:2760 ../oriflamms/OriDocument.cpp:2764
+#: ../oriflamms/OriDocument.cpp:2793 ../oriflamms/OriDocument.cpp:2797
+#: ../oriflamms/OriValidation.cpp:26
+msgid "Rejected"
+msgstr "Rejeté"
+
+#: ../oriflamms/OriDocument.cpp:2549 ../oriflamms/OriDocument.cpp:2553
+#: ../oriflamms/OriDocument.cpp:2579 ../oriflamms/OriDocument.cpp:2583
+#: ../oriflamms/OriDocument.cpp:2608 ../oriflamms/OriDocument.cpp:2612
+#: ../oriflamms/OriDocument.cpp:2637 ../oriflamms/OriDocument.cpp:2641
+#: ../oriflamms/OriDocument.cpp:2670 ../oriflamms/OriDocument.cpp:2674
+#: ../oriflamms/OriDocument.cpp:2703 ../oriflamms/OriDocument.cpp:2707
+#: ../oriflamms/OriDocument.cpp:2732 ../oriflamms/OriDocument.cpp:2736
+#: ../oriflamms/OriDocument.cpp:2761 ../oriflamms/OriDocument.cpp:2765
+#: ../oriflamms/OriDocument.cpp:2794 ../oriflamms/OriDocument.cpp:2798
+msgid "Unchecked"
+msgstr "Non-vérifié"
+
+#: ../oriflamms/OriDocument.cpp:2573 ../oriflamms/OriValidationPanel.cpp:362
+#: ../oriflamms/OriValidation.cpp:48
+msgid "Word"
+msgstr "Mot"
+
+#: ../oriflamms/OriDocument.cpp:2576
+msgid "Transcription"
+msgstr "Transcription"
+
+#: ../oriflamms/OriDocument.cpp:2602 ../oriflamms/OriDocument.cpp:2605
+#: ../oriflamms/OriValidation.cpp:50
+msgid "Length"
+msgstr "Longueur"
+
+#: ../oriflamms/OriDocument.cpp:2631 ../oriflamms/OriDocument.cpp:2634
+msgid "Initial letter"
+msgstr "Lettre initiale"
+
+#: ../oriflamms/OriDocument.cpp:2643 ../oriflamms/OriDocument.cpp:2676
+msgid "Mean manual correction"
+msgstr "Moyenne des corrections de mots"
+
+#: ../oriflamms/OriDocument.cpp:2644 ../oriflamms/OriDocument.cpp:2677
+msgid "Mean absolute manual correction"
+msgstr "Moyenne des valeurs absolues de corrections de mots"
+
+#: ../oriflamms/OriDocument.cpp:2664 ../oriflamms/OriDocument.cpp:2667
+msgid "Final letter"
+msgstr "Lettre finale"
+
+#: ../oriflamms/OriDocument.cpp:2697 ../oriflamms/OriDocument.cpp:2700
+msgid "Preceding final letter"
+msgstr "Lettre finale précédente"
+
+#: ../oriflamms/OriDocument.cpp:2726 ../oriflamms/OriDocument.cpp:2729
+msgid "Next initial letter"
+msgstr "Lettre initiale suivante"
+
+#: ../oriflamms/OriDocument.cpp:2755
+msgid "Preceding final + initial"
+msgstr "Lettre finale précédente + initiale"
+
+#: ../oriflamms/OriDocument.cpp:2758 ../oriflamms/OriDocument.cpp:2791
+msgid "Digram"
+msgstr "Digramme"
+
+#: ../oriflamms/OriDocument.cpp:2788
+msgid "Final + next initial"
+msgstr "Lettre finale + initiale suivante"
+
+#: ../oriflamms/OriDocument.cpp:2833 ../oriflamms/OriDocument.cpp:2845
+msgid "character not found."
+msgstr "caractère introuvable."
+
+#: ../oriflamms/OriDocument.cpp:2887 ../oriflamms/OriDocument.cpp:2962
+msgid "milestone without an id."
+msgstr "milestone sans identifiant."
+
+#: ../oriflamms/OriDocument.cpp:2895 ../oriflamms/OriDocument.cpp:2969
+msgid "page without an id."
+msgstr "page sans identifiant."
+
+#: ../oriflamms/OriDocument.cpp:2903 ../oriflamms/OriDocument.cpp:2975
+msgid "column without an id."
+msgstr "colonne sans identifiant."
+
+#: ../oriflamms/OriDocument.cpp:2911 ../oriflamms/OriDocument.cpp:2981
+msgid "line without an id."
+msgstr "ligne sans identifiant."
+
+#: ../oriflamms/OriDocument.cpp:2922 ../oriflamms/OriDocument.cpp:2990
+msgid "word or pc without an id."
+msgstr "mot ou pc sans identifiant."
+
+#: ../oriflamms/OriDocument.cpp:2934 ../oriflamms/OriDocument.cpp:3000
+msgid "seg without an id."
+msgstr "seg sans identifiant."
+
+#: ../oriflamms/OriDocument.cpp:3007
+msgid "character without an id."
+msgstr "caractère sans identifiant."
+
+#: ../oriflamms/OriTEIImporter.cpp:71
+msgid "Node selection"
+msgstr "Sélection des nœuds"
+
+#: ../oriflamms/OriTEIImporter.cpp:79
+msgid "Next"
+msgstr "Suivant"
+
+#: ../oriflamms/OriTEIImporter.cpp:88
+msgid "Selected"
+msgstr "Sélectionné"
+
+#: ../oriflamms/OriTEIImporter.cpp:89
+msgid "Element"
+msgstr "Élément"
+
+#: ../oriflamms/OriTEIImporter.cpp:90
+msgid "Contains text"
+msgstr "Contient du texte"
+
+#: ../oriflamms/OriAlignDialog.cpp:14
+msgid "Align words"
+msgstr "Aligner les mots"
+
+#: ../oriflamms/OriAlignDialog.cpp:15
+msgid "Align all words"
+msgstr "Aligner tous les mots"
+
+#: ../oriflamms/OriAlignDialog.cpp:16
+msgid "Align non-validated words"
+msgstr "Aligner les mots non-validés"
+
+#: ../oriflamms/OriAlignDialog.cpp:17
+msgid "Update aligned words' frontiers"
+msgstr "Mettre à jour les frontières des mots alignés"
+
+#: ../oriflamms/OriAlignDialog.cpp:18
+msgid "Align characters"
+msgstr "Aligner les caractères"
+
+#: ../oriflamms/OriAlignDialog.cpp:19
+msgid "in all aligned words"
+msgstr "dans tous les mots alignés"
+
+#: ../oriflamms/OriAlignDialog.cpp:20
+msgid "in validated words"
+msgstr "dans les mots validés"
+
+#: ../oriflamms/OriAlignDialog.cpp:21
+msgid "in non-rejected words"
+msgstr "dans les mots non-rejetés"
+
+#: ../oriflamms/OriAlignDialog.cpp:22
+msgid "Align all characters"
+msgstr "Aligner tous les caractères"
+
+#: ../oriflamms/OriAlignDialog.cpp:23
+msgid "Align non-validated characters"
+msgstr "Aligner les caractères non-validés"
+
+#: ../oriflamms/OriValidation.cpp:25
+msgid "Accepted"
+msgstr "Accepté"
+
+#: ../oriflamms/OriValidation.cpp:95
+msgid "Gathering the words"
+msgstr "Rassemblement des mots"
+
+#: ../oriflamms/OriValidation.cpp:154
+msgid "Loading words"
+msgstr "Chargement des mots"
+
+#: ../oriflamms/OriValidation.cpp:397
+msgid ""
+"You visited some words without performing any modification.\n"
+"Do you wish to validate them?"
+msgstr ""
+"Vous avez visité certains mots sans apporter de modifications.\n"
+"Voulez-vous les valider ?"
+
+#: ../oriflamms/OriValidation.cpp:472
+msgid ""
+"No modification was performed on this word.\n"
+"Do you wish to validate current state?"
+msgstr ""
+"Aucune modification n'a été apportée à ce mot.\n"
+"Voulez-vous le valider en l'état ?"
+
+#~ msgid "Show"
+#~ msgstr "Afficher"
+
+#~ msgid "Malformed word path."
+#~ msgstr "Chemin de mot mal formé."
+
+#~ msgid "character frontiers were not computed."
+#~ msgstr "les frontières des caractères n'ont pas été calculées."
+
+#~ msgid "index out of bounds."
+#~ msgstr "indice hors limites."
+
+#~ msgid "No view to add column id:"
+#~ msgstr "Pas de vue à laquelle ajouter la colonne : "
+
+#~ msgid "No view to add line #"
+#~ msgstr "Pas de vue à laquelle ajouter la ligne n°"
+
+#~ msgid "No view to add word id:"
+#~ msgstr "Pas de vue à laquelle ajouter le mot : "
+
+#~ msgid "Not a TEI document."
+#~ msgstr "Le document n'est pas un fichier TEI."
+
+#~ msgid "Malformed Oriflamms project file."
+#~ msgstr "Fichier de projet Oriflamms mal formé."
+
+#~ msgid "_New project"
+#~ msgstr "_Nouveau projet"
+
+#~ msgid "New project"
+#~ msgstr "Nouveau projet"
+
+#~ msgid "_Import project"
+#~ msgstr "_Importer un projet"
+
+#~ msgid "Import project"
+#~ msgstr "Importer un projet"
+
+#~ msgid "Reload _TEI"
+#~ msgstr "Recharger le fichier _TEI"
+
+#~ msgid "Reload TEI"
+#~ msgstr "Recharger le fichier TEI"
+
+#~ msgid "_Export TEI"
+#~ msgstr "_Exporter au format TEI"
+
+#~ msgid "Export TEI"
+#~ msgstr "Exporter au format TEI"
+
+#~ msgid "Please select a TEI XML file"
+#~ msgstr "Veuillez sélectionner un fichier XML TEI"
+
+#~ msgid "Please select the folder containing the images"
+#~ msgstr "Veuillez sélectionner le dossier contenant les images"
+
+#~ msgid "Project name"
+#~ msgstr "Nom du projet"
+
+#~ msgid "TEI XML file"
+#~ msgstr "Fichier XML TEI"
+
+#~ msgid "Image folder"
+#~ msgstr "Dossier des images"
+
+#~ msgid "All files"
+#~ msgstr "Tous les fichiers"
+
+#~ msgid "Please select a project file to import"
+#~ msgstr "Veuillez sélectionner un fichier projet à importer"
+
+#~ msgid "Saving…"
+#~ msgstr "Sauvegarde en cours…"
+
+#~ msgid "Please choose a file name for the TEI export."
+#~ msgstr "Veuillez choisir un nom de fichier pour l'exportation TEI."
+
+#~ msgid "Cannot find image: "
+#~ msgstr "Impossible de trouver l'image : "
+
+#~ msgid "The range must be within a single line."
+#~ msgstr "Les bornes doivent être contenues dans une seule ligne."
+
+#~ msgid "Empty word."
+#~ msgstr "Mot vide."
+
+#~ msgid "Word has no signature: <"
+#~ msgstr "Pas de signature pour le mot : <"
+
+#~ msgid "Character has no signature: <"
+#~ msgstr "Pas de signature pour le caractère : <"
+
+#, fuzzy
+#~ msgid "_Validate words"
+#~ msgstr "Mots validés"
+
+#~ msgid "_Find word"
+#~ msgstr "_Chercher un mot"
+
+#~ msgid "_Validate alignment"
+#~ msgstr "_Validation de l'alignement"
+
+#~ msgid "Validate alignment"
+#~ msgstr "Validation de l'alignement"
+
+#~ msgid "_Export validated characters"
+#~ msgstr "_Exporter les caractères validés"
+
+#~ msgid "Please select a folder where the characters will be saved"
+#~ msgstr "Veuillez sélectionner un dossier où les caractères seront sauvés"
+
+#~ msgid "No view."
+#~ msgstr "Pas de vue."
+
+#~ msgid "_Interface"
+#~ msgstr "_Interface"
+
+#~ msgid "Interface"
+#~ msgstr "Interface"
