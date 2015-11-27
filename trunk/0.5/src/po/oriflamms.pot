@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: oriflamms \n"
 "Report-Msgid-Bugs-To: yann@leydier.info\n"
-"POT-Creation-Date: 2015-11-26 11:55+0100\n"
+"POT-Creation-Date: 2015-11-27 10:22+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -897,31 +897,39 @@ msgstr ""
 msgid "character not found."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:2887 ../oriflamms/OriDocument.cpp:2962
+#: ../oriflamms/OriDocument.cpp:2887 ../oriflamms/OriDocument.cpp:3005
 msgid "milestone without an id."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:2895 ../oriflamms/OriDocument.cpp:2969
+#: ../oriflamms/OriDocument.cpp:2895 ../oriflamms/OriDocument.cpp:3012
 msgid "page without an id."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:2903 ../oriflamms/OriDocument.cpp:2975
+#: ../oriflamms/OriDocument.cpp:2903 ../oriflamms/OriDocument.cpp:3018
 msgid "column without an id."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:2911 ../oriflamms/OriDocument.cpp:2981
+#: ../oriflamms/OriDocument.cpp:2911 ../oriflamms/OriDocument.cpp:3024
 msgid "line without an id."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:2922 ../oriflamms/OriDocument.cpp:2990
+#: ../oriflamms/OriDocument.cpp:2916
+msgid "line @type=\"rejet\" without @corresp."
+msgstr ""
+
+#: ../oriflamms/OriDocument.cpp:2918
+msgid "line @type=\"rejet\" with malformed @corresp."
+msgstr ""
+
+#: ../oriflamms/OriDocument.cpp:2945 ../oriflamms/OriDocument.cpp:3032
 msgid "word or pc without an id."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:2934 ../oriflamms/OriDocument.cpp:3000
+#: ../oriflamms/OriDocument.cpp:2967 ../oriflamms/OriDocument.cpp:3042
 msgid "seg without an id."
 msgstr ""
 
-#: ../oriflamms/OriDocument.cpp:3007
+#: ../oriflamms/OriDocument.cpp:3049
 msgid "character without an id."
 msgstr ""
 

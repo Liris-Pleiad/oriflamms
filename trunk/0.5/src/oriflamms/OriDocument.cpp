@@ -1624,7 +1624,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		auto doc = crn::xml::Document{base / TEXTDIR / name + "-w.xml"_p};
 		auto root = doc.GetRoot();
 		auto pos = ElementPosition{};
-		readTextWElements(root, pos, teiselection, milestones);
+		readTextWElements(root, pos, teiselection, milestones, 'l');
 	}
 	catch (std::exception &ex)
 	{
@@ -2870,7 +2870,7 @@ static crn::StringUTF8 allTextInElement(crn::xml::Element &el, const TEISelectio
 	return txt;
 }
 
-void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones)
+void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones, char lpos)
 {
 	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)
 	{
@@ -2909,10 +2909,33 @@ void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, co
 				{
 					if (elid.IsEmpty())
 						throw crn::ExceptionNotFound(name + "-w: "_s + _("line without an id."));
-					view_struct[pos.view].lines.emplace(elid, Line{});
-					view_struct[pos.view].columns[pos.column].lines.push_back(elid);
-					pos.line = elid;
-					// TODO rejets
+					if (sel.GetAttribute<crn::StringUTF8>("type", true) == "rejet")
+					{
+						auto corresp = sel.GetAttribute<Id>("corresp", true);
+						if (corresp.IsEmpty())
+							throw crn::ExceptionNotFound(name + "-w: "_s + _("line @type=\"rejet\" without @corresp."));
+						if (corresp[0] != '#')
+							throw crn::ExceptionNotFound(name + "-w: "_s + _("line @type=\"rejet\" with malformed @corresp."));
+						corresp.Crop(1);
+						if (sel.GetAttribute<crn::StringUTF8>("rend", true) == "center")
+							lpos = 'c';
+						else
+							lpos = 'r';
+						if (view_struct[pos.view].lines.find(corresp) == view_struct[pos.view].lines.end())
+						{
+							view_struct[pos.view].lines.emplace(corresp, Line{});
+							//view_struct[pos.view].columns[pos.column].lines.push_back(corresp);
+						}
+						pos.line = corresp;
+					}
+					else
+					{
+						if (view_struct[pos.view].lines.find(elid) == view_struct[pos.view].lines.end())
+							view_struct[pos.view].lines.emplace(elid, Line{});
+						view_struct[pos.view].columns[pos.column].lines.push_back(elid);
+						pos.line = elid;
+						lpos = 'l';
+					}
 				}
 				else if ((elname == "w") || (elname == "pc"))
 				{
@@ -2922,7 +2945,17 @@ void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, co
 							throw crn::ExceptionNotFound(name + "-w: "_s + _("word or pc without an id."));
 						view_struct[pos.view].words.emplace(elid, Word{});
 						view_struct[pos.view].words[elid].text = allTextInElement(sel, cnode);
-						view_struct[pos.view].lines[pos.line].left.push_back(elid); // TODO rejets
+						switch (lpos)
+						{
+							case 'r':
+								view_struct[pos.view].lines[pos.line].right.push_back(elid);
+								break;
+							case 'c':
+								view_struct[pos.view].lines[pos.line].center.push_back(elid);
+								break;
+							default:
+								view_struct[pos.view].lines[pos.line].left.push_back(elid);
+						}
 					}
 				}
 				else if (elname == "seg")
@@ -2934,11 +2967,21 @@ void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, co
 							throw crn::ExceptionNotFound(name + "-w: "_s + _("seg without an id."));
 						view_struct[pos.view].words.emplace(elid, Word{});
 						view_struct[pos.view].words[elid].text = allTextInElement(sel, cnode);
-						view_struct[pos.view].lines[pos.line].left.push_back(elid); // TODO rejets
+						switch (lpos)
+						{
+							case 'r':
+								view_struct[pos.view].lines[pos.line].right.push_back(elid);
+								break;
+							case 'c':
+								view_struct[pos.view].lines[pos.line].center.push_back(elid);
+								break;
+							default:
+								view_struct[pos.view].lines[pos.line].left.push_back(elid);
+						}
 					}
 				}
 
-				readTextWElements(sel, pos, cnode, milestones);
+				readTextWElements(sel, pos, cnode, milestones, lpos);
 				break;
 			}
 	}
@@ -2967,20 +3010,19 @@ void Document::readTextCElements(crn::xml::Element &el, ElementPosition &pos, co
 				{
 					if (elid.IsEmpty())
 						throw crn::ExceptionNotFound(name + "-c: "_s + _("page without an id."));
-					pos.page = elid;
+					//pos.page = elid;
 				}
 				else if (elname == "cb")
 				{
 					if (elid.IsEmpty())
 						throw crn::ExceptionNotFound(name + "-c: "_s + _("column without an id."));
-					pos.column = elid;
+					//pos.column = elid;
 				}
 				else if (elname == "lb")
 				{
 					if (elid.IsEmpty())
 						throw crn::ExceptionNotFound(name + "-c: "_s + _("line without an id."));
-					pos.line = elid;
-					// TODO rejets
+					//pos.line = elid;
 				}
 				else if ((elname == "w") || (elname == "pc"))
 				{
