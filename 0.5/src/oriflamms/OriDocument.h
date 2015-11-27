@@ -367,7 +367,7 @@ namespace ori
 			};
 
 		private:
-			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones);
+			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones, char lpos);
 			void readTextCElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel);
 
 			using ViewRef = std::weak_ptr<View::Impl>;

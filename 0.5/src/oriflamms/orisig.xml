@@ -58,7 +58,27 @@
     <ent char="121" sig="ll&apos;"/>
     <ent char="122" sig=")"/>
     <ent char="182" sig="l"/>
+    <ent char="199" sig="(&apos;"/>
+    <ent char="200" sig="l&apos;"/>
+    <ent char="201" sig="l&apos;"/>
+    <ent char="202" sig="l&apos;"/>
+    <ent char="203" sig="l&apos;"/>
+    <ent char="206" sig="l"/>
+    <ent char="207" sig="l"/>
+    <ent char="217" sig="ll"/>
+    <ent char="219" sig="ll"/>
+    <ent char="220" sig="ll"/>
+    <ent char="231" sig="(&apos;"/>
+    <ent char="232" sig="(&apos;"/>
+    <ent char="233" sig="(&apos;"/>
+    <ent char="234" sig="(&apos;"/>
+    <ent char="235" sig="(&apos;"/>
     <ent char="237" sig="l"/>
+    <ent char="238" sig="l"/>
+    <ent char="239" sig="l"/>
+    <ent char="249" sig="ll"/>
+    <ent char="251" sig="ll"/>
+    <ent char="252" sig="ll"/>
     <ent char="383" sig="l"/>
     <ent char="700" sig=""/>
     <ent char="773" sig=""/>
