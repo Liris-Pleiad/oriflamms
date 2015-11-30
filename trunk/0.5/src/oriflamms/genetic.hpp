@@ -222,6 +222,6 @@ struct FitnessThreshold
 	constexpr FitnessThreshold(double thresh):threshold(thresh) {}
 	template<typename T> inline bool operator()(const std::multimap<double, T> &population) const { return population.begin()->first < threshold; }
 	private:
-		size_t threshold;
+		double threshold;
 };
 
