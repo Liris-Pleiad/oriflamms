@@ -1,3 +1,6 @@
+2015-11-30 Yann LEYDIER <yann@leydier.info>
+	* Document (cstr, Save): Distances matrices are now saved in binary format.
+
 2015-11-27 Yann LEYDIER <yann@leydier.info>
 	* Document (readTextWElements): Added support for <lb> @type="rejet".
 
