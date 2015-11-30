@@ -1757,6 +1757,7 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 				continue;
 			}
 			auto idlist = iel.GetFirstChildText().Split(" ");
+			/*
 			auto mel = el.GetFirstChildElement("SquareMatrixDouble");
 			if (!mel)
 			{
@@ -1767,6 +1768,13 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 				continue;
 			}
 			chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), std::make_pair(std::move(idlist), crn::SquareMatrixDouble{mel}));
+			*/
+			const auto num = el.GetAttribute<int>("num", false);
+			std::ifstream matfile;
+			matfile.open((base / ORIDIR / "dm"_p + num + ".dat"_p).CStr(), std::ios::in|std::ios::binary);
+			auto dm = crn::SquareMatrixDouble{idlist.size()};
+			matfile.read(reinterpret_cast<char *>(const_cast<double*>(dm.Std().data())), dm.Std().size() * sizeof(double));
+			chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), std::make_pair(std::move(idlist), std::move(dm)));
 			el = el.GetNextSiblingElement("dm");
 		}
 	}
@@ -1981,11 +1989,16 @@ void Document::Save() const
 	// save distance matrices
 	auto dmdoc = crn::xml::Document{};
 	auto root = dmdoc.PushBackElement("charsdm");
+	auto cnt = 0;
 	for (const auto &dm : chars_dm)
 	{
 		auto el = root.PushBackElement("dm");
 		el.SetAttribute("charname", dm.first.CStr());
-		dm.second.second.Serialize(el);
+		el.SetAttribute("num", cnt);
+		std::ofstream matfile;
+		matfile.open((base / ORIDIR / "dm"_p + cnt + ".dat"_p).CStr(), std::ios::out|std::ios::binary);
+		matfile.write(reinterpret_cast<const char *>(dm.second.second.Std().data()), dm.second.second.Std().size() * sizeof(double));
+		//dm.second.second.Serialize(el);
 		el = el.PushBackElement("ids");
 		auto idlist = crn::StringUTF8{};
 		for (const auto &id : dm.second.first)
@@ -1994,6 +2007,7 @@ void Document::Save() const
 			idlist += ' ';
 		}
 		el.PushBackText(idlist);
+		cnt += 1;
 	}
 	dmdoc.Save(base / ORIDIR / "char_dm.xml");
 }
