@@ -969,7 +969,12 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	if (newright || newleft)
 	{
 		current_view.ComputeContour(word.GetZone());
-		current_view.AlignWordCharacters(AlignConfig::AllChars, doc->GetPosition(wordid).line, wordid);
+		if (!word.GetCharacters().empty())
+		{
+			const auto &z = current_view.GetZone(current_view.GetCharacter(word.GetCharacters().front()).GetZone());
+			if (z.GetPosition().IsValid())
+				current_view.AlignWordCharacters(AlignConfig::AllChars, doc->GetPosition(wordid).line, wordid);
+		}
 	}
 
 	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
@@ -1018,12 +1023,21 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		GtkCRN::Image::OverlayItem &item(img.get_overlay_item(overlay_id, overlay_item_id));
 		GtkCRN::Image::Polygon &po = static_cast<GtkCRN::Image::Polygon&>(item);
 		l.SetMidline(po.points);
-		// realign
-		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
-		size_t i = pw.add_progress_bar("");
-		pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-		pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::AllWords|AlignConfig::CharsAllWords, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
-		//project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected(); // TODO
+
+		const auto &line = current_view.GetLine(linid);
+		if (!line.GetWords().empty())
+		{
+			const auto &z = current_view.GetZone(current_view.GetWord(line.GetWords().front()).GetZone());
+			if (z.GetPosition().IsValid())
+			{
+				// realign
+				GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
+				size_t i = pw.add_progress_bar("");
+				pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
+				pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::AllWords|AlignConfig::CharsAllWords, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
+				//project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected(); // TODO
+			}
+		}
 
 		set_need_save();
 		display_line(linid); // refresh
@@ -1325,12 +1339,12 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 				while (pos != text.NPos())
 				{ // found
 					auto at_exit = [&pos, &text, &str]()
-							{
-								if (pos + str.Size() < text.Size())
-									pos = text.Find(str, pos + str.Size());
-								else
-									pos = crn::String::NPos();
-							};
+					{
+						if (pos + str.Size() < text.Size())
+							pos = text.Find(str, pos + str.Size());
+						else
+							pos = crn::String::NPos();
+					};
 					AtScopeExit(at_exit); // find next occurrence before looping
 
 					const auto str0 = text.SubString(0, pos + 1);
@@ -1523,7 +1537,7 @@ void GUI::go_to()
 	ident.set_activates_default(true);
 	hbox.pack_start(ident, true, true, 4);
 	dial.get_vbox()->show_all_children();
-	
+
 	if (dial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		dial.hide();

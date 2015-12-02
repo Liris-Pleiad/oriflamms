@@ -392,7 +392,7 @@ bool ValidationPanel::load_tooltip_img()
 	loadedtip.Swap(tipword);
 	tipword = "";
 
-	const auto &oriview = doc.GetView(doc.GetPosition(loadedtip).view);
+	const auto oriview = doc.GetView(doc.GetPosition(loadedtip).view);
 	const auto &oriword = oriview.GetWord(loadedtip);
 	const auto &orizone = oriview.GetZone(oriword.GetZone());
 	const auto &bbox = orizone.GetPosition();
