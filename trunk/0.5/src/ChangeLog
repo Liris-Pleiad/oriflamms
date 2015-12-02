@@ -1,3 +1,10 @@
+2015-12-02 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ExtractFeatures): Bugfix.
+	* GUI (overlay_changed): Lines' content is now realigned only if is was 
+													 already aligned.
+	* GUI (display_update_word): Characters are now realigned only if they were
+															 already aligned.
+
 2015-12-01 Yann LEYDIER <yann@leydier.info>
 	* TEIImporter (fill_tree): <pb> does not require @facs anymore.
 

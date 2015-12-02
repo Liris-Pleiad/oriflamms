@@ -1169,11 +1169,19 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 		return features; // do not recompute
 
 	// create subblock
-	int bx = GetFront().X;
-	int ex = GetBack().X;
-	int by = GetFront().Y - int(lh/2);
-	int ey = GetBack().Y + int(lh/2);
-	SBlock lb = b.AddChildAbsolute(U"lines", Rect(bx, by, ex, ey)); // XXX TODO crash ici ???
+	const auto bx = GetFront().X;
+	const auto ex = GetBack().X;
+	const auto by = GetFront().Y - int(lh/2);
+	const auto ey = GetBack().Y + int(lh/2);
+	auto lb = SBlock{};
+	try
+	{
+		lb = b.AddChildAbsolute(U"lines", Rect(bx, by, ex, ey));
+	}
+	catch (...)
+	{
+		return features;
+	}
 
 	Differential diff(Differential::NewGaussian(*lb->GetRGB(), Differential::RGBProjection::ABSMAX, 0));
 	size_t sw = StrokesWidth(*b.GetGray());
