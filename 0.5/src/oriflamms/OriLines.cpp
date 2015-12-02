@@ -1173,7 +1173,7 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 	int ex = GetBack().X;
 	int by = GetFront().Y - int(lh/2);
 	int ey = GetBack().Y + int(lh/2);
-	SBlock lb = b.AddChildAbsolute(U"lines", Rect(bx, by, ex, ey));
+	SBlock lb = b.AddChildAbsolute(U"lines", Rect(bx, by, ex, ey)); // XXX TODO crash ici ???
 
 	Differential diff(Differential::NewGaussian(*lb->GetRGB(), Differential::RGBProjection::ABSMAX, 0));
 	size_t sw = StrokesWidth(*b.GetGray());

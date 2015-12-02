@@ -172,9 +172,6 @@ void TEIImporter::fill_tree(crn::xml::Node &nd, Gtk::TreeModel::Row &row, std::s
 				if (name == "w" || name == "pc" || name == "cb" || name == "pb")
 					if (el.GetAttribute<crn::StringUTF8>("xml:id",true).IsEmpty())
 						error = true;
-				if (name == "pb")
-					if (el.GetAttribute<crn::StringUTF8 > ("facs",true).IsEmpty())
-						error = true;
 				if (name == "lb")
 					if (el.GetAttribute<int>("n",true) == 0)
 						error = true;
