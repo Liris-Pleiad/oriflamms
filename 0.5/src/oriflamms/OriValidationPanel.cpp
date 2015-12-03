@@ -10,6 +10,7 @@
 #include <CRNi18n.h>
 #include <fstream>
 #include <iostream>
+#include <CRNUtils/CRNTimer.h>
 
 using namespace ori;
 using namespace crn::literals;
@@ -392,14 +393,19 @@ bool ValidationPanel::load_tooltip_img()
 	loadedtip.Swap(tipword);
 	tipword = "";
 
+	crn::Timer::Start();
 	const auto oriview = doc.GetView(doc.GetPosition(loadedtip).view);
+	std::cout << "load view: " << crn::Timer::Stop() << std::endl;
 	const auto &oriword = oriview.GetWord(loadedtip);
 	const auto &orizone = oriview.GetZone(oriword.GetZone());
 	const auto &bbox = orizone.GetPosition();
 	if (!bbox.IsValid())
 		return true;
 	
+	crn::Timer::Start();
 	auto pb = Gdk::Pixbuf::create_from_file(oriview.GetImageName().CStr());
+	std::cout << "load image: " << crn::Timer::Stop() << std::endl;
+	crn::Timer::Start();
 	tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, bbox.GetWidth()+40, bbox.GetHeight());
 	pb->copy_area(bbox.GetLeft()-20, bbox.GetTop(), bbox.GetWidth()+40, bbox.GetHeight(), tippb, 0, 0);
 	//if (!tippb->get_has_alpha())
@@ -483,6 +489,7 @@ bool ValidationPanel::load_tooltip_img()
 				break;
 			}
 		}
+	std::cout << "create thumbnail: " << crn::Timer::Stop() << std::endl;
 	tipsig.emit();
 	return true;
 }
