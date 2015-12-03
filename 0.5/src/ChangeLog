@@ -1,3 +1,9 @@
+2015-12-03 Yann LEYDIER <yann@leydier.info>
+	* ElementPosition (operator<, operator==): Added.
+	* ValidationPanel ElementId: Now using ElementPosition.
+	* ValidationPanel Element: Added to store tooltip.
+	* ValidationPanel (add_element): Now takes the tooltip image as argument.
+
 2015-12-02 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Bugfix.
 	* GUI (overlay_changed): Lines' content is now realigned only if is was 

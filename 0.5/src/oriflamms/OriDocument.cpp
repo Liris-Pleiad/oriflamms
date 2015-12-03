@@ -1397,7 +1397,7 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 			continue; // XXX Is this necessary???
 
 		auto &wzone = GetZone(word.GetZone());
-		//word.SetImageSignature(align[bbn].second);
+		//word.SetImageSignature(align[bbn].second); // TODO
 		if (wzone.GetPosition() != align[bbn].first)
 			SetValid(wid, crn::Prop3::Unknown);
 		wzone.SetPosition(align[bbn].first);

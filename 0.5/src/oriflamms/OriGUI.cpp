@@ -1420,15 +1420,29 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 					if (max_x - min_x == 0)
 						break;
 
-					const auto &bbox = wzone.GetPosition();
 					auto wpb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, max_y - min_y);
-					pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, max_y - min_y, wpb, 0, 0);
+					pb->copy_area(min_x, min_y, max_x - min_x, max_y - min_y, wpb, 0, 0);
 
 					if (!wpb->get_has_alpha())
 						wpb = wpb->add_alpha(true, 255, 255, 255);
 					auto* pixs = wpb->get_pixels();
 					const auto rowstrides = wpb->get_rowstride();
 					const auto channels = wpb->get_n_channels();
+
+					auto wbbox = wzone.GetPosition() | crn::Rect{min_x, min_y, max_x, max_y};
+					wbbox.SetLeft(wbbox.GetLeft() - wbbox.GetHeight());
+					if (wbbox.GetLeft() < 0)
+						wbbox.SetLeft(0);
+					wbbox.SetRight(wbbox.GetRight() + wbbox.GetHeight());
+					if (wbbox.GetRight() >= pb->get_width())
+						wbbox.SetRight(pb->get_width() - 1);
+					auto tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, wbbox.GetWidth(), wbbox.GetHeight());
+					pb->copy_area(wbbox.GetLeft(), wbbox.GetTop(), wbbox.GetWidth(), wbbox.GetHeight(), tippb, 0, 0);
+					auto* tippixs = tippb->get_pixels();
+					const auto tiprowstrides = tippb->get_rowstride();
+					const auto tipchannels = tippb->get_n_channels();
+					const auto dx = min_x - wbbox.GetLeft();
+					const auto dy = min_y - wbbox.GetTop();
 
 					for (auto j = size_t(0); j < wpb->get_height(); ++j)
 					{
@@ -1449,6 +1463,9 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 						}
 						for (auto k = 0; k < crn::Min(x, wpb->get_width()); ++k)
 							pixs[k * channels + j * rowstrides + 3] = 0;
+						tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides] = 255;
+						tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 1] = 0;
+						tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 2] = 0;
 
 						auto xx = wpb->get_width();
 						for (auto i = size_t(0); i < backfrontier.size() - 1; ++i)
@@ -1467,17 +1484,20 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 						}
 						for (auto k = crn::Max(xx + 1, 0); k < wpb->get_width(); ++k)
 							pixs[k * channels + j * rowstrides + 3] = 0;
+						tippixs[(xx + dx) * tipchannels + (j + dy) * tiprowstrides] = 255;
+						tippixs[(xx + dx) * tipchannels + (j + dy) * tiprowstrides + 1] = 0;
+						tippixs[(xx + dx) * tipchannels + (j + dy) * tiprowstrides + 2] = 0;
 					}
 
 					if (view.IsValid(w.first).IsFalse())
 					{
 						// add to reject list
-						panel->add_element(wpb, panel->label_ko, w.first, w.second.GetCharacters()[cpos0]);
+						panel->add_element(doc->GetPosition(w.first), panel->label_ko, wpb, tippb, w.second.GetCharacters()[cpos0]);
 					}
 					else if (view.IsValid(w.first).IsTrue())
-						panel->add_element(wpb, panel->label_ok, w.first, w.second.GetCharacters()[cpos0]);
+						panel->add_element(doc->GetPosition(w.first), panel->label_ok, wpb, tippb, w.second.GetCharacters()[cpos0]);
 					else
-						panel->add_element(wpb, panel->label_unknown, w.first, w.second.GetCharacters()[cpos0]);
+						panel->add_element(doc->GetPosition(w.first), panel->label_unknown, wpb, tippb, w.second.GetCharacters()[cpos0]);
 
 				}
 			}

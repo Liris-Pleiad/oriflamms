@@ -20,8 +20,8 @@ namespace ori
 		public:
 			struct ElementId
 			{
-				ElementId(const Id &wid, const Id &cid = ""): word_id(wid), char_id(cid) {}
-				Id word_id;
+				ElementId(const ElementPosition &wid, const Id &cid = ""): word_id(wid), char_id(cid) {}
+				ElementPosition word_id;
 				Id char_id;
 				inline bool operator<(const ElementId &other) const noexcept
 				{
@@ -30,13 +30,20 @@ namespace ori
 					else return false;
 				}
 			};
-			using ElementCluster = std::map<ElementId, Glib::RefPtr<Gdk::Pixbuf>>;
+			struct Element
+			{
+				Element(const Glib::RefPtr<Gdk::Pixbuf> &i, const Glib::RefPtr<Gdk::Pixbuf> &ti, const Glib::ustring &t):img(i), context(ti), tip(t) {}
+				Glib::RefPtr<Gdk::Pixbuf> img;
+				Glib::RefPtr<Gdk::Pixbuf> context;
+				Glib::ustring tip;
+			};
+			using ElementCluster = std::map<ElementId, Element>;
 			using ElementList = std::map<crn::StringUTF8, ElementCluster>;
 
 			ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m);
 			virtual ~ValidationPanel() override { }
 
-			void add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, const Id &char_id = "");
+			void add_element(const ElementPosition &pos, const crn::StringUTF8 cluster, const Glib::RefPtr<Gdk::Pixbuf> &pb, const Glib::RefPtr<Gdk::Pixbuf> &tip_pb, const Id &char_id = "");
 			/*! \brief Erases all elements */
 			void clear()
 			{
@@ -82,10 +89,6 @@ namespace ori
 			bool on_scroll(GdkEventScroll *ev);
 			/*! \brief Init tooltip */
 			bool tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip);
-			/*! \brief Loads tooltip image */
-			bool load_tooltip_img();
-			/*! \brief Displays tooltip image */
-			void set_tooltip_img();
 
 			Gtk::DrawingArea da;
 			Glib::RefPtr<Gdk::GC> da_gc;
@@ -94,10 +97,7 @@ namespace ori
 			Gtk::Window tipwin;
 			Gtk::Label tiplab;
 			Gtk::Image tipimg;
-			Id tipword, loadedtip;
-			Glib::RefPtr<Gdk::Pixbuf> tippb;
-			Glib::Dispatcher tipsig;
-			std::mutex tipmutex;
+			ElementPosition tipword;
 
 			ElementList elements;
 			std::map<ElementId, crn::Point2DInt> positions;
