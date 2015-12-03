@@ -133,15 +133,6 @@ void Validation::update_words(crn::Progress *prog)
 
 void Validation::tree_selection_changed()
 {
-	/* TODO check if needed on WIN32
-#ifdef CRN_PF_MSVC
-if (firstrun)
-{
-firstrun = false;
-return;
-}
-#endif
-*/
 	// concludes with what was displayed
 	conclude_word();
 
@@ -175,6 +166,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 	auto pb = Glib::RefPtr<Gdk::Pixbuf>{};
 	auto clustpath = std::vector<Id>{};
 	auto clustimg = std::vector<Glib::RefPtr<Gdk::Pixbuf>>{};
+	auto clusttip = std::vector<Glib::RefPtr<Gdk::Pixbuf>>{};
 	auto clustsig = std::vector<crn::String>{};
 	for (const auto &wp : elems)
 	{
@@ -231,6 +223,21 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 			const auto rowstrides = wpb->get_rowstride();
 			const auto channels = wpb->get_n_channels();
 
+			auto wbbox = bbox | crn::Rect{min_x, min_y, max_x, max_y};
+			wbbox.SetLeft(wbbox.GetLeft() - wbbox.GetHeight());
+			if (wbbox.GetLeft() < 0)
+				wbbox.SetLeft(0);
+			wbbox.SetRight(wbbox.GetRight() + wbbox.GetHeight());
+			if (wbbox.GetRight() >= pb->get_width())
+				wbbox.SetRight(pb->get_width() - 1);
+			auto tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, wbbox.GetWidth(), wbbox.GetHeight());
+			pb->copy_area(wbbox.GetLeft(), wbbox.GetTop(), wbbox.GetWidth(), wbbox.GetHeight(), tippb, 0, 0);
+			auto* tippixs = tippb->get_pixels();
+			const auto tiprowstrides = tippb->get_rowstride();
+			const auto tipchannels = tippb->get_n_channels();
+			const auto dx = min_x - wbbox.GetLeft();
+			const auto dy = min_y - wbbox.GetTop();
+
 			for (auto j = size_t(0); j < wpb->get_height(); ++j)
 			{
 				auto x = 0;
@@ -251,6 +258,9 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 				}
 				for (auto k = 0; k < x; ++k)
 					pixs[k * channels + j * rowstrides + 3] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides] = 255;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 1] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 2] = 0;
 			}
 			for (auto j = size_t (0); j < wpb->get_height(); ++j)
 			{
@@ -270,16 +280,19 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 				}
 				for (auto k = x + 1; k < wpb->get_width(); ++k)
 					pixs[k * channels + j * rowstrides + 3] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides] = 255;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 1] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 2] = 0;
 			}
 			if (view.IsValid(wp).IsFalse())
 			{
 				// add to reject list
-				kowords.add_element(wpb, kowords.label_ko, wp);
+				kowords.add_element(doc.GetPosition(wp), kowords.label_ko, wpb, tippb);
 			}
 			else
 			{
 				if (view.IsValid(wp).IsTrue())
-					okwords.add_element(wpb, okwords.label_ok, wp);
+					okwords.add_element(doc.GetPosition(wp), okwords.label_ok, wpb, tippb);
 
 				else
 				{
@@ -287,11 +300,12 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 					{
 						clustpath.push_back(wp);
 						clustimg.push_back(wpb);
+						clusttip.push_back(tippb);
 						clustsig.push_back(""/*oriword.GetImageSignature()*/); // TODO
 					}
 					else
 					{
-						okwords.add_element(wpb, okwords.label_unknown, wp);
+						okwords.add_element(doc.GetPosition(wp), okwords.label_unknown, wpb, tippb);
 					}
 				}
 			}
@@ -335,7 +349,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 
 			for (size_t i : c)
 			{
-				okwords.add_element(clustimg[i], lab, clustpath[i]);
+				okwords.add_element(doc.GetPosition(clustpath[i]), lab, clustimg[i], clusttip[i]);
 			}
 
 		}
@@ -349,15 +363,15 @@ void Validation::on_remove_words(ValidationPanel::ElementList words)
 	auto work = std::unordered_map<Id, std::vector<ValidationPanel::ElementCluster::value_type>>{};
 	for (const auto &el : words)
 		for (const auto &w : el.second)
-			work[doc.GetPosition(w.first.word_id).view].push_back(w);
+			work[w.first.word_id.view].push_back(w);
 
 	for (const auto &v : work)
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &w : v.second)
 		{
-			view.SetValid(w.first.word_id, false);
-			kowords.add_element(w.second, kowords.label_ko, w.first.word_id);
+			view.SetValid(w.first.word_id.word, false);
+			kowords.add_element(w.first.word_id, kowords.label_ko, w.second.img, w.second.context);
 		}
 	}
 
@@ -370,15 +384,15 @@ void Validation::on_unremove_words(ValidationPanel::ElementList words)
 	auto work = std::unordered_map<Id, std::vector<ValidationPanel::ElementCluster::value_type>>{};
 	for (const auto &el : words)
 		for (const auto &w : el.second)
-			work[doc.GetPosition(w.first.word_id).view].push_back(w);
+			work[w.first.word_id.view].push_back(w);
 
 	for (const auto &v : work)
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &w : v.second)
 		{
-			view.SetValid(w.first.word_id, true);
-			okwords.add_element(w.second, kowords.label_ko, w.first.word_id);
+			view.SetValid(w.first.word_id.word, true);
+			okwords.add_element(w.first.word_id, kowords.label_ko, w.second.img, w.second.context);
 		}
 	}
 
@@ -400,7 +414,7 @@ void Validation::on_close()
 			// validate
 			auto work = std::unordered_map<Id, std::vector<Id>>{};
 			for (const auto &w : needconfirm)
-				work[doc.GetPosition(w).view].push_back(w);
+				work[w.view].push_back(w.word);
 			for (const auto &v : work)
 			{
 				auto view = doc.GetView(v.first);
@@ -429,7 +443,7 @@ void Validation::conclude_word()
 	const std::set<ValidationPanel::ElementId> validcontent(okwords.GetContent());
 	auto work = std::unordered_map<Id, std::vector<Id>>{};
 	for (const auto &w : validcontent)
-		work[doc.GetPosition(w.word_id).view].push_back(w.word_id);
+		work[w.word_id.view].push_back(w.word_id.word);
 
 	if (okwords.IsModified())
 	{
@@ -484,7 +498,7 @@ void Validation::conclude_word()
 		} // not in batch mode (= ask every time)
 	} // no modification was made
 
-	//project.PropagateValidation(); TODO
+	doc.PropagateValidation();
 
 	okwords.clear();
 	kowords.clear();

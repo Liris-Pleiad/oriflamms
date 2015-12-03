@@ -72,23 +72,31 @@ ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bo
 	hbox->pack_start(tipimg, false, true, 2);
 	hbox->pack_start(tiplab, false, true, 2);
 	tipwin.show_all_children();
-	tipsig.connect(sigc::mem_fun(this, &ValidationPanel::set_tooltip_img));
 	da.signal_query_tooltip().connect(sigc::mem_fun(this, &ValidationPanel::tooltip));
 	signal_hide().connect(sigc::mem_fun(tipwin, &Gtk::Widget::hide));
-	Glib::signal_timeout().connect(sigc::mem_fun(this, &ValidationPanel::load_tooltip_img), 200);
 
 	show_all();
 }
 
 /*! Adds an element to the panel
- * \param[in]	pb	the image to be displayed
+ * \param[in]	pos	the path of the word containing the element
  * \param[in]	cluster	the element's class name
- * \param[in]	word_id	the path of the word containing the element
- * \param[in]	pos	the position of the element in the word
+ * \param[in]	pb	the image to be displayed
+ * \param[in]	tip_pb	the image to be displayed in tooltip
+ * \param[in]	char_id	optional character id
  */
-void ValidationPanel::add_element(const Glib::RefPtr<Gdk::Pixbuf> &pb, const crn::StringUTF8 cluster, const Id &word_id, const Id &char_id)
+void ValidationPanel::add_element(const ElementPosition &pos, const crn::StringUTF8 cluster, const Glib::RefPtr<Gdk::Pixbuf> &pb, const Glib::RefPtr<Gdk::Pixbuf> &tip_pb, const Id &char_id)
 {
-	elements[cluster].emplace(ElementId{word_id, char_id}, pb);
+	auto msg = crn::StringUTF8{};
+	msg += _("View") + " "_s + pos.view + "\n";
+	msg += _("Page") + " "_s + pos.page + "\n";
+	msg += _("Column") + " "_s += pos.column + "\n";
+	msg += _("Line") + " "_s + pos.line + "\n";
+	msg += _("Word") + " "_s + pos.word;
+	if (char_id.IsNotEmpty())
+		msg += "\n"_s + _("Character") + " "_s + char_id;
+
+	elements[cluster].emplace(ElementId{pos, char_id}, Element{pb, tip_pb, msg.CStr()});
 	nelem += 1;
 }
 
@@ -154,7 +162,7 @@ bool ValidationPanel::button_clicked(GdkEventButton *ev)
 				{
 					const crn::Point2DInt &pos(positions[w.first]);
 					crn::Rect bbox(pos.X, pos.Y + offset,
-							pos.X + w.second->get_width(), pos.Y + offset + w.second->get_height());
+							pos.X + w.second.img->get_width(), pos.Y + offset + w.second.img->get_height());
 					bool found = false;
 					for (const crn::Point2DInt &p : mark)
 					{
@@ -241,7 +249,7 @@ void ValidationPanel::refresh()
 				int ey = by;
 				for (const ValidationPanel::ElementCluster::value_type &w : el.second)
 				{
-					int y = positions[w.first].Y + w.second->get_height();
+					int y = positions[w.first].Y + w.second.img->get_height();
 					if (y > ey) ey = y;
 				}
 				if ((el.first == elements.rbegin()->first) && (ey < disph))
@@ -255,9 +263,9 @@ void ValidationPanel::refresh()
 			}
 			for (const ValidationPanel::ElementCluster::value_type &w : el.second)
 			{
-				Glib::RefPtr<Gdk::Pixbuf> wpb = w.second;
+				Glib::RefPtr<Gdk::Pixbuf> wpb = w.second.img;
 
-				pm->draw_pixbuf(da_gc, wpb, 0, 0, positions[w.first].X, positions[w.first].Y + offset, w.second->get_width(), w.second->get_height(), Gdk::RGB_DITHER_NONE, 0, 0);
+				pm->draw_pixbuf(da_gc, wpb, 0, 0, positions[w.first].X, positions[w.first].Y + offset, w.second.img->get_width(), w.second.img->get_height(), Gdk::RGB_DITHER_NONE, 0, 0);
 			}
 		}
 
@@ -307,7 +315,7 @@ void ValidationPanel::full_refresh()
 		nelem += int(cit->second.size());
 		for (ElementCluster::iterator wit = cit->second.begin(); wit != cit->second.end(); ++wit)
 		{
-			if ((x + wit->second->get_width() >= dispw) && (x > 0) && (h > 0))
+			if ((x + wit->second.img->get_width() >= dispw) && (x > 0) && (h > 0))
 			{
 				// wont fit
 				x = margin;
@@ -315,8 +323,8 @@ void ValidationPanel::full_refresh()
 				h = 0;
 			}
 			positions.insert(std::make_pair(wit->first, crn::Point2DInt(x, y)));
-			x += wit->second->get_width() + margin;
-			h = crn::Max(h, wit->second->get_height());
+			x += wit->second.img->get_width() + margin;
+			h = crn::Max(h, wit->second.img->get_height());
 			if (x >= dispw)
 			{
 				// the margin made us go off bounds
@@ -346,27 +354,13 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 		{
 			const crn::Point2DInt &pos(positions[w.first]);
 			crn::Rect bbox(pos.X, pos.Y + offset,
-					pos.X + w.second->get_width(), pos.Y + offset + w.second->get_height());
+					pos.X + w.second.img->get_width(), pos.Y + offset + w.second.img->get_height());
 			if (bbox.Contains(x, y))
 			{
 				if (w.first.word_id != tipword)
 				{
-					std::lock_guard<std::mutex> tiplock{tipmutex};
-					tipword = w.first.word_id;
-
-					const auto &wordpath = doc.GetPosition(tipword);
-					auto msg = crn::StringUTF8{};
-					msg += _("View") + " "_s + wordpath.view + "\n";
-					msg += _("Page") + " "_s + wordpath.page + "\n";
-					msg += _("Column") + " "_s += wordpath.column + "\n";
-					msg += _("Line") + " "_s + wordpath.line + "\n";
-					msg += _("Word") + " "_s + tipword;
-					if (w.first.char_id.IsNotEmpty())
-						msg += "\n"_s + _("Character") + " "_s + w.first.char_id;
-					tiplab.set_text(msg.CStr());
-
-					if (tipword != loadedtip)
-						tipimg.set(Gtk::Stock::REFRESH, Gtk::ICON_SIZE_DIALOG);
+					tiplab.set_text(w.second.tip);
+					tipimg.set(w.second.context);
 				}
 
 				Glib::RefPtr<Gdk::Window> win(da.get_window());
@@ -385,6 +379,7 @@ bool ValidationPanel::tooltip(int x, int y, bool keyboard_tooltip, const Glib::R
 	return false;
 }
 
+/*
 bool ValidationPanel::load_tooltip_img()
 {
 	std::lock_guard<std::mutex> tiplock{tipmutex};
@@ -496,13 +491,7 @@ bool ValidationPanel::load_tooltip_img()
 	tipsig.emit();
 	return true;
 }
-
-void ValidationPanel::set_tooltip_img()
-{
-	tipwin.resize(1, 1);
-	std::lock_guard<std::mutex> tiplock{tipmutex};
-	tipimg.set(tippb);
-}
+*/
 
 void ValidationPanel::set_color(Cairo::RefPtr<Cairo::Context> &cc, const crn::StringUTF8 &label)
 {

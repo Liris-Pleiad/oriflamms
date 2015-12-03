@@ -324,6 +324,7 @@ void CharacterTree::init(crn::Progress *prog)
 			if (!pb->get_has_alpha())
 				pb = pb->add_alpha(true, 255, 255, 255);
 			images.emplace(cid, pb);
+			tipimages.emplace(cid, pb); // XXX TODO CHANGE
 
 			if (prog)
 				prog->Advance();
@@ -418,7 +419,7 @@ void CharacterTree::sel_changed()
 		current_glyph = Id(Glib::ustring((*it)[columns.value]).c_str());
 		const auto &dm = doc.GetDistanceMatrix(character);
 		for (const auto &cid : clusters[current_glyph])
-			panel.add_element(images[cid], ""/*doc.GetPosition(cid).view*/, doc.GetPosition(cid).word, cid);
+			panel.add_element(doc.GetPosition(cid), ""/*doc.GetPosition(cid).view*/, images[cid], tipimages[cid], cid);
 	}
 	else
 		current_glyph = "";
@@ -432,7 +433,7 @@ void CharacterTree::on_remove_chars(ValidationPanel::ElementList words)
 {
 	for (const auto &el : words)
 		for (const auto &w : el.second)
-			kopanel.add_element(w.second, ValidationPanel::label_ko, w.first.word_id, w.first.char_id);
+			kopanel.add_element(w.first.word_id, ValidationPanel::label_ko, w.second.img, w.second.context, w.first.char_id);
 	kopanel.full_refresh();
 }
 
@@ -440,7 +441,7 @@ void CharacterTree::on_unremove_chars(ValidationPanel::ElementList words)
 {
 	for (const auto &el : words)
 		for (const auto &w : el.second)
-			panel.add_element(w.second, ""/*doc.GetPosition(cid).view*/, w.first.word_id, w.first.char_id);
+			panel.add_element(w.first.word_id, ""/*doc.GetPosition(cid).view*/, w.second.img, w.second.context, w.first.char_id);
 	panel.full_refresh();
 }
 

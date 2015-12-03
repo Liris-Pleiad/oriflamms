@@ -50,7 +50,7 @@ namespace ori
 			Document &doc;
 			std::map<crn::String, std::vector<Id> > words;
 			bool firstrun;
-			std::set<Id> needconfirm;
+			std::set<ElementPosition> needconfirm;
 			bool needsave, batch, clustering;
 			std::function<void(void)> saveatclose;
 			std::function<void(void)> refreshatclose;

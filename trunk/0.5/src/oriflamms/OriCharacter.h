@@ -85,6 +85,7 @@ namespace ori
 			ValidationPanel panel;
 			ValidationPanel kopanel;
 			std::unordered_map<Id, Glib::RefPtr<Gdk::Pixbuf>> images;
+			std::unordered_map<Id, Glib::RefPtr<Gdk::Pixbuf>> tipimages;
 			Gtk::Button clear_clusters;
 			Gtk::Button auto_clusters;
 			Gtk::Button label_ok;

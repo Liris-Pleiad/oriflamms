@@ -35,6 +35,29 @@ namespace ori
 		ElementPosition(ElementPosition&&) = default;
 		ElementPosition& operator=(const ElementPosition&) = default;
 		ElementPosition& operator=(ElementPosition&&) = default;
+		bool operator<(const ElementPosition &other) const noexcept
+		{
+			if (view < other.view) return true;
+			else if (view == other.view)
+			{
+				if (page < other.page) return true;
+				else if (page == other.page)
+				{
+					if (column < other.column) return true;
+					else if (column == other.column)
+					{
+						if (line < other.line) return true;
+						else if (line == other.line)
+							return word < other.word;
+					}
+				}
+			}
+			return false;
+		}
+		bool operator==(const ElementPosition &other) const noexcept
+		{ return (view == other.view) && (page == other.page) && (column == other.column) && (line == other.line) && (word == other.word); }
+		bool operator!=(const ElementPosition &other) const noexcept
+		{ return (view != other.view) || (page != other.page) || (column != other.column) || (line != other.line) || (word != other.word); }
 		Id view;
 		Id page;
 		Id column;
