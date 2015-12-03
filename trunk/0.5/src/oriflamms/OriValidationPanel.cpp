@@ -401,10 +401,13 @@ bool ValidationPanel::load_tooltip_img()
 	const auto &bbox = orizone.GetPosition();
 	if (!bbox.IsValid())
 		return true;
-	
+
 	crn::Timer::Start();
 	auto pb = Gdk::Pixbuf::create_from_file(oriview.GetImageName().CStr());
-	std::cout << "load image: " << crn::Timer::Stop() << std::endl;
+	std::cout << "load image (gdkpixbuf): " << crn::Timer::Stop() << std::endl;
+	crn::Timer::Start();
+	auto test = crn::NewImageFromFile(oriview.GetImageName());
+	std::cout << "load image (libcrn): " << crn::Timer::Stop() << std::endl;
 	crn::Timer::Start();
 	tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, bbox.GetWidth()+40, bbox.GetHeight());
 	pb->copy_area(bbox.GetLeft()-20, bbox.GetTop(), bbox.GetWidth()+40, bbox.GetHeight(), tippb, 0, 0);
