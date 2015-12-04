@@ -11,6 +11,7 @@
 #include <CRNi18n.h>
 #include <fstream>
 #include <iostream>
+
 using namespace ori;
 
 static bool nullkey(GdkEventKey*)
@@ -173,7 +174,6 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 		{
 			view = doc.GetView(vid);
 			lastview = vid;
-			//pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
 			pb = GdkCRN::PixbufFromFile(view.GetImageName());
 		}
 
