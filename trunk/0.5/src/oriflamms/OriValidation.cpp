@@ -6,9 +6,7 @@
 
 #include <OriValidation.h>
 #include <GtkCRNProgressWindow.h>
-#ifdef CRN_PF_MSVC
-#	include <GdkCRNPixbuf.h>
-#endif
+#include <GdkCRNPixbuf.h>
 #include <CRNAI/CRNIterativeClustering.h>
 #include <CRNi18n.h>
 #include <fstream>
@@ -175,7 +173,8 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 		{
 			view = doc.GetView(vid);
 			lastview = vid;
-			pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
+			//pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
+			pb = GdkCRN::PixbufFromFile(view.GetImageName());
 		}
 
 		const auto &oriword = view.GetWord(wp);
