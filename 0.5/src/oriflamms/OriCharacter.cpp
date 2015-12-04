@@ -1,5 +1,5 @@
 /* Copyright 2015 Université Paris Descartes
- * 
+ *
  * file: OriCharacter.cpp
  * \author Yann LEYDIER
  */
@@ -83,9 +83,9 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	std::vector<int> altbut;
 	//altbut.push_back(Gtk::RESPONSE_ACCEPT);
 	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	set_alternative_button_order_from_array(altbut);	
+	set_alternative_button_order_from_array(altbut);
 	//set_default_response(Gtk::RESPONSE_ACCEPT);
-	
+
 	show_all_children();
 	update_buttons();
 }
@@ -130,8 +130,8 @@ void CharacterDialog::compute_distmat()
 		ids.insert(ids.end(), v.second.begin(), v.second.end());
 	auto dm = crn::SquareMatrixDouble{ids.size(), 0.0};
 
-	const auto res = Gtk::MessageDialog{*this, 
-			_("Are all the occurrences of this character approximately the same size?"), 
+	const auto res = Gtk::MessageDialog{*this,
+			_("Are all the occurrences of this character approximately the same size?"),
 			false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO}.run();
 
 	GtkCRN::ProgressWindow pw(_("Computing distance matrix..."), this, true);
@@ -291,7 +291,7 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	std::vector<int> altbut;
 	//altbut.push_back(Gtk::RESPONSE_ACCEPT);
 	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	set_alternative_button_order_from_array(altbut);	
+	set_alternative_button_order_from_array(altbut);
 	//set_default_response(Gtk::RESPONSE_ACCEPT);
 
 	// create images
@@ -317,7 +317,7 @@ void CharacterTree::init(crn::Progress *prog)
 	{
 		auto view = doc.GetView(v.first);
 		// load image
-		auto pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
+		auto pb = GdkCRN::PixbufFromFile(view.GetImageName());
 
 		for (const auto &cid : v.second)
 		{
@@ -556,7 +556,7 @@ void CharacterTree::change_label(ValidationPanel &p)
 	std::vector<int> altbut;
 	altbut.push_back(Gtk::RESPONSE_ACCEPT);
 	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	dial.set_alternative_button_order_from_array(altbut);	
+	dial.set_alternative_button_order_from_array(altbut);
 	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
 	Gtk::HBox hbox;
 	dial.get_vbox()->pack_start(hbox, false, true, 4);
@@ -587,7 +587,7 @@ void CharacterTree::change_label(ValidationPanel &p)
 		for (const auto &el : p.get_elements())
 			for (const auto &w : el.second)
 				charperview[doc.GetPosition(w.first.char_id).view].push_back(w.first.char_id);
-		
+
 		for (const auto &v : charperview)
 		{
 			auto view = doc.GetView(v.first);
@@ -868,7 +868,7 @@ void CharacterTree::clear_clustering()
 			auto &glyphs = view.GetClusters(cid);
 			glyphs.erase(
 					std::remove_if(glyphs.begin(), glyphs.end(),
-						[this](const Id &id){ return doc.GetGlyph(id).IsAuto(); }), 
+						[this](const Id &id){ return doc.GetGlyph(id).IsAuto(); }),
 					glyphs.end());
 		}
 	}
@@ -900,7 +900,7 @@ static double split_score(const std::vector<Id> &sel, std::unordered_map<Id, siz
 void CharacterTree::auto_cut(crn::Progress *prog)
 {
 	static constexpr auto NCLUST = size_t(37);
-	
+
 	if (prog)
 		prog->SetMaxCount(NCLUST);
 
@@ -908,7 +908,7 @@ void CharacterTree::auto_cut(crn::Progress *prog)
 	auto indices = std::unordered_map<Id, size_t>{};
 	for (auto tmp = size_t(0); tmp < distmat.first.size(); ++tmp)
 		indices.emplace(distmat.first[tmp], tmp);
-		
+
 	auto baseid = "auto_"_s + character.CStr();
 	try { doc.AddGlyph(baseid, _("Base class for automatic clustering of ") + crn::StringUTF8(character), "", true); } catch (...) { }
 	baseid = Glyph::LocalId(baseid);
@@ -953,7 +953,7 @@ void CharacterTree::auto_cut(crn::Progress *prog)
 		if (split.empty())
 			break;
 	}
-	
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1008,7 +1008,7 @@ void GlyphSelection::add_glyph_dialog(const Id &parent_id, Gtk::Window *parent)
 	std::vector<int> altbut;
 	altbut.push_back(Gtk::RESPONSE_ACCEPT);
 	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	dial.set_alternative_button_order_from_array(altbut);	
+	dial.set_alternative_button_order_from_array(altbut);
 	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
 	Gtk::Table tab(3, 2);
 	dial.get_vbox()->pack_start(tab, false, true, 4);

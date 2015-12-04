@@ -6,11 +6,11 @@
 
 #include <OriValidationPanel.h>
 #include <GtkCRNProgressWindow.h>
+#include <GdkCRNPixbuf.h>
 #include <CRNAI/CRNIterativeClustering.h>
 #include <CRNi18n.h>
 #include <fstream>
 #include <iostream>
-#include <CRNUtils/CRNTimer.h>
 
 using namespace ori;
 using namespace crn::literals;

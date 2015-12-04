@@ -1,3 +1,7 @@
+2015-12-04 Yann LEYDIER <yann@leydier.info>
+	* *: Replaced all occurrences of Gdk::Pixbuf::create_from_file() for
+				optimization on Windows.
+
 2015-12-03 Yann LEYDIER <yann@leydier.info>
 	* ElementPosition (operator<, operator==): Added.
 	* ValidationPanel ElementId: Now using ElementPosition.

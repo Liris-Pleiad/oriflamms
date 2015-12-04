@@ -8,6 +8,7 @@
 #include <CRNIO/CRNPath.h>
 #include <GtkCRNFileSelecterDialog.h>
 #include <GtkCRNProgressWindow.h>
+#include <GdkCRNPixbuf.h>
 #include <OriConfig.h>
 #include <OriLines.h>
 #include <CRNUtils/CRNXml.h>
@@ -40,7 +41,7 @@ GUI::GUI():
 	try
 	{
 		crn::Path iconfile(ori::Config::GetStaticDataDir() + crn::Path::Separator() + "icon.png");
-		set_icon(Gdk::Pixbuf::create_from_file(iconfile.CStr()));
+		set_icon(GdkCRN::PixbufFromFile(iconfile));
 	}
 	catch (...) { }
 	set_default_size(900, 700);
@@ -313,7 +314,7 @@ void GUI::about()
 	dial.set_website("http://oriflamms.hypotheses.org/");
 	try
 	{
-		dial.set_logo(Gdk::Pixbuf::create_from_file((ori::Config::GetStaticDataDir() + crn::Path::Separator() + "icon.png").CStr()));
+		dial.set_logo(GdkCRN::PixbufFromFile(ori::Config::GetStaticDataDir() / "icon.png"));
 	}
 	catch (...) { }
 	dial.show();
@@ -758,7 +759,7 @@ void GUI::tree_selection_changed(bool focus)
 	{
 		current_view_id = viewid;
 		current_view = doc->GetView(current_view_id);
-		img.set_pixbuf(Gdk::Pixbuf::create_from_file(current_view.GetImageName().CStr()));
+		img.set_pixbuf(GdkCRN::PixbufFromFile(current_view.GetImageName()));
 	}
 	img.set_selection_type(GtkCRN::Image::Overlay::None);
 	img.clear_selection();
@@ -1327,7 +1328,7 @@ void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)
 		{ // for each view
 			const auto view = doc->GetView(vid);
 			// load image
-			auto pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
+			auto pb = GdkCRN::PixbufFromFile(view.GetImageName());
 			for (const auto &w : view.GetWords())
 			{ // for each character
 				const auto &wzone = view.GetZone(w.second.GetZone());
@@ -1548,7 +1549,7 @@ void GUI::go_to()
 	std::vector<int> altbut;
 	altbut.push_back(Gtk::RESPONSE_ACCEPT);
 	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	dial.set_alternative_button_order_from_array(altbut);	
+	dial.set_alternative_button_order_from_array(altbut);
 	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
 	Gtk::HBox hbox;
 	dial.get_vbox()->pack_start(hbox, false, true, 4);
