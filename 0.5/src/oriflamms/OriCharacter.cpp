@@ -316,15 +316,118 @@ void CharacterTree::init(crn::Progress *prog)
 	for (const auto &v : charperview)
 	{
 		auto view = doc.GetView(v.first);
+		// load image
+		auto pb = Gdk::Pixbuf::create_from_file(view.GetImageName().CStr());
+
 		for (const auto &cid : v.second)
 		{
+			// get contour
+			const auto &czone = view.GetZone(view.GetCharacter(cid).GetZone());
+			auto contour = czone.GetContour();
+			auto frontier = size_t(0);
+			if (contour.empty())
+			{
+				const auto &bbox = czone.GetPosition();
+				contour.emplace_back(bbox.GetLeft(), bbox.GetTop());
+				contour.emplace_back(bbox.GetLeft(), bbox.GetBottom());
+				frontier = 2;
+				contour.emplace_back(bbox.GetRight(), bbox.GetBottom());
+				contour.emplace_back(bbox.GetRight(), bbox.GetTop());
+			}
+			else
+			{
+				for (; frontier < contour.size() - 1; ++frontier)
+					if (contour[frontier + 1].Y < contour[frontier].Y)
+						break;
+			}
+
+			auto max_x = contour[frontier].X;
+			for (auto i = frontier; i < contour.size(); ++i)
+				if (contour[i].X > max_x)
+					max_x = contour[i].X;
+
+			auto min_x = contour.front().X;
+			for (auto i = size_t(0); i < frontier; ++i)
+				if (contour[i].X < min_x)
+					min_x = contour[i].X;
+
+			const auto min_y = contour.front().Y;
+			const auto max_y = contour[frontier].Y;
+
 			// create image
-			auto b = view.GetZoneImage(view.GetCharacter(cid).GetZone());
-			auto pb = GdkCRN::PixbufFromCRNImage(*b->GetRGB());
-			if (!pb->get_has_alpha())
-				pb = pb->add_alpha(true, 255, 255, 255);
-			images.emplace(cid, pb);
-			tipimages.emplace(cid, pb); // XXX TODO CHANGE
+			Glib::RefPtr<Gdk::Pixbuf> cpb(Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, max_y - min_y));;
+			pb->copy_area(min_x, min_y, max_x - min_x, max_y - min_y, cpb, 0, 0);
+
+			if (!cpb->get_has_alpha())
+				cpb = cpb->add_alpha(true, 255, 255, 255);
+			auto* pixs = cpb->get_pixels();
+			const auto rowstrides = cpb->get_rowstride();
+			const auto channels = cpb->get_n_channels();
+
+			auto wbbox = view.GetZone(view.GetWord(doc.GetPosition(cid).word).GetZone()).GetPosition() | crn::Rect{min_x, min_y, max_x, max_y};
+			wbbox.SetLeft(wbbox.GetLeft() - wbbox.GetHeight());
+			if (wbbox.GetLeft() < 0)
+				wbbox.SetLeft(0);
+			wbbox.SetRight(wbbox.GetRight() + wbbox.GetHeight());
+			if (wbbox.GetRight() >= pb->get_width())
+				wbbox.SetRight(pb->get_width() - 1);
+			auto tippb = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, wbbox.GetWidth(), wbbox.GetHeight());
+			pb->copy_area(wbbox.GetLeft(), wbbox.GetTop(), wbbox.GetWidth(), wbbox.GetHeight(), tippb, 0, 0);
+			auto* tippixs = tippb->get_pixels();
+			const auto tiprowstrides = tippb->get_rowstride();
+			const auto tipchannels = tippb->get_n_channels();
+			const auto dx = min_x - wbbox.GetLeft();
+			const auto dy = min_y - wbbox.GetTop();
+
+			for (auto j = size_t(0); j < cpb->get_height(); ++j)
+			{
+				auto x = 0;
+				for (auto i = size_t(0); i < frontier - 1; ++i)
+				{
+					const auto x1 = contour[i].X - min_x;
+					const auto y1 = contour[i].Y - min_y;
+					const auto x2 = contour[i + 1].X - min_x;
+					const auto y2 = contour[i + 1].Y - min_y;
+
+					if (j == y2)
+						x = x2;
+					if (j == y1)
+						x = x1;
+					if ((j < y2) && (j > y1))
+						x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+
+				}
+				for (auto k = 0; k < x; ++k)
+					pixs[k * channels + j * rowstrides + 3] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides] = 255;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 1] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 2] = 0;
+			}
+			for (auto j = size_t (0); j < cpb->get_height(); ++j)
+			{
+				auto x = max_x - min_x;
+				for(auto i = frontier; i < contour.size() - 1; ++i)
+				{
+					const auto x2 = contour[i].X - min_x;
+					const auto y2 = contour[i].Y - min_y;
+					const auto x1 = contour[i + 1].X - min_x;
+					const auto y1 = contour[i + 1].Y - min_y;
+					if (j == y2)
+						x = x2;
+					if (j == y1)
+						x = x1;
+					if ((j < y2) && (j > y1))
+						x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
+				}
+				for (auto k = x + 1; k < cpb->get_width(); ++k)
+					pixs[k * channels + j * rowstrides + 3] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides] = 255;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 1] = 0;
+				tippixs[(x + dx) * tipchannels + (j + dy) * tiprowstrides + 2] = 0;
+			}
+
+			images.emplace(cid, cpb);
+			tipimages.emplace(cid, tippb);
 
 			if (prog)
 				prog->Advance();
