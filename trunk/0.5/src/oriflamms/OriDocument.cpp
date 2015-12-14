@@ -311,7 +311,9 @@ void View::Impl::readZoneElements(crn::xml::Element &el)
 {
 	if (el.GetName() == "zone")
 	{
-		const auto id = el.GetAttribute<Id>("xml:id", false);
+		const auto id = el.GetAttribute<Id>("xml:id", true);
+		if (id.IsEmpty())
+			throw crn::ExceptionNotFound(this->id + "-zones.xml: " + _("zone without an id."));
 		zones.emplace(id, Zone{el});
 	}
 	for (auto sel = el.BeginElement(); sel != el.EndElement(); ++sel)

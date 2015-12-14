@@ -1,3 +1,6 @@
+2015-12-14 Yann LEYDIER <yann@leydier.info>
+	* View Impl (readZoneElements): Better error message.
+
 2015-12-04 Yann LEYDIER <yann@leydier.info>
 	* *: Replaced all occurrences of Gdk::Pixbuf::create_from_file() for
 				optimization on Windows.
