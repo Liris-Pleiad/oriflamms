@@ -20,6 +20,7 @@
 #include <CRNi18n.h>
 
 #include <iostream>
+#include <fstream>
 
 using namespace ori;
 using namespace crn::literals;

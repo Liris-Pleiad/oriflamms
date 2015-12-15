@@ -164,6 +164,8 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 			mask.Set(x, y);
 			pts.emplace_back(x, y);
 
+			//if (cnt == 8 && loop == 102)
+				//std::cout << "pfffffffffffffffffff" << std::endl;
 			// update energy
 			for (const auto pt : pts)
 			{
@@ -927,7 +929,7 @@ void View::detectLines()
 			// central objects
 
 			auto lsum = std::vector<double>(lines.size());
-			std::transform(distmat.begin(), distmat.end(), lsum.begin(), 
+			std::transform(distmat.begin(), distmat.end(), lsum.begin(),
 					[](const std::vector<double> &l){ return std::accumulate(l.begin(), l.end(), 0.0); });
 
 			auto outmap = std::multimap<double, SLinearInterpolation>{};
