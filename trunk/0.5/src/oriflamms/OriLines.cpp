@@ -1300,7 +1300,9 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 	std::vector<bool> centerguide(iw, false);
 	for (size_t x = 0; x < iw; ++x)
 	{
-		int y = At(int(x) + bx) - by;
+		auto y = At(int(x) + bx) - by;
+		if (y < 0 || y >= strokes.GetHeight())
+			continue;
 		if (strokes.At(x, y))
 		{
 			centerguide[x] = true;
