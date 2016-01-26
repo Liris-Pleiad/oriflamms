@@ -1391,7 +1391,7 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 	{
 		if (bbn >= align.size())
 		{
-			CRNError(_("Range align misfit."));
+			CRNError(_("Range align misfit at line ") + line_id);
 			break;
 		}
 		const auto &wid = line.GetWords()[w];
@@ -1435,7 +1435,7 @@ void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &wo
 		auto csig = TextSignatureDB::Sign(ctxt);
 		if (csig.empty())
 		{
-			CRNWarning(cid + U" (" + ctxt + U"): " + _("empty signature."));
+			CRNWarning(cid + U" (" + ctxt + U") at line " + line_id + U": " + _("empty signature."));
 			csig.emplace_back(true, 'l');
 		}
 		std::move(csig.begin(), csig.end(), std::back_inserter(wsig));

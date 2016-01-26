@@ -2,6 +2,9 @@
 <!--oriflamms signature table-->
 <orisig>
     <ent char="32" sig=" "/>
+    <ent char="38" sig=".l&apos;"/>
+    <ent char="40" sig="("/>
+    <ent char="41" sig=")"/>
     <ent char="44" sig=","/>
     <ent char="45" sig=","/>
     <ent char="46" sig="."/>
@@ -15,6 +18,7 @@
     <ent char="69" sig="l&apos;"/>
     <ent char="70" sig=""/>
     <ent char="71" sig="(l"/>
+    <ent char="72" sig="ll"/>
     <ent char="73" sig="l"/>
     <ent char="74" sig="l"/>
     <ent char="75" sig="ll"/>
@@ -31,7 +35,7 @@
     <ent char="86" sig="ll"/>
     <ent char="88" sig=""/>
     <ent char="89" sig=",l&apos;"/>
-    <ent char="90" sig=""/>
+    <ent char="90" sig=",&apos;"/>
     <ent char="97" sig=",l"/>
     <ent char="98" sig="l)"/>
     <ent char="99" sig="(&apos;"/>
@@ -76,6 +80,7 @@
     <ent char="237" sig="l"/>
     <ent char="238" sig="l"/>
     <ent char="239" sig="l"/>
+    <ent char="247" sig=".&apos;"/>
     <ent char="249" sig="ll"/>
     <ent char="251" sig="ll"/>
     <ent char="252" sig="ll"/>
@@ -86,10 +91,15 @@
     <ent char="868" sig=""/>
     <ent char="7653" sig=""/>
     <ent char="7823" sig="ll"/>
+    <ent char="42833" sig="l)"/>
+    <ent char="42835" sig=",l)"/>
     <ent char="42843" sig=")"/>
+    <ent char="42845" sig="),"/>
     <ent char="42863" sig=",)"/>
     <ent char="42864" sig=""/>
+    <ent char="58981" sig="l)"/>
     <ent char="61784" sig=",&apos;"/>
     <ent char="61793" sig=","/>
+    <ent char="61868" sig="."/>
     <ent char="61943" sig=""/>
 </orisig>
