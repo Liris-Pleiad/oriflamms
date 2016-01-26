@@ -8,11 +8,17 @@ int main(void)
 	sig[U' '] = " ";
 	sig[U'-'] = ",";
 	sig[U'?'] = ".'"; // printed as .° in the manuscript
+	sig[U'&'] = ".l'";
 
 	sig[U','] = ",";
 	sig[U'.'] = ".";
 	sig[U':'] = "."; // prints as a .
 	sig[U';'] = "."; // ????
+	sig[U''] = "."; // ????
+	sig[U'÷'] = ".'"; // ????
+	sig[U'('] = "("; // ????
+	sig[U')'] = ")"; // ????
+
 	sig[U'A'] = ",l";
 	sig[U'B'] = "ll";
 	sig[U'C'] = "('"; // ll  l,'  'l,  ,l'  ll  ,'  l'  l  ,'  l,'  l',  ll  l'  'l  l'  ll'  l'  'l  l  ll  l'
@@ -25,6 +31,7 @@ int main(void)
 	sig[U'Ë'] = "l'";
 	sig[U'F'] = ""; // TODO NOT FOUND
 	sig[U'G'] = "(l"; // ll  ll  ll  l'
+	sig[U'H'] = "ll";
 	sig[U'I'] = "l"; // 'l  ,l  ,l  l  ,l  l  l  l
 	sig[U'Î'] = "l";
 	sig[U'Ï'] = "l";
@@ -46,7 +53,7 @@ int main(void)
 	sig[U'V'] = "ll";
 	sig[U'X'] = ""; // TODO NOT FOUND
 	sig[U'Y'] = ",l'"; // NOT FOUND  ,l'  ,ll  ,l'  (3 occurrences)
-	sig[U'Z'] = ""; // TODO NOT FOUND
+	sig[U'Z'] = ",'"; // TODO NOT FOUND
 	sig[U'a'] = ",l";
 	sig[U'b'] = "l)"; // l,  ll  ll  ll  ll
 	sig[U'c'] = "('";
@@ -70,6 +77,9 @@ int main(void)
 	sig[U'n'] = "ll";
 	sig[U'o'] = "()";
 	sig[U'p'] = "l)";
+	sig[U''] = "l)";
+	sig[U'ꝑ'] = "l)";
+	sig[U'ꝓ'] = ",l)";
 	sig[U'q'] = "(l";
 	sig[U'r'] = "l'";
 	sig[U's'] = "l"; // ll  l,  'l,  <-- using long s' signature
@@ -91,6 +101,7 @@ int main(void)
 	sig[L'ᷥ'] = ""; // s long sup <-- nothing
 	sig[U'ẏ'] = "ll";
 	sig[U'ꝛ'] = ")"; // small r rotunda
+	sig[U'ꝝ'] = "),"; // ???
 	sig[U'ꝰ'] = ""; // modified letter us <-- nothing
 	sig[U''] = ",'"; // et barré
 	sig[U''] = ","; // punctus elevatus

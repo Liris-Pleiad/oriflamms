@@ -1,3 +1,7 @@
+2016-01-26 Yann LEYDIER <yann@leydier.info>
+	* orisig: Updated.
+	* Document (AlignRange): Better warning messages.
+
 2016-01-21 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Bugfix.
 
