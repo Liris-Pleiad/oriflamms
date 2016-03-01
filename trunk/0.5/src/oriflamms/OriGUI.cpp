@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2016 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes, ENS-Lyon
  *
  * file: OriGUI.h
  * \author Yann LEYDIER
@@ -23,7 +23,7 @@
 using namespace ori;
 using namespace crn::literals;
 
-const Glib::ustring GUI::wintitle(Glib::ustring("Oriflamms ") + ORIFLAMMS_PACKAGE_VERSION + Glib::ustring(" – LIRIS, IRHT & LIPADE"));
+const Glib::ustring GUI::wintitle(Glib::ustring("Oriflamms ") + ORIFLAMMS_PACKAGE_VERSION + Glib::ustring(" – LIRIS, IRHT, LIPADE & ICAR"));
 const crn::String GUI::linesOverlay("lines");
 const crn::String GUI::wordsOverlay("zwords");
 const crn::String GUI::wordsOverlayOk("wordsok");
@@ -310,7 +310,7 @@ void GUI::about()
 	dial.set_program_name("Oriflamms");
 	dial.set_version(ORIFLAMMS_PACKAGE_VERSION);
 	dial.set_comments(_("Text alignment between TEI xml and images"));
-	dial.set_copyright("© LIRIS / INSA Lyon & IRHT & LIPADE / Université Paris Descartes 2013-2015");
+	dial.set_copyright("© LIRIS / INSA Lyon & IRHT & LIPADE / Université Paris Descartes & ICAR / ENS Lyon 2013-2015");
 	dial.set_website("http://oriflamms.hypotheses.org/");
 	try
 	{

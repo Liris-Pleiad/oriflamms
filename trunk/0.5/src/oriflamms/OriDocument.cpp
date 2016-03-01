@@ -1,4 +1,4 @@
-/* Copyright 2015 Université Paris Descartes
+/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
  *
  * file: OriDocument.cpp
  * \author Yann LEYDIER
@@ -976,12 +976,19 @@ struct get_neighbors
 
 std::vector<crn::Point2DInt> View::ComputeFrontier(size_t x, size_t y1, size_t y2) const
 {
-	return SimplifyCurve(crn::AStar(
-				crn::Point2DInt(int(x), int(y1)),
-				crn::Point2DInt(int(x), int(y2)),
-				stepcost(getWeight(), int(x)),
-				heuristic(),
-				get_neighbors(GetBlock().GetAbsoluteBBox())), 1);
+	try
+	{
+		return SimplifyCurve(crn::AStar(
+					crn::Point2DInt(int(x), int(y1)),
+					crn::Point2DInt(int(x), int(y2)),
+					stepcost(getWeight(), int(x)),
+					heuristic(),
+					get_neighbors(GetBlock().GetAbsoluteBBox())), 1);
+	}
+	catch (crn::ExceptionNotFound&)
+	{
+		return std::vector<crn::Point2DInt>{crn::Point2DInt{int(x), int(y1)}, crn::Point2DInt{int(x), int(y2)}};
+	}
 }
 
 /*! Computes the contour of a zone from its bounding box
@@ -1340,6 +1347,10 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 	if (first_word >= line.GetWords().size() || last_word >= line.GetWords().size())
 		throw crn::ExceptionDomain("View::AlignRange(): "_s + _("out of range."));
 
+	// check if the text line is associated to an image line
+	try { GetGraphicalLine(line_id); }
+	catch (crn::ExceptionDomain&) { return; }
+
 	auto &bl = GetGraphicalLine(line_id);
 	// range on image
 	auto bx = size_t(0);
@@ -1403,7 +1414,8 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 		//word.SetImageSignature(align[bbn].second); // TODO
 		if (wzone.GetPosition() != align[bbn].first)
 			SetValid(wid, crn::Prop3::Unknown);
-		wzone.SetPosition(align[bbn].first);
+		if (align[bbn].first.IsValid())
+			wzone.SetPosition(align[bbn].first);
 		bbox |= align[bbn].first;
 		ResetCorrections(wid); // reset left/right corrections
 		ComputeContour(word.GetZone());
@@ -1414,7 +1426,8 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 	// recompute line's bbox
 	auto &lzone = GetZone(line.GetZone());
 	bbox |= lzone.GetPosition();
-	lzone.SetPosition(bbox);
+	if (bbox.IsValid())
+		lzone.SetPosition(bbox);
 }
 
 /*! Aligns the characters in a word
@@ -1425,6 +1438,10 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &word_id)
 {
 	// TODO use config
+
+	// check if the text line is associated to an image line
+	try { GetGraphicalLine(line_id); }
+	catch (crn::ExceptionDomain&) { return; }
 
 	auto &word = GetWord(word_id);
 	const auto isig = GetGraphicalLine(line_id).ExtractFeatures(GetBlock());
