@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2016 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes, ENS-Lyon
  *
  * file: OriLines.cpp
  * \author Yann LEYDIER
@@ -1050,6 +1050,8 @@ void View::detectLines()
 
 template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, double maxdist)
 {
+	if (line.empty())
+		throw crn::ExceptionDimension{"SimplifyCurve(): Empty line."};
 	auto sline = std::vector<T>{line.front()};
 	auto sx = double(line.front().X);
 	auto sy = double(line.front().Y);
@@ -1670,6 +1672,13 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 		}
 		else
 			prevs = '\0';
+	}
+
+	if (sig.empty())
+	{
+		if (b.HasTree(U"lines"))
+			b.RemoveChild(U"lines", lb);
+		return features;
 	}
 
 	// spread bounding boxes

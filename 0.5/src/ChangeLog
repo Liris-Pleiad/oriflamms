@@ -1,3 +1,9 @@
+2016-02-01 Yann LEYDIER <yann@leydier.info>
+	* View (ComputeFrontier): Now returns a straight line if no path is found.
+	* GraphicalLine (ExtractFeatures): Bugfix.
+	* View (AlignRange, AlignWordCharacters): Silently ignore text lines that
+		are not associated to a GraphicalLine.
+
 2016-01-26 Yann LEYDIER <yann@leydier.info>
 	* orisig: Updated.
 	* Document (AlignRange): Better warning messages.
