@@ -24,7 +24,7 @@ EntityDialog::EntityDialog(Gtk::Window &parent):
 	std::vector<int> altbut;
 	altbut.push_back(Gtk::RESPONSE_ACCEPT);
 	altbut.push_back(Gtk::RESPONSE_CANCEL);
-	set_alternative_button_order_from_array(altbut);	
+	set_alternative_button_order_from_array(altbut);
 	set_default_response(Gtk::RESPONSE_ACCEPT);
 
 	butt_add_file.set_image(*Gtk::manage(new Gtk::Image( Gtk::Stock::DIRECTORY,Gtk::ICON_SIZE_BUTTON)));
@@ -103,7 +103,7 @@ void EntityDialog::dialogAddFile()
 	//Handle the response:
 	if(result == Gtk::RESPONSE_OK)
 	{
-		ori::EntityManager::AddEntityFile(crn::StringUTF8{dialog.get_filename()},bt.get_active());
+		ori::EntityManager::AddEntityFile(crn::StringUTF8{Glib::locale_from_utf8(dialog.get_filename())},bt.get_active());
 		refresh_entities();
 	}
 }
@@ -119,7 +119,7 @@ class addEntityDialog: public Gtk::Dialog
 			std::vector<int> altbut;
 			altbut.push_back(Gtk::RESPONSE_ACCEPT);
 			altbut.push_back(Gtk::RESPONSE_CANCEL);
-			set_alternative_button_order_from_array(altbut);	
+			set_alternative_button_order_from_array(altbut);
 			set_default_response(Gtk::RESPONSE_ACCEPT);
 
 			Gtk::HBox *hb = Gtk::manage(new Gtk::HBox);
