@@ -5,6 +5,8 @@
 			Oriflamms project.
 	* GUI (load_project, stats), EntityDialog (dialogAddFile): 
 			Fixed path encoding on Windows.
+	* GUI (load_project): Now selects automatically the right folder if it was
+			selected in stead of entered.
 
 2016-02-01 Yann LEYDIER <yann@leydier.info>
 	* View (ComputeFrontier): Now returns a straight line if no path is found.
