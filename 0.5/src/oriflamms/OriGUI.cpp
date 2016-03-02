@@ -338,6 +338,12 @@ void GUI::load_project()
 	if (dial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		dial.hide();
+		std::cout << "get_current_folder() " << dial.get_current_folder() << std::endl;
+		std::cout << "get_current_folder_uri() " << dial.get_current_folder_uri() << std::endl;
+		std::cout << "filename_from_uri(get_current_folder_uri()) " << Glib::filename_from_uri(dial.get_current_folder_uri()) << std::endl;
+		std::cout << "get_filename() " << dial.get_filename() << std::endl;
+		std::cout << "get_uri() " << dial.get_uri() << std::endl;
+		std::cout << "filename_from_uri(get_uri()) " << Glib::filename_from_uri(dial.get_uri()) << std::endl;
 		try
 		{
 			GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
@@ -346,7 +352,6 @@ void GUI::load_project()
 			doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
 			if (!doc)
 				throw 1;
-			//doc = std::make_unique<Document>(dial.get_current_folder().c_str());
 			const auto &error = doc->ErrorReport();
 			if (error.IsNotEmpty())
 			{
@@ -362,6 +367,11 @@ void GUI::load_project()
 		{
 			if (!crn::IO::Access(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p, crn::IO::EXISTS))
 			{
+				if (!crn::IO::Access(dial.get_current_folder().c_str() / "texts"_p, crn::IO::EXISTS))
+				{
+					GtkCRN::App::show_message(_("The folder is not an Oriflamms project."), Gtk::MESSAGE_ERROR);
+					return;
+				}
 				auto dir = crn::IO::Directory(dial.get_current_folder().c_str() / "texts"_p);
 				for (const auto fname : dir.GetFiles())
 					if (fname.EndsWith("-c.xml"))
@@ -403,13 +413,19 @@ void GUI::load_project()
 			}
 		}
 
-		GtkCRN::ProgressWindow pw(_("Loading…"), this, true);
-		auto i = pw.add_progress_bar(_("Page"));
-		pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
-		store = pw.run<Glib::RefPtr<Gtk::TreeStore>>(sigc::bind(sigc::mem_fun(this, &GUI::fill_tree), pw.get_crn_progress(i)));
-		tv.set_model(store);
-		setup_window();
-
+		try
+		{
+			GtkCRN::ProgressWindow pw(_("Loading…"), this, true);
+			auto i = pw.add_progress_bar(_("Page"));
+			pw.get_crn_progress(i)->SetType(crn::Progress::Type::ABSOLUTE);
+			store = pw.run<Glib::RefPtr<Gtk::TreeStore>>(sigc::bind(sigc::mem_fun(this, &GUI::fill_tree), pw.get_crn_progress(i)));
+			tv.set_model(store);
+			setup_window();
+		}
+		catch (crn::Exception &ex)
+		{
+			GtkCRN::App::show_exception(ex, false);
+		}
 
 		/* exportation des caractères
 		for (size_t v = 0; v < project->GetNbViews(); ++v)
@@ -768,17 +784,107 @@ void GUI::tree_selection_changed(bool focus)
 	switch (level)
 	{
 		case 0:
-			// view
-			tv.expand_row(Gtk::TreePath(it), false);
-			for (const auto &row : it->children())
-				tv.expand_row(Gtk::TreePath(row), false);
-			view_depth = ViewDepth::View;
-			break;
+			{
+				// view
+				tv.expand_row(Gtk::TreePath(it), false);
+				for (const auto &row : it->children())
+					tv.expand_row(Gtk::TreePath(row), false);
+
+				auto fx = 0;
+				auto fy = 0;
+				for (const auto &pageid : current_view.GetPages())
+				{
+					const auto &page = current_view.GetPage(pageid);
+					for (const auto &cid : page.GetColumns())
+					{
+						const auto &column = current_view.GetColumn(cid);
+						for (const auto &lid : column.GetLines())
+						{
+							if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+								display_line(lid);
+							if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
+								display_words(lid);
+							if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
+								display_characters(lid);
+							if (!fx && !fy)
+							{
+								try
+								{
+									const auto lzoneid = current_view.GetLine(lid).GetZone();
+									const auto &r = current_view.GetZone(lzoneid).GetPosition();
+									if (r.IsValid())
+									{
+										fx = r.GetCenterX();
+										fy = r.GetTop();
+									}
+								}
+								catch (...) {}
+							}
+						}
+					}
+				}
+				if (focus)
+				{ // set focus
+					img.focus_on(fx, fy);
+				}
+
+				view_depth = ViewDepth::View;
+				break;
+			}
 		case 1:
-			// page
-			tv.expand_row(Gtk::TreePath(tv.get_selection()->get_selected()), false);
-			view_depth = ViewDepth::Page;
-			break;
+			{
+				// page
+				tv.expand_row(Gtk::TreePath(tv.get_selection()->get_selected()), false);
+
+				it = tv.get_selection()->get_selected();
+				auto pageid = Id{it->get_value(columns.id).c_str()};
+				const auto &page = current_view.GetPage(pageid);
+				auto fx = 0;
+				auto fy = 0;
+				for (const auto &cid : page.GetColumns())
+				{
+					const auto &column = current_view.GetColumn(cid);
+					for (const auto &lid : column.GetLines())
+					{
+						if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+							display_line(lid);
+						if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
+							display_words(lid);
+						if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
+							display_characters(lid);
+						if (!fx && !fy)
+						{
+							try
+							{
+								const auto lzoneid = current_view.GetLine(lid).GetZone();
+								const auto &r = current_view.GetZone(lzoneid).GetPosition();
+								if (r.IsValid())
+								{
+									fx = r.GetCenterX();
+									fy = r.GetTop();
+								}
+							}
+							catch (...) {}
+						}
+					}
+				}
+				if (focus)
+				{ // set focus
+					if ((!fx || !fy) && !page.GetColumns().empty())
+					{
+						const auto &glines = current_view.GetGraphicalLines(page.GetColumns().front());
+						if (!glines.empty())
+						{
+							fx = (glines.front().GetFront().X + glines.front().GetBack().X) / 2;
+							fy = glines.front().GetFront().Y;
+						}
+					}
+					img.focus_on(fx, fy);
+				}
+
+				view_depth = ViewDepth::Page;
+				break;
+			}
 		case 2:
 			{
 				// column
