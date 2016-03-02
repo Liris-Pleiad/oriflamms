@@ -338,18 +338,16 @@ void GUI::load_project()
 	if (dial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		dial.hide();
-		std::cout << "get_current_folder() " << dial.get_current_folder() << std::endl;
-		std::cout << "get_current_folder_uri() " << dial.get_current_folder_uri() << std::endl;
-		std::cout << "filename_from_uri(get_current_folder_uri()) " << Glib::filename_from_uri(dial.get_current_folder_uri()) << std::endl;
-		std::cout << "get_filename() " << dial.get_filename() << std::endl;
-		std::cout << "get_uri() " << dial.get_uri() << std::endl;
-		std::cout << "filename_from_uri(get_uri()) " << Glib::filename_from_uri(dial.get_uri()) << std::endl;
+		// convert path to local encoding and tests if the folder was clicked once or twice
+		auto pathname = crn::Path{Glib::locale_from_utf8(dial.get_filename())};
+		if (!crn::IO::Access(pathname / "texts"_p, crn::IO::EXISTS))
+			pathname = Glib::locale_from_utf8(dial.get_current_folder());
 		try
 		{
 			GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
 			pw.set_terminate_on_exception(false);
 			auto i = pw.add_progress_bar("");
-			doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
+			doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), pathname, pw.get_crn_progress(i)));
 			if (!doc)
 				throw 1;
 			const auto &error = doc->ErrorReport();
@@ -365,14 +363,14 @@ void GUI::load_project()
 		}
 		catch (int)
 		{
-			if (!crn::IO::Access(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p, crn::IO::EXISTS))
+			if (!crn::IO::Access(pathname / "oriflamms"_p / "tei_selection.xml"_p, crn::IO::EXISTS))
 			{
-				if (!crn::IO::Access(dial.get_current_folder().c_str() / "texts"_p, crn::IO::EXISTS))
+				if (!crn::IO::Access(pathname / "texts"_p, crn::IO::EXISTS))
 				{
 					GtkCRN::App::show_message(_("The folder is not an Oriflamms project."), Gtk::MESSAGE_ERROR);
 					return;
 				}
-				auto dir = crn::IO::Directory(dial.get_current_folder().c_str() / "texts"_p);
+				auto dir = crn::IO::Directory(pathname / "texts"_p);
 				for (const auto fname : dir.GetFiles())
 					if (fname.EndsWith("-c.xml"))
 					{
@@ -382,14 +380,13 @@ void GUI::load_project()
 						if (impdial.run() == Gtk::RESPONSE_ACCEPT)
 						{
 							impdial.hide();
-							impdial.export_selected_elements().Save(dial.get_current_folder().c_str() / "oriflamms"_p / "tei_selection.xml"_p);
+							impdial.export_selected_elements().Save(pathname / "oriflamms"_p / "tei_selection.xml"_p);
 							try
 							{
-								//doc = std::make_unique<Document>(dial.get_current_folder().c_str());
 								GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
 								pw.set_terminate_on_exception(false);
 								auto i = pw.add_progress_bar("");
-								doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), crn::Path{dial.get_current_folder().c_str()}, pw.get_crn_progress(i)));
+								doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), pathname, pw.get_crn_progress(i)));
 								if (!doc)
 									throw 1;
 
@@ -1386,7 +1383,7 @@ void GUI::stats()
 	if (fdial.run() != Gtk::RESPONSE_ACCEPT)
 		return;
 	fdial.hide();
-	auto fname = crn::Path(fdial.get_filename().c_str());
+	auto fname = crn::Path(Glib::locale_from_utf8(fdial.get_filename()));
 	const auto ext = fname.GetExtension();
 	if ((ext != "ods") && (ext != "Ods") && (ext != "ODS"))
 		fname += ".ods";
