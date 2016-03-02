@@ -1,0 +1,378 @@
+2016-02-02 Yann LEYDIER <yann@leydier.info>
+	* GUI (tree_selection_changed): Now displays lines, words and characters at
+			page and view levels.
+	* GUI (load_project): Fixed a crash when the project folder is not a valid
+			Oriflamms project.
+	* GUI (load_project, stats), EntityDialog (dialogAddFile): 
+			Fixed path encoding on Windows.
+
+2016-02-01 Yann LEYDIER <yann@leydier.info>
+	* View (ComputeFrontier): Now returns a straight line if no path is found.
+	* GraphicalLine (ExtractFeatures): Bugfix.
+	* View (AlignRange, AlignWordCharacters): Silently ignore text lines that
+			are not associated to a GraphicalLine.
+
+2016-01-26 Yann LEYDIER <yann@leydier.info>
+	* orisig: Updated.
+	* Document (AlignRange): Better warning messages.
+
+2016-01-21 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ExtractFeatures): Bugfix.
+
+2015-12-14 Yann LEYDIER <yann@leydier.info>
+	* View Impl (readZoneElements): Better error message.
+
+2015-12-04 Yann LEYDIER <yann@leydier.info>
+	* *: Replaced all occurrences of Gdk::Pixbuf::create_from_file() for
+				optimization on Windows.
+
+2015-12-03 Yann LEYDIER <yann@leydier.info>
+	* ElementPosition (operator<, operator==): Added.
+	* ValidationPanel ElementId: Now using ElementPosition.
+	* ValidationPanel Element: Added to store tooltip.
+	* ValidationPanel (add_element): Now takes the tooltip image as argument.
+
+2015-12-02 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ExtractFeatures): Bugfix.
+	* GUI (overlay_changed): Lines' content is now realigned only if is was 
+													 already aligned.
+	* GUI (display_update_word): Characters are now realigned only if they were
+															 already aligned.
+
+2015-12-01 Yann LEYDIER <yann@leydier.info>
+	* TEIImporter (fill_tree): <pb> does not require @facs anymore.
+
+2015-11-30 Yann LEYDIER <yann@leydier.info>
+	* Document (cstr, Save): Distances matrices are now saved in binary format.
+
+2015-11-27 Yann LEYDIER <yann@leydier.info>
+	* Document (readTextWElements): Added support for <lb> @type="rejet".
+
+2015-11-26 Yann LEYDIER <yann@leydier.info>
+	* GUI (go_to): Added.
+	* GUI (find_string, display_search): Bugfix.
+
+2015-11-25 Yann LEYDIER <yann@leydier.info>
+	* CharacterTree (cut, auto_cut): Added.
+
+2015-11-24 Yann LEYDIER <yann@leydier.info>
+	* ValidationPanel (tooltip): Bugfix.
+	* CharacterTree: Added second panel.
+	* GlyphSelection: Added.
+
+2015-11-23 Yann LEYDIER <yann@leydier.info>
+	* View (GetZoneImage): Bugfix.
+	* Glyph (LocalId, GlobalId): Added.
+	* Document (AddGlyph): Bugfix.
+	* GUI (display_search): Bugfix.
+	* View (AlignWordCharacters): Now adds a dummy signature when the 
+																character has none.
+
+2015-11-20 Yann LEYDIER <yann@leydier.info>
+	* CharacterTree: Added.
+
+2015-11-19 Yann LEYDIER <yann@leydier.info>
+	* ValidationPanel: Removed threads. Tooltips are now computed in the main
+	loop.
+	* CharacterDialog: Added distances matrices.
+	* GUI (load_project): Now shows a progress bar.
+
+2015-11-18 Yann LEYDIER <yann@leydier.info>
+	* Document (Save, GetDistanceMatrix, SetDistanceMatrix): Added.
+	* View (GetZoneImage): Added.
+	* GUI (display_search): Bugfix.
+	* Validation (read_word): Bugfix.
+	* Align: Bugfix.
+	* CharacterDialog: Added.
+
+2015-11-17 Yann LEYDIER <yann@leydier.info>
+	* Glyph: Added.
+	* Document (GetGlyph, AddGlyph, CollectCharacters): Added.
+	* View (GetClusters): Added.
+	* CharacterDialog: Added.
+
+2015-11-16 Yann LEYDIER <yann@leydier.info>
+	* trunk: Version 0.5.
+	* OriStruct, OriProject: Removed.
+	* OriDocument: Added (support for Oriflamms TEI guidelines).
+
+2015-10-07 Yann LEYDIER <yann@leydier.info>
+	* branch: Version 0.5.
+
+2015-08-17 Yann LEYDIER <yann@leydier.info>
+	* AlignConfig, AlignDialog, Project (AlignLine): Added option to 
+			recompute words' frontiers without realigning.
+
+2015-08-14 Yann LEYDIER <yann@leydier.info>
+	* Project (AlignLine): Rewritten.
+	* Word (GetCharacterFront, GetCharacterBack, GetCharacters): Bugfix.
+	* Word (IsAligned, CharactersAligned): Added.
+
+2015-08-12 Yann LEYDIER <yann@leydier.info>
+	* AlignConfig: Added.
+	* AlignDialog: Added.
+
+2015-06-08 Yann LEYDIER <yann@leydier.info>
+	* TEIImpoter (fill_tree): Added <am> to OK element list.
+
+2015-06-05 Yann LEYDIER <yann@leydier.info>
+	* DetectLines: Updated.
+
+2015-06-02 Yann LEYDIER <yann@leydier.info>
+	* SimplifyCurve: Rewritten.
+	* GUI (add_point_to_line, rem_point_from_line): Added.
+
+2015-06-01 Yann LEYDIER <yann@leydier.info>
+	* Word (ClearAlignement): Added.
+	* Project (ClearAlignement): Added.
+	* GUI (add_line): Implemented.
+	* GUI (rem_line): Added.
+	* GUI (on_rmb_click): Now pops a menu up when clicking on a line.
+
+2015-05-29 Yann LEYDIER <yann@leydier.info>
+	* GUI: Reactivated UI to add lines.
+
+2015-03-17 Yann LEYDIER <yann@leydier.info>
+	* ValidationPanel (add_element): Now takes one extra argument for the position
+		 in the word.
+	* GUI (display_search): Now displays all occurrences in a same word.
+
+2015-03-12 Yann LEYDIER <yann@leydier.info>
+	* Project (ComputeWordFrontiers): Added.
+	* GUI: Reactivated on-image line and word edition.
+	* Align: Bugfix. Added condition to avoid empty segments. Added condition
+					for equivalent paths.
+	* ImageSignature (cutproba): Added.
+
+2015-03-11 Yann LEYDIER <yann@leydier.info>
+	* GUI: Show lines/words/characters now a radio group. Added keyboard
+			shortcuts.
+	* GUI (edit_overlays): Added.
+
+2015-03-04 Yann LEYDIER <yann@leydier.info>
+	* Document (read_tei): Now ignores <cb> with @rend="hidden".
+	* TEIImporter (fill_tree): Now <note> and <teiHeader> are uncheck by
+														 default.
+
+2015-03-03 Yann LEYDIER <yann@leydier.info>
+	* GUI (display_search): Bugfix.
+
+2014-12-16 Yann LEYDIER <yann@leydier.info>
+	* TEIImporter (fill_tree): Added more elements to select/deselect.
+	* DetectLines: Now merges facing lines.
+
+2014-12-15 Yann LEYDIER <yann@leydier.info>
+	* TEIImporter: Refactored.
+	* TEINode: Removed.
+	* EntityManager (ExpandXML): Rewritten.
+	* GUI (fill_tree): Now escapes special characters.
+	* Document (read_tei): Now reads <pc>.
+
+2014-11-18 Yann LEYDIER <yann@leydier.info>
+	* DetectLines, detectColumns: Now uses the read TEI structure to guide the segmentation.
+
+2014-09-25 Yann LEYDIER <yann@leydier.info>
+	* ValidationPanel (load_tooltip_img): Now frontiers are red.
+
+2014-09-24 Yann LEYDIER <yann@leydier.info>
+	* GUI: Wording and menu structure.
+
+2014-09-23 Yann LEYDIER <yann@leydier.info>
+	* ValidationPanel: Now images are loaded asynchronously.
+	* WordPath (operator!=): Added.
+
+2014-09-17 Yann LEYDIER <yann@leydier.info>
+	* EntityManager (ExpandXML): Now throws exception.
+
+2014-09-10 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ExtractSignature): Bugfix.
+
+2014-09-09 Yann LEYDIER <yann@leydier.info>
+	* Document (Load, Save): Refactored.
+	* Word (SetIgnoreList, GetIgnoreList): Added.
+	* Word (GetCharacterFront, GetCharacterBack): Added.
+
+2014-09-06 Yann LEYDIER <yann@leydier.info>
+	* Project (AlignCharacters): Compute aligned groups of Unicode characters.
+	* GUI (find_word): Added Close button.
+
+2014-09-05 Yann LEYDIER <yann@leydier.info>
+	* Project (AlignRange): Bugfix.
+	* DetectLines: Added simplification of polylines.
+
+2014-09-04 Yann LEYDIER <yann@leydier.info>
+	* Project: Now saves data in structure.xml instead of tei.xml.
+	* Project: Now stores TEISelectionNode.
+	* Document (read_tei): Rewritten using TEISelectionNode.
+	* Document (remove_ent): Removed. Now using EntityManager.
+	* GUI (display_search): Bugfix.
+
+2014-09-01 Yann LEYDIER <yann@leydier.info>
+	* Config (GetUserDirectory): Added.
+	* EntityManager: Now saves to user directory.
+	* EntityManager (Reload): Added.
+	* EntityDialog: Refactoring.
+
+2014-08-29 Yann LEYDIER <yann@leydier.info>
+	* EntityDialog, EntityManager, TEIImporter, TEINode: Added.
+	* ValidationPanel: Is now independent from Validation.
+	* Project, Structure, GUI: Added character alignment.
+	* Project, Structure, GUI: Frontiers are now polylines.
+
+2014-07-18 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (cstr): Bugfix.
+
+2014-07-09 Yann LEYDIER <yann@leydier.info>
+	* Converted to libcrn3.
+
+2014-04-29 Yann LEYDIER <yann@leydier.info>
+	* remove_ent: Now also removes spaces, tabulations and line feeds.
+	* remove_ent: Now can handle single &.
+	* read_tei: Now ignores "listWit" and "listBibl".
+	* read_tei: Now searches for "abbr" in "choice".
+
+2014-04-14 Yann LEYDIER <yann@leydier.info>
+	* Updated © info.
+
+2014-01-23 Yann LEYDIER <yann@leydier.info>
+	* Project (ExportCharacters): Now silently ignores characters which cannot
+																be written to filesystem.
+
+2014-01-17 Yann LEYDIER <yann@leydier.info>
+	* Project (ExportStats): Now exports stats on preceding final + initial and
+													 final + next initial digrams.
+	* Project (PropagateValidation): Added.
+	* GUI (propagate_validation): Added.
+	* Validation (conclude_word): Now calls PropagateValidation().
+
+2013-12-20 Yann LEYDIER <yann@leydier.info>
+	* Project (AlignRange): Added.
+	* Project (AlignLine): Now uses AlignRange() to preserve validated words.
+	* Line (Align): Removed.
+
+2013-12-19 Yann LEYDIER <yann@leydier.info>
+	* GUI (export_chars): Added (+ menu entry).
+	* Project (ExportCharacters): Added.
+	* Align: Added.
+	* Line (Align): Modified to use generic Align() function.
+	* Line (featurize): Removed.
+
+2013-12-18 Yann LEYDIER <yann@leydier.info>
+	* Project (getSignature): Added.
+
+2013-12-17 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ClearFeatures): Added.
+	* Project (ClearSignatures): Added.
+	* GUI (clear_sig): Added (+ menu entry).
+
+2013-12-16 Yann LEYDIER <yann@leydier.info>
+	* Document (GetLine, GetColumn, GetView): Added.
+
+2013-12-13 Yann LEYDIER <yann@leydier.info>
+	* Line (featurize): Removed spaces.
+	* Line (Align): Now correctly resets the left/right corrections.
+	* GUI (overlay_changed): Does not wrongfully shift bounds by 1 pixel anymore.
+	* GraphicalLine (ExtractFeatures): New feature set.
+
+2013-11-25 Yann LEYDIER <yann@leydier.info>
+	* Project (ExportStats): Updated to save zip files.
+
+2013-11-21 Yann LEYDIER <yann@leydier.info>
+	* GUI (set_need_save): Added (indicates in the titlebar that a save is
+			needed).
+	* Validation (cstr): Now takes arguments to asynchronously save the
+											 changes and to invoke a refresh of the display at exit.
+	* GUI (set_win_title): Added.
+	* Project (GetTitle): Added.
+	* GUI, Validation: Now open maximised.
+	* GUI (setup_window): Added (makes some menus unsensitive when no project is
+			loaded).
+	* ValidationPanel: Now holds the list of image names for tooltips.
+
+2013-11-20 Yann LEYDIER <yann@leydier.info>
+	* GUI (display_word): Renamed display_update_word.
+	* GUI (display_update_word): Now validates a word if both sides were
+															 manually corrected.
+	* GUI (overlay_changed): Words cannot be shrunk to less than 5 pixels.
+
+2013-11-04 Yann LEYDIER <yann@leydier.info>
+	* WordPath (cstr(String), ToString): Added.
+	* GUI (display_word): Added.
+	* GUI (overlay_changed): Linked words to their neighbours.
+	* GUI (on_rmb_clicked): Added. 
+													Now right mouse button click on a word cycles
+													through validation state.
+	* Project (ExportStats): Now counts the length of manual corrections to words.
+
+2013-11-04 Yann LEYDIER <yann@leydier.info>
+	* read_tei: Now ignores <hi rend="initiale>…</hi>.
+	* read_tei: Now replaces <ex>con</ex> with ꝯ.
+
+2013-10-31 Yann LEYDIER <yann@leydier.info>
+	* GUI (overlay_changed): Now growing words make their neighbours shrink.
+
+2013-10-25 Yann LEYDIER <yann@leydier.info>
+	* GUI (overlay_changed): Now user can resize words.
+	* Line, Word (GetCorrected, SetCorrected): Added.
+	* Project (ExportStats): Now counts manually corrected lines and words.
+
+2013-10-21 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (SetBounds, SetLeft, SetRight): Added.
+	* GUI (overlay_changed): Now user can resize lines.
+	* GUI (display_line): Added.
+
+2013-09-12 Yann LEYDIER <yann@leydier.info>
+	* Validation (set_color): Now sets 3 different colors for custom labels.
+
+2013-09-09 Yann LEYDIER <yann@leydier.info>
+	* Project (ExportStats): Addes stats on preceding final and next initial
+													 letters.
+	* Word (GetImageSignature, SetImageSignature): Added.
+	* Line (Align): Store image signature of the words.
+	* Validation (read_word): Modified clustering to use image signature.
+	* Validation ValidationPanel (clear): Sets scrollbar position to 0.
+
+2013-09-06 Yann LEYDIER <yann@leydier.info>
+	* Project (ExportStats): Added stats on initial and final letters.
+	* Validation (read_word): Added clustering.
+
+2013-09-05 Yann LEYDIER <yann@leydier.info>
+	* GUI, Project (Align): Added progress bars.
+	* GUI, Project (Align): Optimized.
+	* DetectLine: Bugfix (some lines had a null luminance threshold).
+
+2013-09-04 Yann LEYDIER <yann@leydier.info>
+	* detectColumns: Rewritten.
+
+2013-08-21 Yann LEYDIER <yann@leydier.info>
+	* Validation ValidationPanel (tooltip): Added.
+
+2013-08-16 Yann LEYDIER <yann@leydier.info>
+	* Project (ExportStats): Added.
+
+2013-08-14 Yann LEYDIER <yann.leydier@corenum.fr>
+	* Validation: Added option to ask for validation on unmodified words
+	everytime.
+	* Validation: Added a margin in word occurrence display.
+	* Validation: TreeView keyboard events are ignored.
+
+2013-08-12 Yann LEYDIER <yann@leydier.info>
+	* Validation: Now stores unmodified visited words for validation.
+	* GUI: Added save window.
+	* GUI: Added font selection dialog for image overlays
+
+2013-08-09 Yann LEYDIER <yann@leydier.info>
+	* Validation: Now using categories and colors
+	* Structure: Added page id, column number and line number.
+
+2013-08-06 Yann LEYDIER <yann@leydier.info>
+	* Project: Progress bar in constructor
+	* GUI: Automatic centering of the image on selected object
+	* Validation: Added.
+
+2013-07-29 Yann LEYDIER <yann@leydier.info>
+	* GUI: Project importation.
+
+2013-05-14 Yann LEYDIER <yann@leydier.info>
+	* project created
+
