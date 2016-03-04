@@ -127,7 +127,15 @@ void CharacterDialog::compute_distmat()
 	const auto character = crn::String{Glib::ustring{row[columns.value]}.c_str()};
 	auto ids = std::vector<Id>{};
 	for (const auto &v : characters[character])
-		ids.insert(ids.end(), v.second.begin(), v.second.end());
+	{
+		//ids.insert(ids.end(), v.second.begin(), v.second.end());
+		auto view = doc.GetView(v.first);
+		for (const auto &id : v.second)
+			if (view.IsAligned(id))
+			{
+				ids.push_back(id);
+			}
+	}
 	auto dm = crn::SquareMatrixDouble{ids.size(), 0.0};
 
 	const auto res = Gtk::MessageDialog{*this,
@@ -157,10 +165,11 @@ void CharacterDialog::compute_gm(const crn::String &character, const std::vector
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &c : v.second)
-		{
-			grad.emplace_back(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient());
-			prog->Advance();
-		}
+			if (view.IsAligned(c))
+			{
+				grad.emplace_back(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient());
+				prog->Advance();
+			}
 	}
 	for (auto i : crn::Range(ids))
 	{
@@ -182,10 +191,11 @@ void CharacterDialog::compute_gsc(const crn::String &character, const std::vecto
 	{
 		auto view = doc.GetView(v.first);
 		for (const auto &c : v.second)
-		{
-			grad.push_back(GSCF::CreateRatio(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient(), 6, 1));
-			prog->Advance();
-		}
+			if (view.IsAligned(c))
+			{
+				grad.push_back(GSCF::CreateRatio(*view.GetZoneImage(view.GetCharacter(c).GetZone())->GetGradient(), 6, 1));
+				prog->Advance();
+			}
 	}
 	for (auto i : crn::Range(ids))
 	{
