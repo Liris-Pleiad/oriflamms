@@ -1,4 +1,4 @@
-/* Copyright 2015 Université Paris Descartes
+/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
  * 
  * file: OriDocument.h
  * \author Yann LEYDIER
@@ -278,9 +278,9 @@ namespace ori
 			/*! \brief Resets the left and right corrections of a word */
 			void ResetCorrections(const Id &id);
 			/*! \brief Gets the total left correction of a word */
-			int GetLeftCorrection(const Id &id);
+			int GetLeftCorrection(const Id &id) const;
 			/*! \brief Gets the total right correction of a word */
-			int GetRightCorrection(const Id &id);
+			int GetRightCorrection(const Id &id) const;
 
 			/*! \brief Computes alignment on a page */
 			void AlignPage(AlignConfig conf, const Id &page_id, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
@@ -292,6 +292,9 @@ namespace ori
 			void AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, size_t last_word);
 			/*! \brief Aligns the characters in a word */
 			void AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &word_id);
+
+			/*! \brief	Checks if an element is associated to a non-empty zone */
+			bool IsAligned(const Id &id) const;
 
 		private:
 			struct Impl;
@@ -360,7 +363,7 @@ namespace ori
 			/*! \brief Propagates the validation of word alignment */
 			void PropagateValidation(crn::Progress *prog = nullptr);
 
-			/*! \brief Gets the list of characters sorted by Unicode value */
+			/*! \brief	Exports list of characters sorted firstly by Unicode value and then by view id */
 			std::map<crn::String, std::unordered_map<Id, std::vector<Id>>> CollectCharacters() const;
 
 			const Glyph& GetGlyph(const Id &id) const;

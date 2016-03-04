@@ -1178,7 +1178,7 @@ void View::UpdateRightFrontier(const Id &id, int x)
  * \param[in]	id	the id of the word
  * \return	the total left correction of the word
  */
-int View::GetLeftCorrection(const Id &id)
+int View::GetLeftCorrection(const Id &id) const
 {
 	auto wit = pimpl->struc.words.find(id);
 	if (wit == pimpl->struc.words.end())
@@ -1191,7 +1191,7 @@ int View::GetLeftCorrection(const Id &id)
  * \param[in]	id	the id of the word
  * \return	the total right correction of the word
  */
-int View::GetRightCorrection(const Id &id)
+int View::GetRightCorrection(const Id &id) const
 {
 	auto wit = pimpl->struc.words.find(id);
 	if (wit == pimpl->struc.words.end())
@@ -1483,6 +1483,57 @@ void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &wo
 			break;
 		}
 	}
+}
+
+/*! Checks if an element is associated to a non-empty zone */
+bool View::IsAligned(const Id &id) const
+{
+	auto zid = id;
+
+	// is it a page?
+	auto pit = pimpl->struc.pages.find(id);
+	if (pit != pimpl->struc.pages.end())
+	{
+		zid = pit->second.GetZone();
+	}
+	else
+	{ // is it a column?
+		auto cit = pimpl->struc.columns.find(id);
+		if (cit != pimpl->struc.columns.end())
+		{
+			zid = cit->second.GetZone();
+		}
+		else
+		{ // is it a line?
+			auto lit = pimpl->struc.lines.find(id);
+			if (lit != pimpl->struc.lines.end())
+			{
+				zid = lit->second.GetZone();
+			}
+			else
+			{ // is it a word?
+				auto wit = pimpl->struc.words.find(id);
+				if (wit != pimpl->struc.words.end())
+				{
+					zid = wit->second.GetZone();
+				}
+				else
+				{ // is it a character?
+					auto chit = pimpl->struc.characters.find(id);
+					if (chit != pimpl->struc.characters.end())
+					{
+						zid = chit->second.GetZone();
+					}
+				}
+			}
+		}
+	}
+	// have we found a zone?
+	auto zit = pimpl->zones.find(zid);
+	if (zit != pimpl->zones.end())
+		return zit->second.GetPosition().IsValid();
+	else
+		return false;
 }
 
 const crn::ImageGray& View::getWeight() const

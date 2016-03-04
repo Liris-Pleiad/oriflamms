@@ -1,3 +1,11 @@
+2016-02-04 Yann LEYDIER <yann@leydier.info>
+	* CharacterDialog (compute_distmat, compute_gm, compute_gsc): Now skip
+			unaligned characters.
+
+2016-02-03 Yann LEYDIER <yann@leydier.info>
+	* View (GetLeftCorrection, GetRightCorrection): Are now const.
+	* View (IsAligned): Added.
+
 2016-02-02 Yann LEYDIER <yann@leydier.info>
 	* GUI (tree_selection_changed): Now displays lines, words and characters at
 			page and view levels.
