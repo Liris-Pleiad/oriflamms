@@ -35,7 +35,6 @@ if(WIN32)
 	install(FILES "oriflamms.ico" DESTINATION ${RUNTIME_INSTALL_PATH})
 endif(WIN32)
 
-install(FILES "orient.xml" DESTINATION ${ORIFLAMMS_DATA_PATH})
 install(FILES "orisig.xml" DESTINATION ${ORIFLAMMS_DATA_PATH})
 
 
