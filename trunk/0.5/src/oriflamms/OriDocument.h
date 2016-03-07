@@ -333,7 +333,6 @@ namespace ori
 			mutable crn::xml::Element el;
 	};
 
-	class TEISelectionNode;
 	class Document
 	{
 		public:
@@ -348,6 +347,8 @@ namespace ori
 			const crn::StringUTF8& GetName() const noexcept { return name; }
 			const crn::Path& GetBase() const noexcept { return base; }
 			const crn::StringUTF8& ErrorReport() const noexcept { return report; }
+			const crn::StringUTF8& WarningReport() const noexcept { return warningreport; }
+			void TidyUp(crn::Progress *prog);
 
 			void Save() const;
 
@@ -393,8 +394,9 @@ namespace ori
 			};
 
 		private:
-			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel, std::multimap<int, Id> &milestones, char lpos);
-			void readTextCElements(crn::xml::Element &el, ElementPosition &pos, const TEISelectionNode& teisel);
+			void readTextWElements(crn::xml::Element &el, ElementPosition &pos, std::multimap<int, Id> &milestones, char lpos);
+			void readTextCElements(crn::xml::Element &el, ElementPosition &pos);
+			View getCleanView(const Id &id);
 
 			using ViewRef = std::weak_ptr<View::Impl>;
 			std::unordered_map<Id, ViewRef> view_refs; // weak references to views
@@ -406,7 +408,7 @@ namespace ori
 
 			crn::Path base;
 			crn::StringUTF8 name;
-			crn::StringUTF8 report;
+			crn::StringUTF8 report, warningreport;
 			crn::xml::Document global_onto;
 			mutable crn::xml::Document local_onto;
 			std::unique_ptr<crn::xml::Element> charDecl;
