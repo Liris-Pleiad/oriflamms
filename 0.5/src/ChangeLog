@@ -10,6 +10,10 @@
 	* Document (getCleanView, TidyUp, WarningReport): Added.
 	* GUI (load_project): Now ask the user if she wants to correct
 			inconsistencies or abort.
+	* EntityManager, EntityDialog: Removed.
+	* ExceptionTEISelection, TEIImporter, TEISelectionNode: Removed.
+	* TEIDisplay: Added.
+	* GUI (show_tei): Added.
 
 2016-02-04 Yann LEYDIER <yann@leydier.info>
 	* CharacterDialog (compute_distmat, compute_gm, compute_gsc): Now skip

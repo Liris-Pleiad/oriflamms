@@ -14,10 +14,10 @@
 #include <CRNUtils/CRNXml.h>
 #include <CRNIO/CRNIO.h>
 #include <CRNi18n.h>
-#include <OriTEIImporter.h>
-#include <OriEntityDialog.h>
+#include <OriTEIDisplay.h>
 #include <CRNUtils/CRNAtScopeExit.h>
 #include <OriCharacter.h>
+#include <OriTEIDisplay.h>
 #include <gtkmm/accelmap.h>
 
 using namespace ori;
@@ -104,6 +104,7 @@ GUI::GUI():
 
 	// Structure menu
 	actions->add(Gtk::Action::create("structure-menu", _("_Structure"), _("Structure")));
+	actions->add(Gtk::Action::create("show-tei", Gtk::Stock::INDENT, _("Show _TEI structure"), _("Show TEI structure")), sigc::mem_fun(this, &GUI::show_tei));
 	actions->add(Gtk::Action::create("add-line", Gtk::Stock::INDENT, _("Add _line"), _("Add line")), sigc::mem_fun(this, &GUI::add_line));
 	actions->get_action("add-line")->set_sensitive(false);
 
@@ -113,7 +114,6 @@ GUI::GUI():
 	actions->add(Gtk::RadioAction::create(g, "validation-unit", _("_Unit validation"), "Unit validation"));
 	actions->add(Gtk::RadioAction::create(g, "validation-batch", _("_Batch validation"), "Batch validation"));
 	actions->add(Gtk::Action::create("change-font", Gtk::Stock::SELECT_FONT, _("Change _font"), _("Change font")), sigc::mem_fun(this, &GUI::change_font));
-	actions->add(Gtk::Action::create("manage-entities", Gtk::Stock::EDIT, _("Manage _entities"), _("Manage entities")), sigc::mem_fun(this,&GUI::manage_entities));
 
 	// Line menu
 	actions->add(Gtk::Action::create("add-point-to-line", Gtk::Stock::ADD, _("_Add point"), _("Add point")));
@@ -148,8 +148,9 @@ GUI::GUI():
 		"			<menuitem action='go-to'/>"
 		"		</menu>"
 		"		<menu action='structure-menu'>"
-		"			<menuitem action='edit'/>"
+		"			<menuitem action='show-tei'/>"
 		"			<separator/>"
+		"			<menuitem action='edit'/>"
 		"			<menuitem action='add-line'/>"
 		"		</menu>"
 		"		<menu action='align-menu'>"
@@ -169,7 +170,6 @@ GUI::GUI():
 		"			<menuitem action='validation-batch'/>"
 		"			<menuitem action='validation-unit'/>"
 		"			<menuitem action='change-font'/>"
-		"			<menuitem action='manage-entities'/>"
 		"		</menu>"
 		"		<menu action='app-help-menu'>"
 		"			<menuitem action='app-about'/>"
@@ -535,6 +535,15 @@ void GUI::set_win_title()
 		t += ")";
 	}
 	set_title(t);
+}
+
+void GUI::show_tei()
+{
+	if (doc)
+	{
+		TEIDisplay disp(doc->GetBase() / "texts" / doc->GetName() + "-w.xml" , doc->GetBase() / "texts" / doc->GetName() + "-w.xml", *this);
+		disp.run();
+	}
 }
 
 void GUI::add_line()
@@ -1384,15 +1393,6 @@ void GUI::propagate_validation()
 	pwin.run(sigc::bind(sigc::mem_fun(*doc, &Document::PropagateValidation), pwin.get_crn_progress(id)));
 	set_need_save();
 	tree_selection_changed(false); // update display
-}
-
-void GUI::manage_entities()
-{
-	ori::EntityDialog mapwindow(*this);
-	if (mapwindow.run() == Gtk::RESPONSE_ACCEPT)
-		EntityManager::Save();
-	else
-		EntityManager::Reload();
 }
 
 void GUI::display_search(Gtk::Entry *entry, ori::ValidationPanel *panel)

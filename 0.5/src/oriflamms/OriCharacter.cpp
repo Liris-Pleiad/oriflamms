@@ -1,4 +1,4 @@
-/* Copyright 2015 Université Paris Descartes
+/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
  *
  * file: OriCharacter.cpp
  * \author Yann LEYDIER

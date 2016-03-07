@@ -11,7 +11,6 @@
 #include <OriLines.h>
 #include <CRNAI/CRNPathFinding.h>
 #include <CRNImage/CRNDifferential.h>
-#include <OriTEIImporter.h>
 #include <OriViewImpl.h>
 #include <OriTextSignature.h>
 #include <OriFeatures.h>

@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2016 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes, ENS-Lyon
  *
  * file: OriGUI.h
  * \author Yann LEYDIER
@@ -28,6 +28,7 @@ namespace ori
 			void load_project();
 			void setup_window();
 			void set_win_title();
+			void show_tei();
 			void add_line();
 			void rem_line(const Id &l);
 			void add_point_to_line(const Id &l, int x, int y);
@@ -45,7 +46,6 @@ namespace ori
 			void save_project();
 			void on_close();
 			void change_font();
-			void manage_entities();
 			void stats();
 			void display_words(const Id &linid);
 			void display_line(const Id &linid);
