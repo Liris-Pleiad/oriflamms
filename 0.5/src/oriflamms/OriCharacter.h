@@ -30,6 +30,7 @@ namespace ori
 
 			void update_buttons();
 			void compute_distmat();
+			void update_distmat();
 			void compute_gm(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog);
 			void compute_gsc(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog);
 			void delete_dm();
@@ -43,6 +44,7 @@ namespace ori
 			model columns;
 			Gtk::Label dm_ok;
 			Gtk::Button compute_dm;
+			Gtk::Button update_dm;
 			Gtk::Button clear_dm;
 			Gtk::Button show_clusters;
 	};

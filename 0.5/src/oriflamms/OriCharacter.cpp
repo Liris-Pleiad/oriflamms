@@ -28,6 +28,7 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	characters(docu.CollectCharacters()),
 	dm_ok(_(("OK"))),
 	compute_dm(_("Compute")),
+	update_dm(_("Update")),
 	clear_dm(Gtk::Stock::CLEAR),
 	show_clusters(_("Show and edit clusters"))
 {
@@ -69,6 +70,8 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	hbox2->pack_start(dm_ok, true, false, 0);
 	hbox2->pack_start(compute_dm, true, false, 0);
 	compute_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::compute_distmat));
+	hbox2->pack_start(update_dm, true, false, 0);
+	update_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::update_distmat));
 	tab->attach(clear_dm, 2, 3, 0, 1, Gtk::FILL, Gtk::FILL);
 	clear_dm.signal_clicked().connect(sigc::mem_fun(this, &CharacterDialog::delete_dm));
 
@@ -97,6 +100,7 @@ void CharacterDialog::update_buttons()
 	{
 		dm_ok.hide();
 		compute_dm.hide();
+		update_dm.hide();
 		clear_dm.set_sensitive(false);
 		show_clusters.set_sensitive(false);
 	}
@@ -105,15 +109,31 @@ void CharacterDialog::update_buttons()
 		const auto character = crn::String{Glib::ustring{(*it)[columns.value]}.c_str()};
 		try
 		{
-			doc.GetDistanceMatrix(character);
+			const auto &dm = doc.GetDistanceMatrix(character);
 			compute_dm.hide();
 			dm_ok.show();
 			clear_dm.set_sensitive(true);
 			show_clusters.set_sensitive(true);
+
+			auto ids = std::vector<Id>{};
+			for (const auto &v : characters[character])
+			{
+				auto view = doc.GetView(v.first);
+				for (const auto &id : v.second)
+					if (view.IsAligned(id))
+					{
+						ids.push_back(id);
+					}
+			}
+			if ((ids.size() != dm.first.size()) || !std::equal(ids.begin(), ids.end(), dm.first.begin()))
+				update_dm.show();
+			else
+				update_dm.hide();
 		}
 		catch (crn::ExceptionNotFound&)
 		{
 			compute_dm.show();
+			update_dm.hide();
 			dm_ok.hide();
 			clear_dm.set_sensitive(false);
 			show_clusters.set_sensitive(false);
@@ -155,6 +175,12 @@ void CharacterDialog::compute_distmat()
 	}
 	doc.SetDistanceMatrix(character, std::move(ids), std::move(dm));
 	update_buttons();
+}
+
+void CharacterDialog::update_distmat()
+{
+	delete_dm();
+	compute_distmat();
 }
 
 void CharacterDialog::compute_gm(const crn::String &character, const std::vector<Id> &ids, crn::SquareMatrixDouble &dm, crn::Progress *prog)

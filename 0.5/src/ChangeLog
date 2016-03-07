@@ -1,3 +1,16 @@
+2016-02-07 Yann LEYDIER <yann@leydier.info>
+	* CharacterDialog (update_buttons): Now detects if the distance matrix is
+			obsolete.
+	* CharacterDialog (update_distmat): Added.
+	* Document (cstr, readTextWElements, readTextCElements): Not using
+			TEISelection anymore.
+	* GUI (load_project): Not using TEISelection anymore.
+	* View Impl (readLinkElements): Is now able to either report inconsistencies 
+			or correct them.
+	* Document (getCleanView, TidyUp, WarningReport): Added.
+	* GUI (load_project): Now ask the user if she wants to correct
+			inconsistencies or abort.
+
 2016-02-04 Yann LEYDIER <yann@leydier.info>
 	* CharacterDialog (compute_distmat, compute_gm, compute_gsc): Now skip
 			unaligned characters.

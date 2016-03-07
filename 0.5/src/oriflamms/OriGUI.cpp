@@ -348,66 +348,39 @@ void GUI::load_project()
 			pw.set_terminate_on_exception(false);
 			auto i = pw.add_progress_bar("");
 			doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), pathname, pw.get_crn_progress(i)));
-			if (!doc)
-				throw 1;
-			const auto &error = doc->ErrorReport();
-			if (error.IsNotEmpty())
+			if (doc)
 			{
-				GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
+				const auto &warning = doc->WarningReport();
+				if (warning.IsNotEmpty())
+				{
+					Gtk::MessageDialog md((_("There were inconsistencies while reading the file. Do you want to correct them?") + "\n"_s + warning).CStr(),
+							false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
+					if (md.run() == Gtk::RESPONSE_YES)
+					{
+						GtkCRN::ProgressWindow pw(_("Tidying project up…"), this, true);
+						pw.set_terminate_on_exception(false);
+						auto i = pw.add_progress_bar("");
+						pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::TidyUp), pw.get_crn_progress(i)));
+					}
+					else
+					{
+						doc.reset();
+					}
+				}
+			}
+			if (doc)
+			{
+				const auto &error = doc->ErrorReport();
+				if (error.IsNotEmpty())
+				{
+					GtkCRN::App::show_message((_("Non-fatal incidents occurred:") + "\n"_s + error).CStr(), Gtk::MESSAGE_WARNING);
+				}
 			}
 		}
 		catch (crn::Exception &ex)
 		{
 			doc.reset();
 			GtkCRN::App::show_exception(ex, false);
-		}
-		catch (int)
-		{
-			if (!crn::IO::Access(pathname / "oriflamms"_p / "tei_selection.xml"_p, crn::IO::EXISTS))
-			{
-				if (!crn::IO::Access(pathname / "texts"_p, crn::IO::EXISTS))
-				{
-					GtkCRN::App::show_message(_("The folder is not an Oriflamms project."), Gtk::MESSAGE_ERROR);
-					return;
-				}
-				auto dir = crn::IO::Directory(pathname / "texts"_p);
-				for (const auto fname : dir.GetFiles())
-					if (fname.EndsWith("-c.xml"))
-					{
-						auto fname2 = fname;
-						fname2[fname2.Size() - 5] = 'w';
-						TEIImporter impdial{fname, fname2, *this};
-						if (impdial.run() == Gtk::RESPONSE_ACCEPT)
-						{
-							impdial.hide();
-							impdial.export_selected_elements().Save(pathname / "oriflamms"_p / "tei_selection.xml"_p);
-							try
-							{
-								GtkCRN::ProgressWindow pw(_("Reading files…"), this, true);
-								pw.set_terminate_on_exception(false);
-								auto i = pw.add_progress_bar("");
-								doc = pw.run<decltype(doc)>(sigc::bind(sigc::ptr_fun(&createdoc), pathname, pw.get_crn_progress(i)));
-								if (!doc)
-									throw 1;
-
-								const auto &error = doc->ErrorReport();
-								if (error.IsNotEmpty())
-								{
-									GtkCRN::App::show_message(error.CStr(), Gtk::MESSAGE_WARNING);
-								}
-							}
-							catch (crn::Exception &ex)
-							{
-								GtkCRN::App::show_exception(ex, false);
-							}
-						}
-						else
-						{
-							GtkCRN::App::show_message(_("Aborted"), Gtk::MESSAGE_ERROR);
-						}
-					}
-
-			}
 		}
 
 		try
