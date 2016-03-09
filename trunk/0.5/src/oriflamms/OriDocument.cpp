@@ -1272,6 +1272,25 @@ void View::ResetCorrections(const Id &id)
 	val.left_corr = val.right_corr = 0;
 }
 
+/*! Computes alignment on the view
+ * \param[in]	conf	alignment options
+ * \param[in]	viewprog	progress bar on pages
+ * \param[in]	pageprog	progress bar on columns
+ * \param[in]	colprog	progress bar on lines
+ * \param[in]	linprog	progress bar on words
+ */
+void View::AlignAll(AlignConfig conf, crn::Progress *viewprog, crn::Progress *pageprog, crn::Progress *colprog, crn::Progress *linprog)
+{
+	if (viewprog)
+		viewprog->SetMaxCount(int(GetPages().size()));
+	for (const auto pid : GetPages())
+	{
+		AlignPage(conf, pid, pageprog, colprog, linprog);
+		if (viewprog)
+			viewprog->Advance();
+	}
+}
+
 /*! Computes alignment on a page
  * \param[in]	conf	alignment options
  * \param[in]	page_id	the id of the page
@@ -2082,7 +2101,9 @@ void Document::TidyUp(crn::Progress *prog)
 				if (!czone.GetPosition().IsValid())
 				{
 					if (cbox.IsValid())
+					{
 						czone.SetPosition(cbox);
+					}
 					else
 					{ // need to compute median lines from scratch
 						if (v.GetGraphicalLines(cid).empty())
@@ -2183,19 +2204,19 @@ void Document::ClearSignatures(crn::Progress *prog)
 /*! Computes alignment on the whole document
  * \param[in]	conf	alignment options
  * \param[in]	docprog	progress bar on views
+ * \param[in]	viewprog	progress bar on pages
  * \param[in]	pageprog	progress bar on columns
  * \param[in]	colprog	progress bar on lines
  * \param[in]	linprog	progress bar on words
  */
-void Document::AlignAll(AlignConfig conf, crn::Progress *docprog, crn::Progress *pageprog, crn::Progress *colprog, crn::Progress *linprog)
+void Document::AlignAll(AlignConfig conf, crn::Progress *docprog, crn::Progress *viewprog, crn::Progress *pageprog, crn::Progress *colprog, crn::Progress *linprog)
 {
 	if (docprog)
 		docprog->SetMaxCount(int(views.size()));
 	for (const auto &vid : views)
 	{
 		auto view = GetView(vid);
-		for (const auto &pid : view.GetPages())
-			view.AlignPage(conf, pid, pageprog, colprog, linprog);
+		view.AlignAll(conf, viewprog, pageprog, colprog, linprog);
 
 		if (docprog)
 			docprog->Advance();
