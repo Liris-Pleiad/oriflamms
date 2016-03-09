@@ -282,6 +282,8 @@ namespace ori
 			/*! \brief Gets the total right correction of a word */
 			int GetRightCorrection(const Id &id) const;
 
+			/*! \brief Computes alignment on the view */
+			void AlignAll(AlignConfig conf, crn::Progress *viewprog = nullptr, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 			/*! \brief Computes alignment on a page */
 			void AlignPage(AlignConfig conf, const Id &page_id, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 			/*! \brief Computes alignment on a column */
@@ -360,7 +362,7 @@ namespace ori
 			/*! \brief Erases image signatures in the document */
 			void ClearSignatures(crn::Progress *prog);
 			/*! \brief Computes alignment on the whole document */
-			void AlignAll(AlignConfig conf, crn::Progress *docprog = nullptr, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
+			void AlignAll(AlignConfig conf, crn::Progress *docprog = nullptr, crn::Progress *viewprog = nullptr, crn::Progress *pageprog = nullptr, crn::Progress *colprog = nullptr, crn::Progress *linprog = nullptr);
 			/*! \brief Propagates the validation of word alignment */
 			void PropagateValidation(crn::Progress *prog = nullptr);
 

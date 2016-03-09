@@ -1,3 +1,12 @@
+2016-02-09 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ExtractFeatures): Bugfix.
+	* View (AlignAll): Added.
+	* GUI (align_selection): Now can align whole views.
+
+2016-02-08 Yann LEYDIER <yann@leydier.info>
+	* GUI (change_font): Now changes the whole application's font.
+	* GUI (load_project): Bugfix.
+
 2016-02-07 Yann LEYDIER <yann@leydier.info>
 	* CharacterDialog (update_buttons): Now detects if the distance matrix is
 			obsolete.

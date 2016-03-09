@@ -355,14 +355,7 @@ void GUI::load_project()
 				{
 					Gtk::MessageDialog md((_("There were inconsistencies while reading the file. Do you want to correct them?") + "\n"_s + warning).CStr(),
 							false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
-					if (md.run() == Gtk::RESPONSE_YES)
-					{
-						GtkCRN::ProgressWindow pw(_("Tidying project up…"), this, true);
-						pw.set_terminate_on_exception(false);
-						auto i = pw.add_progress_bar("");
-						pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::TidyUp), pw.get_crn_progress(i)));
-					}
-					else
+					if (md.run() != Gtk::RESPONSE_YES)
 					{
 						doc.reset();
 					}
@@ -370,6 +363,11 @@ void GUI::load_project()
 			}
 			if (doc)
 			{
+				GtkCRN::ProgressWindow pw(_("Tidying project up…"), this, true);
+				pw.set_terminate_on_exception(false);
+				auto i = pw.add_progress_bar("");
+				pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::TidyUp), pw.get_crn_progress(i)));
+
 				const auto &error = doc->ErrorReport();
 				if (error.IsNotEmpty())
 				{
@@ -1226,9 +1224,23 @@ void GUI::align_selection()
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		switch (view_depth)
 		{
+			case ViewDepth::View:
+				{
+					Gtk::TreeIter it = tv.get_selection()->get_selected();
+					auto viewid = Id{it->get_value(columns.id).c_str()};
+
+					auto ip = pw.add_progress_bar(_("Page"));
+					pw.get_crn_progress(ip)->SetType(crn::Progress::Type::ABSOLUTE);
+					auto ic = pw.add_progress_bar(_("Column"));
+					pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
+					auto il = pw.add_progress_bar(_("Line"));
+					pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
+					pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignAll), aligndial.get_config(), pw.get_crn_progress(ip), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
+					set_need_save();
+				}
+				break;
 			case ViewDepth::Page:
 				{
-					// page
 					Gtk::TreeIter it = tv.get_selection()->get_selected();
 					auto pageid = Id{it->get_value(columns.id).c_str()};
 
@@ -1242,7 +1254,6 @@ void GUI::align_selection()
 				break;
 			case ViewDepth::Column:
 				{
-					// column
 					Gtk::TreeIter it = tv.get_selection()->get_selected();
 					auto colid = Id{it->get_value(columns.id).c_str()};
 
@@ -1254,7 +1265,6 @@ void GUI::align_selection()
 				break;
 			case ViewDepth::Line:
 				{
-					// line
 					Gtk::TreeIter it = tv.get_selection()->get_selected();
 					auto linid = Id{it->get_value(columns.id).c_str()};
 
@@ -1279,11 +1289,13 @@ void GUI::align_all()
 		GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 		size_t iv = pw.add_progress_bar(_("View"));
 		pw.get_crn_progress(iv)->SetType(crn::Progress::Type::ABSOLUTE);
+		size_t ip = pw.add_progress_bar(_("Page"));
+		pw.get_crn_progress(ip)->SetType(crn::Progress::Type::ABSOLUTE);
 		size_t ic = pw.add_progress_bar(_("Column"));
 		pw.get_crn_progress(ic)->SetType(crn::Progress::Type::ABSOLUTE);
 		size_t il = pw.add_progress_bar(_("Line"));
 		pw.get_crn_progress(il)->SetType(crn::Progress::Type::ABSOLUTE);
-		pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::AlignAll), aligndial.get_config(), pw.get_crn_progress(iv), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
+		pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::AlignAll), aligndial.get_config(), pw.get_crn_progress(iv), pw.get_crn_progress(ip), pw.get_crn_progress(ic), pw.get_crn_progress(il), (crn::Progress*)nullptr));
 		set_need_save();
 		tree_selection_changed(false); // update display
 	}
@@ -1331,6 +1343,7 @@ void GUI::change_font()
 	Gtk::FontSelectionDialog dial;
 	dial.set_transient_for(*this);
 	dial.set_preview_text(_("The quick bꝛown fox jumpſ over the lazy dog."));
+	dial.set_font_name(get_settings()->property_gtk_font_name());
 	if (dial.run() == Gtk::RESPONSE_OK)
 	{
 		Pango::FontDescription fd(dial.get_font_name());
@@ -1342,6 +1355,8 @@ void GUI::change_font()
 		GtkCRN::Image::OverlayConfig &wunc(img.get_overlay_config(wordsOverlayUn));
 		wunc.font_family = ff;
 		img.force_redraw();
+
+		get_settings()->property_gtk_font_name() = dial.get_font_name();
 	}
 }
 

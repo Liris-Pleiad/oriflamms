@@ -20,8 +20,11 @@
 #include <numeric>
 #include <math.h>
 #include <OriViewImpl.h>
+#include <CRNIO/CRNIO.h>
 #include <CRNi18n.h>
+
 #include <iostream>
+#include <CRNUtils/CRNTimer.h>
 
 using namespace crn;
 using namespace literals;
@@ -73,7 +76,8 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 {
 	const auto sw = StrokesWidth(oig);
 	auto ig2 = std::make_shared<crn::ImageGray>(oig);
-	ig2->ScaleToSize(ig2->GetWidth(), ig2->GetHeight() / (2 * sw));
+	const auto XDIV = int(oig.GetWidth() / 2000 + 1);
+	ig2->ScaleToSize(ig2->GetWidth() / XDIV, ig2->GetHeight() / (2 * sw));
 	auto b = Block::New(ig2);
 	auto &ig = *b->GetGray();
 	const auto w = ig.GetWidth();
@@ -288,7 +292,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 		{
 			if (vp.GetBin(x) <= th)
 			{
-				thumbzones.emplace_back(bx, 0, int(x) - 1, int(oig.GetHeight()) - 1);
+				thumbzones.emplace_back(bx * XDIV, 0, int(x * XDIV) - 1, int(oig.GetHeight()) - 1);
 				in = false;
 			}
 		}
@@ -303,7 +307,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 	}
 	if (in)
 	{
-		thumbzones.emplace_back(bx, 0, int(oig.GetWidth()) - 1, int(oig.GetHeight()) - 1);
+		thumbzones.emplace_back(bx * XDIV, 0, int(oig.GetWidth()) - 1, int(oig.GetHeight()) - 1);
 	}
 	return thumbzones;
 }
@@ -510,11 +514,18 @@ using namespace ori;
 void View::detectLines()
 {
 	auto &b = GetBlock();
-	const auto sw = StrokesWidth(*b.GetGray());
 	const auto w = b.GetGray()->GetWidth();
 	const auto h = b.GetGray()->GetHeight();
+	//Timer::Start();
+	const auto sw = StrokesWidth(*b.GetGray());
+	//std::cout << "sw " << Timer::Stop() << std::endl;
+	//Timer::Start();
 	const auto lspace1 = EstimateLeading(*b.GetGray());
+	//std::cout << "leading " << Timer::Stop() << std::endl;
+	//Timer::Start();
 	auto igr = b.GetGradient(true, double(sw)); // precompute with a huge sigma
+	//std::cout << "gradient " << Timer::Stop() << std::endl;
+	//Timer::Start();
 
 	//////////////////////////////////////////////////////////////
 	// thumbnail
@@ -554,6 +565,8 @@ void View::detectLines()
 	//ig.Negative();
 	// x smoothing
 	ig.Convolve(MatrixDouble::NewGaussianLine(10.0));
+	//std::cout << "thumb " << Timer::Stop() << std::endl;
+	//Timer::Start();
 
 	//////////////////////////////////////////////////////////////
 	// compute enlightened marks' mask
@@ -615,6 +628,8 @@ void View::detectLines()
 			}
 		}
 	}
+	//std::cout << "enlightened marks " << Timer::Stop() << std::endl;
+	//Timer::Start();
 
 	//////////////////////////////////////////////////////////////
 	// vertical differential
@@ -645,6 +660,8 @@ void View::detectLines()
 				b.GetRGB()->At(x, y).b = 0;
 				*/
 	}
+	//std::cout << "columns " << Timer::Stop() << std::endl;
+	//Timer::Start();
 
 	//////////////////////////////////////////////////////////////
 	// Borders of the page
@@ -705,6 +722,8 @@ void View::detectLines()
 
 	//static int cnt = 0;
 	//enmask.SavePNG("enmask"_p + cnt++ + ".png"_p); // DISPLAY
+	//std::cout << "borders " << Timer::Stop() << std::endl;
+	//Timer::Start();
 
 	//////////////////////////////////////////////////////////////
 	// find lines
@@ -1046,6 +1065,8 @@ void View::detectLines()
 			}
 		} // line list not empty
 	} // for each column
+	//std::cout << "lines " << Timer::Stop() << std::endl;
+	//Timer::Start();
 }
 
 template<typename T> std::vector<T> doSimplify(const std::vector<T> &line, double maxdist)
@@ -1175,15 +1196,16 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 	// create subblock
 	const auto bx = GetFront().X;
 	const auto ex = GetBack().X;
-	const auto by = GetFront().Y - int(lh/2);
-	const auto ey = GetBack().Y + int(lh/2);
+	const auto by = Min(GetFront().Y, GetBack().Y) - int(lh/2);
+	const auto ey = Max(GetFront().Y, GetBack().Y) + int(lh/2);
 	auto lb = SBlock{};
 	try
 	{
 		lb = b.AddChildAbsolute(U"lines", Rect(bx, by, ex, ey));
 	}
-	catch (...)
+	catch (std::exception &ex)
 	{
+		CRNError("Cannot add sub-block line: "_s + ex.what());
 		return features;
 	}
 
@@ -1678,6 +1700,7 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 	{
 		if (b.HasTree(U"lines"))
 			b.RemoveChild(U"lines", lb);
+		CRNError("No signature found.");
 		return features;
 	}
 
