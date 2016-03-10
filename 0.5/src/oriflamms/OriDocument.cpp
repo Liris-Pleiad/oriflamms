@@ -690,6 +690,16 @@ void View::RemoveGraphicalLine(const Id &col_id, size_t index)
 	col.erase(col.begin() + index);
 }
 
+/*! Removes median lines from a column
+ * \throws	crn::ExceptionDomain	index > number of lines
+ * \param[in]	col_id	the id of a column
+ */
+void View::RemoveGraphicalLines(const Id &col_id)
+{
+	auto &col = pimpl->medlines[col_id];
+	col.clear();
+}
+
 /*! Removes all aligned coordinates in a column
  * \param[in]	col_id	the id of the column
  */

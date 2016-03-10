@@ -227,6 +227,8 @@ namespace ori
 			void AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &col_id);
 			/*! \brief Removes a median line from a column */
 			void RemoveGraphicalLine(const Id &col_id, size_t index);
+			/*! \brief Removes all median lines from a column */
+			void RemoveGraphicalLines(const Id &col_id);
 			/*! \brief Removes all aligned coordinates in a column */
 			void ClearAlignment(const Id &col_id);
 
