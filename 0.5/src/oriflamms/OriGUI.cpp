@@ -25,12 +25,14 @@ using namespace crn::literals;
 
 const Glib::ustring GUI::wintitle(Glib::ustring("Oriflamms ") + ORIFLAMMS_PACKAGE_VERSION + Glib::ustring(" – LIRIS, IRHT, LIPADE & ICAR"));
 const crn::String GUI::linesOverlay("lines");
+const crn::String GUI::superlinesOverlay("superlines");
 const crn::String GUI::wordsOverlay("zwords");
 const crn::String GUI::wordsOverlayOk("wordsok");
 const crn::String GUI::wordsOverlayKo("wordsko");
 const crn::String GUI::wordsOverlayUn("wordsun");
 const crn::String GUI::charOverlay("chars");
 const int GUI::minwordwidth(5);
+const int GUI::mincharwidth(3);
 
 
 GUI::GUI():
@@ -120,6 +122,9 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("rem-point-from-line", Gtk::Stock::REMOVE, _("_Remove point"), _("Remove point")));
 	actions->add(Gtk::Action::create("remove-line", Gtk::Stock::DELETE, _("_Delete line"), _("Delete line")));
 
+	// Superline menu
+	actions->add(Gtk::Action::create("remove-superline", Gtk::Stock::DELETE, _("_Delete line"), _("Delete line")));
+
 	ui_manager->insert_action_group(img.get_actions());
 
 	add_accel_group(ui_manager->get_accel_group());
@@ -195,6 +200,9 @@ GUI::GUI():
 		"		<separator/>"
 		"		<menuitem action='remove-line'/>"
 		"	</popup>"
+		"	<popup name='SuperLinePopup'>"
+		"		<menuitem action='remove-superline'/>"
+		"	</popup>"
 		"</ui>";
 
 	ui_manager->add_ui_from_string(ui_info);
@@ -240,6 +248,7 @@ GUI::GUI():
 	hb->add2(img);
 	hb->set_position(300);
 	img.show();
+	img.set_user_cursor(Gdk::Cursor(Gdk::PIRATE));
 	img.signal_overlay_changed().connect(sigc::mem_fun(this, &GUI::overlay_changed));
 	img.signal_rmb_clicked().connect(sigc::mem_fun(this, &GUI::on_rmb_clicked));
 	GtkCRN::Image::OverlayConfig &lc(img.get_overlay_config(linesOverlay));
@@ -249,6 +258,13 @@ GUI::GUI():
 	lc.moveable = false;
 	lc.can_jut_out = false;
 	lc.draw_arrows = false;
+	GtkCRN::Image::OverlayConfig &slc(img.get_overlay_config(superlinesOverlay));
+	slc.color1 = Gdk::Color("#990000");
+	slc.color2 = Gdk::Color("#FFFFFF");
+	slc.editable = false;
+	slc.moveable = false;
+	slc.can_jut_out = false;
+	slc.draw_arrows = false;
 	GtkCRN::Image::OverlayConfig &wc(img.get_overlay_config(wordsOverlay));
 	wc.color1 = Gdk::Color("#000099");
 	wc.color2 = Gdk::Color("#FFFFFF");
@@ -638,6 +654,20 @@ void GUI::rem_point_from_line(const Id &l, int x, int y)
 	display_line(l); // refresh
 }
 
+void GUI::rem_superline(const Id &colid, size_t num)
+{
+	current_view.RemoveGraphicalLine(colid, num);
+	// clear column alignment
+	current_view.ClearAlignment(colid);
+	// update display
+	auto s = int(current_view.GetGraphicalLines(colid).size()) + " "_s;
+	s += _("line(s)");
+	auto it = tv.get_selection()->get_selected(); // XXX this expects the removed line to be on the selected view!
+	it->set_value(columns.image, Glib::ustring(s.CStr()));
+	img.clear_selection();
+	tree_selection_changed(false);
+}
+
 Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 {
 	Glib::RefPtr<Gtk::TreeStore> newstore = Gtk::TreeStore::create(columns);
@@ -731,6 +761,7 @@ Glib::RefPtr<Gtk::TreeStore> GUI::fill_tree(crn::Progress *prog)
 void GUI::tree_selection_changed(bool focus)
 {
 	img.clear_overlay(linesOverlay);
+	img.clear_overlay(superlinesOverlay);
 	img.clear_overlay(wordsOverlay);
 	img.clear_overlay(wordsOverlayOk);
 	img.clear_overlay(wordsOverlayKo);
@@ -798,6 +829,7 @@ void GUI::tree_selection_changed(bool focus)
 								catch (...) {}
 							}
 						}
+						display_supernumerarylines(cid);
 					}
 				}
 				if (focus)
@@ -805,6 +837,8 @@ void GUI::tree_selection_changed(bool focus)
 					img.focus_on(fx, fy);
 				}
 
+				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active() && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+					img.set_selection_type(GtkCRN::Image::Overlay::User);
 				view_depth = ViewDepth::View;
 				break;
 			}
@@ -844,6 +878,7 @@ void GUI::tree_selection_changed(bool focus)
 							catch (...) {}
 						}
 					}
+					display_supernumerarylines(cid);
 				}
 				if (focus)
 				{ // set focus
@@ -859,6 +894,8 @@ void GUI::tree_selection_changed(bool focus)
 					img.focus_on(fx, fy);
 				}
 
+				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active() && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+					img.set_selection_type(GtkCRN::Image::Overlay::User);
 				view_depth = ViewDepth::Page;
 				break;
 			}
@@ -893,6 +930,7 @@ void GUI::tree_selection_changed(bool focus)
 						catch (...) {}
 					}
 				}
+				display_supernumerarylines(colid);
 				if (focus)
 				{ // set focus
 					if (!fx || !fy)
@@ -962,7 +1000,7 @@ void GUI::edit_overlays()
 	GtkCRN::Image::OverlayConfig &wc(img.get_overlay_config(wordsOverlay));
 	wc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wchar(img.get_overlay_config(charOverlay));
-	//wchar.editable = mod; TODO
+	wchar.editable = mod;
 
 	if (view_depth == ViewDepth::Column)
 	{
@@ -975,7 +1013,7 @@ void GUI::edit_overlays()
 		}
 	}
 
-	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active())
+	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active() || Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
 		tree_selection_changed(false);
 }
 
@@ -990,6 +1028,18 @@ void GUI::display_line(const Id &linid)
 		img.add_overlay_item(linesOverlay, linid, pts);
 	}
 	catch (...) { }
+}
+
+void GUI::display_supernumerarylines(const Id &colid)
+{
+	const auto &glines = current_view.GetGraphicalLines(colid);
+	for (auto tmp = current_view.GetColumn(colid).GetLines().size(); tmp < glines.size(); ++tmp)
+	{
+		auto pts = std::vector<crn::Point2DInt>{};
+		for (const auto &p : glines[tmp].GetMidline())
+			pts.emplace_back(int(p.X), int(p.Y));
+		img.add_overlay_item(superlinesOverlay, tmp, pts);
+	}
 }
 
 void GUI::display_words(const Id &linid)
@@ -1014,14 +1064,16 @@ void GUI::display_characters(const Id &linid)
 			const auto &character = current_view.GetCharacter(cid);
 			const auto &zid = character.GetZone();
 			auto ov = wordsOverlayUn;
-			// TODO change color if validated? wordsOverlayOk wordsOverlayKo
 			const auto &zone = current_view.GetZone(zid);
 			auto topbox = zone.GetPosition();
 			if (!topbox.IsValid())
 				continue;
 			topbox.SetHeight(topbox.GetHeight() / 4);
 			img.add_overlay_item(ov, cid, topbox, character.GetText().CStr());
-			img.add_overlay_item(charOverlay, cid, zone.GetContour());
+			if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active())
+				img.add_overlay_item(charOverlay, cid, zone.GetPosition());
+			else
+				img.add_overlay_item(charOverlay, cid, zone.GetContour());
 		}
 	}
 }
@@ -1057,7 +1109,9 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 		{
 			const auto &z = current_view.GetZone(current_view.GetCharacter(word.GetCharacters().front()).GetZone());
 			if (z.GetPosition().IsValid())
+			{
 				current_view.AlignWordCharacters(AlignConfig::AllChars, doc->GetPosition(wordid).line, wordid);
+			}
 		}
 	}
 
@@ -1175,10 +1229,87 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 
 		set_need_save();
 	}
+	else if (overlay_id == charOverlay)
+	{
+		// character modified
+		if (overlay_item_id.IsEmpty())
+			return;
+		// get id
+		const auto id = Id{overlay_item_id};
+
+		const auto &item = img.get_overlay_item(overlay_id, overlay_item_id);
+		auto rect = static_cast<const GtkCRN::Image::Rectangle&>(item).rect;
+
+		const auto &path = doc->GetPosition(id);
+		const auto &contword = current_view.GetWord(path.word);
+		const auto &contwzone = current_view.GetZone(contword.GetZone());
+		rect &= contwzone.GetPosition(); // keep characters inside their word
+		if (!rect.IsValid())
+		{ // cancel
+			display_characters(path.line);
+			return;
+		}
+
+		auto nleft = rect.GetLeft(), nright = rect.GetRight();
+		if (nright - nleft < mincharwidth)
+			nright = nleft + mincharwidth;
+
+		const auto &wchars = contword.GetCharacters();
+		auto it = std::find(wchars.begin(), wchars.end(), id);
+		// need to update previous character?
+		if (it != wchars.begin())
+		{
+			const auto &pp = *(it - 1);
+			const auto &pzid = current_view.GetCharacter(pp).GetZone();
+			auto &pzone = current_view.GetZone(pzid);
+			auto prect = pzone.GetPosition();
+			if (prect.IsValid())
+			{
+				if (nleft < prect.GetLeft() + mincharwidth)
+					nleft = prect.GetLeft() + mincharwidth;
+				prect.SetRight(nleft - 1);
+				pzone.SetPosition(prect);
+				current_view.ComputeContour(pzid);
+			}
+		}
+		// need to update next word?
+		++it;
+		if (it != wchars.end())
+		{
+			const auto &np = *it;
+			const auto &nzid = current_view.GetCharacter(np).GetZone();
+			auto &nzone = current_view.GetZone(nzid);
+			auto nrect = nzone.GetPosition();
+			if (nrect.IsValid())
+			{
+				if (nright > nrect.GetRight() - mincharwidth)
+					nright = nrect.GetRight() - mincharwidth;
+				nrect.SetLeft(nright + 1);
+				nzone.SetPosition(nrect);
+				current_view.ComputeContour(nzid);
+			}
+		}
+
+		// update bbox
+		const auto &czid = current_view.GetCharacter(id).GetZone();
+		auto &czone = current_view.GetZone(czid);
+		auto crect = czone.GetPosition();
+		if (crect.IsValid())
+		{
+			crect.SetLeft(nleft);
+			crect.SetRight(nright);
+			czone.SetPosition(crect);
+			current_view.ComputeContour(czid);
+		}
+
+		display_characters(path.line);
+		set_need_save();
+	}
 }
 
 void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair<crn::String, crn::String> > overlay_items_under_mouse, int x_on_image, int y_on_image)
 {
+	const auto mod = Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active();
 	for (std::vector<std::pair<crn::String, crn::String> >::const_iterator it = overlay_items_under_mouse.begin(); it != overlay_items_under_mouse.end(); ++it)
 	{
 		if (it->first == wordsOverlay)
@@ -1200,18 +1331,29 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 			}
 			catch (...) { }
 		}
-		if (it->first == linesOverlay)
-		{ // if it is a line, pop a menu up
-			auto sit = tv.get_selection()->get_selected();
-			auto colid = sit->get_value(columns.id);
-			auto lineid = Id{it->second};
-			line_rem_connection.disconnect();
-			line_rem_connection = actions->get_action("remove-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_line), lineid));
-			line_add_point_connection.disconnect();
-			line_add_point_connection = actions->get_action("add-point-to-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::add_point_to_line), lineid, x_on_image, y_on_image));
-			line_rem_point_connection.disconnect();
-			line_rem_point_connection = actions->get_action("rem-point-from-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_point_from_line), lineid, x_on_image, y_on_image));
-			dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/LinePopup"))->popup(mouse_button, time);
+		if ((view_depth == ViewDepth::Column) && mod)
+		{
+			if (it->first == linesOverlay)
+			{ // if it is a line, pop a menu up
+				auto sit = tv.get_selection()->get_selected();
+				const auto lineid = Id{it->second};
+				line_rem_connection.disconnect();
+				line_rem_connection = actions->get_action("remove-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_line), lineid));
+				line_add_point_connection.disconnect();
+				line_add_point_connection = actions->get_action("add-point-to-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::add_point_to_line), lineid, x_on_image, y_on_image));
+				line_rem_point_connection.disconnect();
+				line_rem_point_connection = actions->get_action("rem-point-from-line")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_point_from_line), lineid, x_on_image, y_on_image));
+				dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/LinePopup"))->popup(mouse_button, time);
+			}
+			if (it->first == superlinesOverlay)
+			{ // if it is a line, pop a menu up
+				auto sit = tv.get_selection()->get_selected();
+				const auto colid = Id{sit->get_value(columns.id)};
+				const auto linenum = size_t(it->second.ToInt());
+				superline_rem_connection.disconnect();
+				superline_rem_connection = actions->get_action("remove-superline")->signal_activate().connect(sigc::bind(sigc::mem_fun(this, &GUI::rem_superline), colid, linenum));
+				dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/SuperLinePopup"))->popup(mouse_button, time);
+			}
 		}
 	}
 }

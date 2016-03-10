@@ -685,7 +685,7 @@ void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &c
 void View::RemoveGraphicalLine(const Id &col_id, size_t index)
 {
 	auto &col = pimpl->medlines[col_id];
-	if (index > col.size())
+	if (index >= col.size())
 		throw crn::ExceptionDomain("View::RemoveGraphicalLine(): "_s + _("index is greater than the number of lines."));
 	col.erase(col.begin() + index);
 }
