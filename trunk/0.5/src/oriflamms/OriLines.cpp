@@ -513,6 +513,7 @@ using namespace ori;
  */
 void View::detectLines()
 {
+	pimpl->medlines.clear();
 	auto &b = GetBlock();
 	const auto w = b.GetGray()->GetWidth();
 	const auto h = b.GetGray()->GetHeight();

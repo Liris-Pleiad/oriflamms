@@ -30,6 +30,7 @@ namespace ori
 			void set_win_title();
 			void show_tei();
 			void add_line();
+			void rem_lines();
 			void rem_line(const Id &l);
 			void add_point_to_line(const Id &l, int x, int y);
 			void rem_point_from_line(const Id &l, int x, int y);

@@ -109,6 +109,8 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("show-tei", Gtk::Stock::INDENT, _("Show _TEI structure"), _("Show TEI structure")), sigc::mem_fun(this, &GUI::show_tei));
 	actions->add(Gtk::Action::create("add-line", Gtk::Stock::INDENT, _("Add _line"), _("Add line")), sigc::mem_fun(this, &GUI::add_line));
 	actions->get_action("add-line")->set_sensitive(false);
+	actions->add(Gtk::Action::create("rem-lines", Gtk::Stock::CLEAR, _("Delete _median lines"), _("Delete median lines")), sigc::mem_fun(this, &GUI::rem_lines));
+	actions->get_action("rem-lines")->set_sensitive(false);
 
 	// Option menu
 	actions->add(Gtk::Action::create("option-menu", _("_Options"), _("Options")));
@@ -157,6 +159,7 @@ GUI::GUI():
 		"			<separator/>"
 		"			<menuitem action='edit'/>"
 		"			<menuitem action='add-line'/>"
+		"			<menuitem action='rem-lines'/>"
 		"		</menu>"
 		"		<menu action='align-menu'>"
 		"			<menuitem action='align-clear-sig'/>"
@@ -594,8 +597,29 @@ void GUI::add_line()
 		it->set_value(columns.image, Glib::ustring(s.CStr()));
 		img.clear_selection();
 		tree_selection_changed(false);
+		set_need_save();
 	}
 	catch (...) { }
+}
+
+void GUI::rem_lines()
+{
+	Gtk::MessageDialog dial(*this, _("Are you sure you wish to delete all median lines in this column?"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
+	if (dial.run() == Gtk::RESPONSE_YES)
+	{
+		auto it = tv.get_selection()->get_selected();
+		auto colid = Id{it->get_value(columns.id).c_str()};
+		std::cout << colid << std::endl;
+		current_view.RemoveGraphicalLines(colid);
+		// clear column alignment
+		current_view.ClearAlignment(colid);
+		// update display
+		auto s = "0 "_s + _("line(s)");
+		it->set_value(columns.image, Glib::ustring(s.CStr()));
+
+		tree_selection_changed(false);
+		set_need_save();
+	}
 }
 
 void GUI::rem_line(const Id &l)
@@ -611,6 +635,7 @@ void GUI::rem_line(const Id &l)
 	it->set_value(columns.image, Glib::ustring(s.CStr()));
 	img.clear_selection();
 	tree_selection_changed(false);
+	set_need_save();
 }
 
 void GUI::add_point_to_line(const Id &l, int x, int y)
@@ -788,6 +813,7 @@ void GUI::tree_selection_changed(bool focus)
 	img.set_selection_type(GtkCRN::Image::Overlay::None);
 	img.clear_selection();
 	actions->get_action("add-line")->set_sensitive(false);
+	actions->get_action("rem-lines")->set_sensitive(false);
 
 	switch (level)
 	{
@@ -829,7 +855,8 @@ void GUI::tree_selection_changed(bool focus)
 								catch (...) {}
 							}
 						}
-						display_supernumerarylines(cid);
+						if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+							display_supernumerarylines(cid);
 					}
 				}
 				if (focus)
@@ -878,7 +905,8 @@ void GUI::tree_selection_changed(bool focus)
 							catch (...) {}
 						}
 					}
-					display_supernumerarylines(cid);
+					if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+						display_supernumerarylines(cid);
 				}
 				if (focus)
 				{ // set focus
@@ -930,7 +958,8 @@ void GUI::tree_selection_changed(bool focus)
 						catch (...) {}
 					}
 				}
-				display_supernumerarylines(colid);
+				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+					display_supernumerarylines(colid);
 				if (focus)
 				{ // set focus
 					if (!fx || !fy)
@@ -949,6 +978,8 @@ void GUI::tree_selection_changed(bool focus)
 					img.set_selection_type(GtkCRN::Image::Overlay::Line);
 
 				view_depth = ViewDepth::Column;
+
+				actions->get_action("rem-lines")->set_sensitive(true);
 			}
 			break;
 		case 3:

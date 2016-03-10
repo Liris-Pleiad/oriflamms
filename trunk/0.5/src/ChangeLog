@@ -4,6 +4,9 @@
 	* GUI (rem_supernumeraryline): Added.
 	* GUI (on_rmb_clicked): Now only display line popups in edit mode and 
 			when a column is selected.
+	* View (RemoveGraphicalLines): Added.
+	* GUI (rem_lines): Added.
+	* View (detectLines): Bugfix.
 
 2016-02-09 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Bugfix.
