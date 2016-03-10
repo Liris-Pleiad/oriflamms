@@ -1,7 +1,18 @@
+2016-02-10 Yann LEYDIER <yann@leydier.info>
+	* GUI (overlay_changed): Now allows to correct character alignment.
+	* GUI (display_supernumerarylines): Added.
+	* GUI (rem_supernumeraryline): Added.
+	* GUI (on_rmb_clicked): Now only display line popups in edit mode and 
+			when a column is selected.
+
 2016-02-09 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Bugfix.
 	* View (AlignAll): Added.
 	* GUI (align_selection): Now can align whole views.
+	* GUI (tree_selection_changed): Now show a special cursor to indicate that
+			it is not possible to add lines if a column is not selected.
+	* GUI (edit_overlays): Now allows to modify characters.
+	* GUI (display_characters): Now displays rectangles in edit mode.
 
 2016-02-08 Yann LEYDIER <yann@leydier.info>
 	* GUI (change_font): Now changes the whole application's font.

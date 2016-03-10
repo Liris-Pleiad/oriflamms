@@ -33,6 +33,7 @@ namespace ori
 			void rem_line(const Id &l);
 			void add_point_to_line(const Id &l, int x, int y);
 			void rem_point_from_line(const Id &l, int x, int y);
+			void rem_superline(const Id &colid, size_t num);
 			virtual void about() override;
 			Glib::RefPtr<Gtk::TreeStore> fill_tree(crn::Progress *prog);
 			void tree_selection_changed(bool focus);
@@ -49,6 +50,7 @@ namespace ori
 			void stats();
 			void display_words(const Id &linid);
 			void display_line(const Id &linid);
+			void display_supernumerarylines(const Id &colid);
 			void display_characters(const Id &linid);
 			void display_update_word(const Id &wordid, const crn::Option<int> &newleft = crn::Option<int>(), const crn::Option<int> &newright = crn::Option<int>());
 			void clear_sig();
@@ -81,6 +83,7 @@ namespace ori
 			sigc::connection line_rem_connection;
 			sigc::connection line_add_point_connection;
 			sigc::connection line_rem_point_connection;
+			sigc::connection superline_rem_connection;
 			std::unique_ptr<Validation> validation_win;
 			AlignDialog aligndial;
 
@@ -89,6 +92,7 @@ namespace ori
 
 			static const Glib::ustring wintitle;
 			static const crn::String linesOverlay;
+			static const crn::String superlinesOverlay;
 			static const crn::String wordsOverlay;
 			static const crn::String wordsOverlayOk;
 			static const crn::String wordsOverlayKo;
@@ -96,6 +100,7 @@ namespace ori
 			static const crn::String charOverlay;
 
 			static const int minwordwidth;
+			static const int mincharwidth;
 	};
 }
 
