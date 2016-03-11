@@ -329,7 +329,7 @@ void GUI::about()
 	dial.set_program_name("Oriflamms");
 	dial.set_version(ORIFLAMMS_PACKAGE_VERSION);
 	dial.set_comments(_("Text alignment between TEI xml and images"));
-	dial.set_copyright("© LIRIS / INSA Lyon & IRHT & LIPADE / Université Paris Descartes & ICAR / ENS Lyon 2013-2015");
+	dial.set_copyright("© LIRIS / INSA Lyon & IRHT & LIPADE / Université Paris Descartes & ICAR / ENS Lyon 2013-2016");
 	dial.set_website("http://oriflamms.hypotheses.org/");
 	try
 	{
