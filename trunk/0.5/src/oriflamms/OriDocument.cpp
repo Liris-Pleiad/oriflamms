@@ -217,6 +217,9 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 		auto tmpel = el.PushBackElement("titleStmt");
 		tmpel = tmpel.PushBackElement("title");
 		tmpel.PushBackText(_("Allograph links"));
+		tmpel = el.PushBackElement("publicationStmt");
+		tmpel = tmpel.PushBackElement("p");
+		tmpel.PushBackText(_("Oriflamms Project, http://oriflamms.hypotheses.org"));
 		tmpel = el.PushBackElement("sourceDesc");
 		tmpel = tmpel.PushBackElement("p");
 		tmpel.PushBackText(_("Created by Oriflamms."));
@@ -225,11 +228,11 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 		tmpel = el.PushBackElement("prefixDef");
 		tmpel.SetAttribute("ident", "txt");
 		tmpel.SetAttribute("matchPattern", "([a-z]+)");
-		tmpel.SetAttribute("replacementPattern", "../texts/" + projname + "$1");
+		tmpel.SetAttribute("replacementPattern", "../texts/" + projname + "-c.xml$1");
 		tmpel = el.PushBackElement("prefixDef");
 		tmpel.SetAttribute("ident", LOCALGLYPH.SubString(0, LOCALGLYPH.Size() - 1));
 		tmpel.SetAttribute("matchPattern", "([a-z]+)");
-		tmpel.SetAttribute("replacementPattern", "../ontologies/" + projname + "$1");
+		tmpel.SetAttribute("replacementPattern", "../ontologies/" + projname + "_ontology.xml$1");
 		tmpel = el.PushBackElement("prefixDef");
 		tmpel.SetAttribute("ident", GLOBALGLYPH.SubString(0, GLOBALGLYPH.Size() - 1));
 		tmpel.SetAttribute("matchPattern", "([a-z]+)");
@@ -1863,6 +1866,9 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		auto tmpel = el.PushBackElement("titleStmt");
 		tmpel = tmpel.PushBackElement("title");
 		tmpel.PushBackText(_("Allograph declaration"));
+		tmpel = el.PushBackElement("publicationStmt");
+		tmpel = tmpel.PushBackElement("p");
+		tmpel.PushBackText(_("Oriflamms Project, http://oriflamms.hypotheses.org"));
 		tmpel = el.PushBackElement("sourceDesc");
 		tmpel = tmpel.PushBackElement("p");
 		tmpel.PushBackText(_("Created by Oriflamms."));
