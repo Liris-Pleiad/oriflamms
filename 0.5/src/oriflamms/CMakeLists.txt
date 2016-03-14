@@ -37,4 +37,10 @@ endif(WIN32)
 
 install(FILES "orisig.xml" DESTINATION ${ORIFLAMMS_DATA_PATH})
 
-
+if(UNIX)
+	configure_file(
+		"${PROJECT_SOURCE_DIR}/oriflamms/Oriflamms.desktop.in"
+		"${PROJECT_BINARY_DIR}/oriflamms/Oriflamms.desktop"
+		)
+	install(FILES "${PROJECT_BINARY_DIR}/oriflamms/Oriflamms.desktop" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
+endif(UNIX)

@@ -1,3 +1,9 @@
+2016-02-14 Yann LEYDIER <yann@leydier.info>
+	* Document (cstr): Added <publicationStmt> to ontology file.
+	* View Impl (cstr): Added <publicationStmt> to ontology links file.
+	* View Impl (cstr): Corrected <prefixDef> patterns.
+	* Oriflamms.desktop.in: Added.
+
 2016-02-10 Yann LEYDIER <yann@leydier.info>
 	* GUI (overlay_changed): Now allows to correct character alignment.
 	* GUI (display_supernumerarylines): Added.
