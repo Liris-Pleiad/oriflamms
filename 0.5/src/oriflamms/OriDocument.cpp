@@ -1399,6 +1399,37 @@ void View::AlignLine(AlignConfig conf, const Id &line_id, crn::Progress *prog)
 				prog->Advance();
 		}
 	}
+	else if (!!(conf & AlignConfig::NAlWords))
+	{
+		// gather ranges of words to align
+		auto wranges = std::vector<std::vector<size_t>>{};
+		auto in = false;
+		for (auto w : crn::Range(line.GetWords()))
+		{
+			if (!GetZone(GetWord(line.GetWords()[w]).GetZone()).GetPosition().IsValid())
+			{
+				if (!in)
+				{
+					in = true;
+					wranges.push_back(std::vector<size_t>{});
+				}
+				wranges.back().push_back(w);
+			}
+			else
+			{
+				in = false;
+			}
+		}
+		// align
+		if (prog)
+			prog->SetMaxCount(int(wranges.size()));
+		for (const auto &r : wranges)
+		{
+			AlignRange(conf, line_id, r.front(), r.back());
+			if (prog)
+				prog->Advance();
+		}
+	}
 	// Only update frontiers
 	if (!!(conf & AlignConfig::WordFrontiers))
 	{
@@ -1523,19 +1554,29 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 }
 
 /*! Aligns the characters in a word
+ * \throws	crn::ExceptionNotFound	a character in the word was not found
  * \param[in]	conf	alignment options
  * \param[in]	line_id	the id of the line
  * \param[in]	word_id	the id of the word
  */
 void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &word_id)
 {
-	// TODO use config
-
 	// check if the text line is associated to an image line
 	try { GetGraphicalLine(line_id); }
 	catch (crn::ExceptionDomain&) { return; }
 
 	auto &word = GetWord(word_id);
+
+	if (!!(conf & AlignConfig::NAlChars))
+	{
+		const auto &chars = word.GetCharacters();
+		if (chars.empty())
+			return;
+		const auto &cha = GetCharacter(chars.front()); // may throw
+		if (GetZone(cha.GetZone()).GetPosition().IsValid())
+			return; // do not realign
+	}
+
 	const auto isig = GetGraphicalLine(line_id).ExtractFeatures(GetBlock());
 	auto wsig = std::vector<TextSignature>{};
 	for (const auto cid : word.GetCharacters())

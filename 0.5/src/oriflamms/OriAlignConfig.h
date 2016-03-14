@@ -1,4 +1,4 @@
-/* Copyright 2015 Université Paris Descartes
+/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
  * 
  * file: OriAlignConfig.h
  * \author Yann LEYDIER
@@ -16,15 +16,16 @@ namespace ori
 
 		AllWords = 1, // align all words
 		NOKWords = 2, // align non-validated words (i.e.: unknown and rejected)
+		NAlWords = 4, // align not aligned words
 
-		WordFrontiers = 4, // update aligned words' frontiers
+		WordFrontiers = 8, // update aligned words' frontiers
 
-		CharsAllWords = 8, // align characters in all aligned words
-		CharsOKWords = 16, // align characters in validated words
-		CharsNKOWords = 32, // align characters in non-rejected words (i.e.: validated and unknown)
+		CharsAllWords = 16, // align characters in all aligned words
+		CharsOKWords = 32, // align characters in validated words
+		CharsNKOWords = 64, // align characters in non-rejected words (i.e.: validated and unknown)
 
-		AllChars = 64, // align all characters (in previous selection)
-		NOKChars = 128 // align non-validated characters
+		AllChars = 128, // align all characters (in previous selection)
+		NAlChars = 256 // align not aligned characters
 	};
 }
 

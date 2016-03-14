@@ -1,4 +1,4 @@
-/* Copyright 2015 Université Paris Descartes
+/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
  * 
  * file: OriAlignDialog.cpp
  * \author Yann LEYDIER
@@ -14,13 +14,14 @@ AlignDialog::AlignDialog(Gtk::Window &parent):
 	wbut(_("Align words")),
 	wall(_("Align all words")),
 	wnok(_("Align non-validated words")),
+	wnal(_("Align non-aligned words")),
 	wfrontbut(_("Update aligned words' frontiers")),
 	charbut(_("Align characters")),
 	callw(_("in all aligned words")),
 	cokw(_("in validated words")),
 	cnkow(_("in non-rejected words")),
 	call(_("Align all characters")),
-	cnok(_("Align non-validated characters"))
+	cnal(_("Align non-aligned characters"))
 {
 	set_title(_("Alignment"));
 	set_transient_for(parent);
@@ -41,6 +42,8 @@ AlignDialog::AlignDialog(Gtk::Window &parent):
 	wall.set_group(g1);
 	get_vbox()->pack_start(wnok, true, true, 2);
 	wnok.set_group(g1);
+	get_vbox()->pack_start(wnal, true, true, 2);
+	wnal.set_group(g1);
 
 	get_vbox()->pack_start(wfrontbut, true, true, 2);
 	wfrontbut.set_active(false);
@@ -60,9 +63,9 @@ AlignDialog::AlignDialog(Gtk::Window &parent):
 	get_vbox()->pack_start(call, true, true, 2);
 	Gtk::RadioButton::Group g3;
 	call.set_group(g3);
-	get_vbox()->pack_start(cnok, true, true, 2);
-	cnok.set_group(g3);
-	cnok.set_sensitive(false); // XXX temporary
+	get_vbox()->pack_start(cnal, true, true, 2);
+	cnal.set_group(g3);
+	cnal.set_sensitive(false);
 
 	get_vbox()->show_all();
 	update();
@@ -72,6 +75,7 @@ void AlignDialog::update()
 {
 	wall.set_sensitive(wbut.get_active());
 	wnok.set_sensitive(wbut.get_active());
+	wnal.set_sensitive(wbut.get_active());
 
 	wfrontbut.set_sensitive(!wbut.get_active());
 
@@ -79,7 +83,7 @@ void AlignDialog::update()
 	cokw.set_sensitive(charbut.get_active());
 	cnkow.set_sensitive(charbut.get_active());
 	call.set_sensitive(charbut.get_active());
-	//cnok.set_sensitive(charbut.get_active());
+	cnal.set_sensitive(charbut.get_active());
 }
 
 AlignConfig AlignDialog::get_config() const
@@ -89,8 +93,10 @@ AlignConfig AlignDialog::get_config() const
 	{
 		if (wall.get_active())
 			a |= AlignConfig::AllWords;
-		else
+		else if (wnok.get_active())
 			a |= AlignConfig::NOKWords;
+		else
+			a |= AlignConfig::NAlWords;
 	}
 	else if (wfrontbut.get_active())
 		a |= AlignConfig::WordFrontiers;
@@ -107,7 +113,7 @@ AlignConfig AlignDialog::get_config() const
 		if (call.get_active())
 			a |= AlignConfig::AllChars;
 		else
-			a |= AlignConfig::NOKChars;
+			a |= AlignConfig::NAlChars;
 	}
 	return a;
 }
