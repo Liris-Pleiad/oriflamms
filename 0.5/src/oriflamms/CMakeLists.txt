@@ -42,5 +42,5 @@ if(UNIX)
 		"${PROJECT_SOURCE_DIR}/oriflamms/Oriflamms.desktop.in"
 		"${PROJECT_BINARY_DIR}/oriflamms/Oriflamms.desktop"
 		)
-	install(FILES "${PROJECT_BINARY_DIR}/oriflamms/Oriflamms.desktop" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
+	install(FILES "${PROJECT_BINARY_DIR}/oriflamms/Oriflamms.desktop" DESTINATION /share/applications)
 endif(UNIX)
