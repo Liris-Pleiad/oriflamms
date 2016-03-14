@@ -1,4 +1,4 @@
-/* Copyright 2015 Université Paris Descartes
+/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
  * 
  * file: OriAlignDialog.h
  * \author Yann LEYDIER
@@ -22,11 +22,11 @@ namespace ori
 			void update();
 
 			Gtk::CheckButton wbut;
-			Gtk::RadioButton wall, wnok;
+			Gtk::RadioButton wall, wnok, wnal;
 			Gtk::CheckButton wfrontbut;
 			Gtk::CheckButton charbut;
 			Gtk::RadioButton callw, cokw, cnkow;
-			Gtk::RadioButton call, cnok;
+			Gtk::RadioButton call, cnal;
 	};
 }
 

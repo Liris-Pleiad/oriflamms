@@ -3,6 +3,12 @@
 	* View Impl (cstr): Added <publicationStmt> to ontology links file.
 	* View Impl (cstr): Corrected <prefixDef> patterns.
 	* Oriflamms.desktop.in: Added.
+	* AlignConfig (NOKChars): Removed.
+	* AlignConfig (NAlWords, NAlChars): Added.
+	* Document (AlignRange): Can now align only words that are not already
+		aligned.
+	* Document (AlignCharacters): Can now align only characters that are 
+		not already aligned.
 
 2016-02-10 Yann LEYDIER <yann@leydier.info>
 	* GUI (overlay_changed): Now allows to correct character alignment.
