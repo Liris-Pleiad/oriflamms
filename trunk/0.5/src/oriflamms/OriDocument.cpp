@@ -228,15 +228,15 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 		tmpel = el.PushBackElement("prefixDef");
 		tmpel.SetAttribute("ident", "txt");
 		tmpel.SetAttribute("matchPattern", "([a-z]+)");
-		tmpel.SetAttribute("replacementPattern", "../texts/" + projname + "-c.xml$1");
+		tmpel.SetAttribute("replacementPattern", "../texts/" + projname + "-c.xml#$1");
 		tmpel = el.PushBackElement("prefixDef");
 		tmpel.SetAttribute("ident", LOCALGLYPH.SubString(0, LOCALGLYPH.Size() - 1));
 		tmpel.SetAttribute("matchPattern", "([a-z]+)");
-		tmpel.SetAttribute("replacementPattern", "../ontologies/" + projname + "_ontology.xml$1");
+		tmpel.SetAttribute("replacementPattern", "../ontologies/" + projname + "_ontology.xml#$1");
 		tmpel = el.PushBackElement("prefixDef");
 		tmpel.SetAttribute("ident", GLOBALGLYPH.SubString(0, GLOBALGLYPH.Size() - 1));
 		tmpel.SetAttribute("matchPattern", "([a-z]+)");
-		tmpel.SetAttribute("replacementPattern", "../../charDecl.xml$1");
+		tmpel.SetAttribute("replacementPattern", "../../charDecl.xml#$1");
 		el = root.PushBackElement("text");
 		el = el.PushBackElement("body");
 		el = el.PushBackElement("ab");
