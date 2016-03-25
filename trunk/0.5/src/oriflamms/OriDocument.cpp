@@ -1211,7 +1211,7 @@ void View::UpdateLeftFrontier(const Id &id, int x)
 		r.SetLeft(x);
 		zone.SetPosition(r);
 		if (val.right_corr)
-			val.ok = TRUE;
+			val.ok = true;
 	}
 	else
 		throw crn::ExceptionUninitialized("View::UpdateLeftFrontier(): "_s + _("uninitialized zone: ") + zid);
@@ -1240,7 +1240,7 @@ void View::UpdateRightFrontier(const Id &id, int x)
 		r.SetRight(x);
 		zone.SetPosition(r);
 		if (val.left_corr)
-			val.ok = TRUE;
+			val.ok = true;
 	}
 	else
 		throw crn::ExceptionUninitialized("View::UpdateRightFrontier(): "_s + _("uninitialized zone: ") + zid);
@@ -1595,8 +1595,9 @@ void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &wo
 	const auto wordbox = GetZone(word.GetZone()).GetPosition();
 	for (const auto &is : isig)
 	{
-		if ((is.bbox & wordbox).IsValid())
-			wisig.push_back(is);
+		const auto inter = is.bbox & wordbox;
+		if (inter.IsValid())
+			wisig.emplace_back(inter, is.code, is.cutproba);
 	}
 	// align
 	const auto align = Align(wisig, wsig);
@@ -1847,6 +1848,17 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 		auto root = doc.GetRoot();
 		auto pos = ElementPosition{};
 		readTextCElements(root, pos);
+	}
+	// compute words transcription
+	for (auto &v : view_struct)
+	{
+		for (auto &w : v.second.words)
+		{
+			auto trans = crn::String{};
+			for (const auto &cid : w.second.GetCharacters())
+				trans += v.second.characters[cid].GetText();
+			w.second.text = trans;
+		}
 	}
 	if (prog)
 		prog->Advance();
@@ -3153,7 +3165,7 @@ void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, st
 					if (elid.IsEmpty())
 						throw crn::ExceptionNotFound(name + "-w: "_s + _("word or pc without an id."));
 					view_struct[pos.view].words.emplace(elid, Word{});
-					view_struct[pos.view].words[elid].text = allTextInElement(sel);
+					//view_struct[pos.view].words[elid].text = allTextInElement(sel);
 					switch (lpos)
 					{
 						case 'r':
@@ -3175,7 +3187,7 @@ void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, st
 					if (elid.IsEmpty())
 						throw crn::ExceptionNotFound(name + "-w: "_s + _("seg without an id."));
 					view_struct[pos.view].words.emplace(elid, Word{});
-					view_struct[pos.view].words[elid].text = allTextInElement(sel);
+					//view_struct[pos.view].words[elid].text = allTextInElement(sel);
 					switch (lpos)
 					{
 						case 'r':

@@ -19,6 +19,7 @@
 #include <OriCharacter.h>
 #include <OriTEIDisplay.h>
 #include <gtkmm/accelmap.h>
+#include <iostream>
 
 using namespace ori;
 using namespace crn::literals;
@@ -1135,12 +1136,15 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	}
 	if (newright || newleft)
 	{
+		std::cout << "update-display recompute contour " << word.GetText() << std::endl;
 		current_view.ComputeContour(word.GetZone());
 		if (!word.GetCharacters().empty())
 		{
+			std::cout << "update-display has characters " << word.GetText() << std::endl;
 			const auto &z = current_view.GetZone(current_view.GetCharacter(word.GetCharacters().front()).GetZone());
 			if (z.GetPosition().IsValid())
 			{
+				std::cout << "update-display realign characters " << word.GetText() << std::endl;
 				current_view.AlignWordCharacters(AlignConfig::AllChars, doc->GetPosition(wordid).line, wordid);
 			}
 		}

@@ -1,5 +1,9 @@
 2016-03-25 Yann LEYDIER <yann@leydier.info>
 	* View Impl (cstr): Fixed @replacementPattern format.
+	* View AlignCharacters: Now tightly crops the image signature into the
+		word's bounding box.
+	* Document (cstr): Now creates word transcriptions from characters.
+	* Document (readTextWElements): Does not read transcriptions anymore.
 
 2016-03-14 Yann LEYDIER <yann@leydier.info>
 	* Document (cstr): Added <publicationStmt> to ontology file.

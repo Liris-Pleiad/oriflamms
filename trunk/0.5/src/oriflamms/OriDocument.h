@@ -55,9 +55,21 @@ namespace ori
 			return false;
 		}
 		bool operator==(const ElementPosition &other) const noexcept
-		{ return (view == other.view) && (page == other.page) && (column == other.column) && (line == other.line) && (word == other.word); }
+		{ 
+			return (view == other.view) && 
+				(page == other.page) && 
+				(column == other.column) && 
+				(line == other.line) && 
+				(word == other.word); 
+		}
 		bool operator!=(const ElementPosition &other) const noexcept
-		{ return (view != other.view) || (page != other.page) || (column != other.column) || (line != other.line) || (word != other.word); }
+		{ 
+			return (view != other.view) || 
+				(page != other.page) || 
+				(column != other.column) || 
+				(line != other.line) || 
+				(word != other.word); 
+		}
 		Id view;
 		Id page;
 		Id column;
