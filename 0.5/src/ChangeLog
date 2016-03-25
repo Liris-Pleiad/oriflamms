@@ -1,4 +1,7 @@
-2016-02-14 Yann LEYDIER <yann@leydier.info>
+2016-03-25 Yann LEYDIER <yann@leydier.info>
+	* View Impl (cstr): Fixed @replacementPattern format.
+
+2016-03-14 Yann LEYDIER <yann@leydier.info>
 	* Document (cstr): Added <publicationStmt> to ontology file.
 	* View Impl (cstr): Added <publicationStmt> to ontology links file.
 	* View Impl (cstr): Corrected <prefixDef> patterns.
@@ -10,7 +13,7 @@
 	* Document (AlignCharacters): Can now align only characters that are 
 		not already aligned.
 
-2016-02-10 Yann LEYDIER <yann@leydier.info>
+2016-03-10 Yann LEYDIER <yann@leydier.info>
 	* GUI (overlay_changed): Now allows to correct character alignment.
 	* GUI (display_supernumerarylines): Added.
 	* GUI (rem_supernumeraryline): Added.
@@ -20,7 +23,7 @@
 	* GUI (rem_lines): Added.
 	* View (detectLines): Bugfix.
 
-2016-02-09 Yann LEYDIER <yann@leydier.info>
+2016-03-09 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Bugfix.
 	* View (AlignAll): Added.
 	* GUI (align_selection): Now can align whole views.
@@ -29,11 +32,11 @@
 	* GUI (edit_overlays): Now allows to modify characters.
 	* GUI (display_characters): Now displays rectangles in edit mode.
 
-2016-02-08 Yann LEYDIER <yann@leydier.info>
+2016-03-08 Yann LEYDIER <yann@leydier.info>
 	* GUI (change_font): Now changes the whole application's font.
 	* GUI (load_project): Bugfix.
 
-2016-02-07 Yann LEYDIER <yann@leydier.info>
+2016-03-07 Yann LEYDIER <yann@leydier.info>
 	* CharacterDialog (update_buttons): Now detects if the distance matrix is
 			obsolete.
 	* CharacterDialog (update_distmat): Added.
@@ -50,15 +53,15 @@
 	* TEIDisplay: Added.
 	* GUI (show_tei): Added.
 
-2016-02-04 Yann LEYDIER <yann@leydier.info>
+2016-03-04 Yann LEYDIER <yann@leydier.info>
 	* CharacterDialog (compute_distmat, compute_gm, compute_gsc): Now skip
 			unaligned characters.
 
-2016-02-03 Yann LEYDIER <yann@leydier.info>
+2016-03-03 Yann LEYDIER <yann@leydier.info>
 	* View (GetLeftCorrection, GetRightCorrection): Are now const.
 	* View (IsAligned): Added.
 
-2016-02-02 Yann LEYDIER <yann@leydier.info>
+2016-03-02 Yann LEYDIER <yann@leydier.info>
 	* GUI (tree_selection_changed): Now displays lines, words and characters at
 			page and view levels.
 	* GUI (load_project): Fixed a crash when the project folder is not a valid
@@ -68,7 +71,7 @@
 	* GUI (load_project): Now selects automatically the right folder if it was
 			selected in stead of entered.
 
-2016-02-01 Yann LEYDIER <yann@leydier.info>
+2016-03-01 Yann LEYDIER <yann@leydier.info>
 	* View (ComputeFrontier): Now returns a straight line if no path is found.
 	* GraphicalLine (ExtractFeatures): Bugfix.
 	* View (AlignRange, AlignWordCharacters): Silently ignore text lines that
