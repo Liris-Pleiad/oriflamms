@@ -1,3 +1,6 @@
+2016-03-29 Yann LEYDIER <yann@leydier.info>
+	* Document (CompureFrontiers): 3x speed-up.
+
 2016-03-25 Yann LEYDIER <yann@leydier.info>
 	* View Impl (cstr): Fixed @replacementPattern format.
 	* View AlignCharacters: Now tightly crops the image signature into the
