@@ -1047,11 +1047,23 @@ struct get_neighbors
 	}
 };
 
+namespace crn
+{
+bool operator<(const crn::Point2DInt &p1, const crn::Point2DInt &p2)
+{
+	if (p1.X < p2.X)
+		return true;
+	else if (p1.X == p2.X)
+		return p1.Y < p2.Y;
+	else
+		return false;
+}
+}
 std::vector<crn::Point2DInt> View::ComputeFrontier(size_t x, size_t y1, size_t y2) const
 {
 	try
 	{
-		return SimplifyCurve(crn::AStar(
+		return SimplifyCurve(crn::AStarC(
 					crn::Point2DInt(int(x), int(y1)),
 					crn::Point2DInt(int(x), int(y2)),
 					stepcost(getWeight(), int(x)),
