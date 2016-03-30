@@ -50,13 +50,14 @@ endif(WIN32)
 set(LIBRARY_INSTALL_PATH "lib")
 set(ARCHIVE_INSTALL_PATH "lib")
 
+list(APPEND CMAKE_MODULE_PATH "/var/tmp/testcrn/share/cmake/")
+set(LIBCRN_HINTS "/var/tmp/testcrn")
+find_package(GTKCRNMM2 REQUIRED)
+
 if(CMAKE_COMPILER_IS_GNUCXX)
 ###############################################################################
 # g++ specifics
 ###############################################################################
-
-	set(LIBCRN_HINTS "/var/tmp/testcrn")
-	find_package(GTKCRNMM2 REQUIRED)
 
 	# compiler and linker options
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Winit-self -Wreturn-type -Wconversion -Wno-error=literal-suffix -Wno-literal-suffix")
