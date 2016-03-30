@@ -201,7 +201,7 @@ void CharacterDialog::compute_gm(const crn::String &character, const std::vector
 	{
 		for (auto j = i + 1; j < ids.size(); ++j)
 		{
-			dm[i][j] = dm[j][i] = crn::Distance(grad[i], grad[j], 0);
+			dm[i][j] = dm[j][i] = crn::GradientModel::Distance(grad[i], grad[j], 0);
 		}
 		prog->Advance();
 	}

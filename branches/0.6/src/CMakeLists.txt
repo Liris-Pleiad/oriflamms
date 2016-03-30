@@ -7,13 +7,9 @@ cmake_minimum_required (VERSION 2.8)
 #set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Only Debug and Release" FORCE) # must be before project()
 project(oriflamms)
 set(ORIFLAMMS_PACKAGE_VERSION_MAJOR "0")
-set(ORIFLAMMS_PACKAGE_VERSION_MINOR "5")
-set(ORIFLAMMS_PACKAGE_VERSION_PATCH "14")
+set(ORIFLAMMS_PACKAGE_VERSION_MINOR "6")
+set(ORIFLAMMS_PACKAGE_VERSION_PATCH "0")
 set(ORIFLAMMS_PACKAGE_VERSION "${ORIFLAMMS_PACKAGE_VERSION_MAJOR}.${ORIFLAMMS_PACKAGE_VERSION_MINOR}.${ORIFLAMMS_PACKAGE_VERSION_PATCH}")
-
-if(MSVC)
-	message(FATAL_ERROR "Visual Studio 2013 does not completely support C++2011.")
-endif(MSVC)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)
@@ -29,9 +25,6 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 ###############################################################################
 # Override default modules with the ones in the source dir
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-# Use pkg-config on Linux
-include(ReadPkgConfig)
-#include(FindPkgConfig)
 
 ###############################################################################
 # Options
@@ -62,7 +55,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 # g++ specifics
 ###############################################################################
 
-	read_pkg_config("libgtkcrnmm >= 3.0" LIBGTKCRNMM)
+	set(LIBCRN_HINTS "/var/tmp/testcrn")
+	find_package(GTKCRNMM2 REQUIRED)
 
 	# compiler and linker options
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Winit-self -Wreturn-type -Wconversion -Wno-error=literal-suffix -Wno-literal-suffix")
@@ -74,13 +68,6 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 ###############################################################################
 # Build
 ###############################################################################
-
-# shared or static libs
-if(BUILD_SHARED_LIBRARIES)
-	set(library_link_mode SHARED)
-else(BUILD_SHARED_LIBRARIES)
-	set(library_link_mode STATIC)
-endif(BUILD_SHARED_LIBRARIES)
 
 # put all binaries in the same directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out")

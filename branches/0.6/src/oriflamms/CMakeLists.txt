@@ -9,8 +9,7 @@ include_directories("${PROJECT_BINARY_DIR}/oriflamms")
 # add path to oriflamms
 include_directories("${PROJECT_SOURCE_DIR}/oriflamms")
 # add path to dependencies
-include_directories(${LIBGTKCRNMM_INCLUDE_DIRS})
-link_directories(${LIBGTKCRNMM_LIBRARY_DIRS})
+include_directories(${GTKCRNMM2_INCLUDE_DIRS})
 
 # set sources
 file(GLOB_RECURSE ORIFLAMMS_HEADERS "*.h")
@@ -23,9 +22,9 @@ source_group("Misc" FILES ${ORIFLAMMS_MISC})
 
 # create Titus
 add_executable(oriflamms ${ORIFLAMMS_SOURCES} ${ORIFLAMMS_HEADERS})
-set_target_properties(oriflamms PROPERTIES COMPILE_FLAGS "${GTKCRNMM_CFLAGS_OTHER}" LINK_FLAGS "${GTKCRNMM_LDFLAGS_OTHER} -lstdc++")
+set_target_properties(oriflamms PROPERTIES LINK_FLAGS "-lstdc++")
 # add dependencies
-target_link_libraries(oriflamms ${LIBGTKCRNMM_LIBRARIES})
+target_link_libraries(oriflamms ${GTKCRNMM2_LIBRARIES})
 
 # installation
 install(TARGETS oriflamms DESTINATION ${RUNTIME_INSTALL_PATH})

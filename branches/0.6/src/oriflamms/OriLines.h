@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2016 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes, ENS-Lyon
  *
  * file: OriLines.h
  * \author Yann LEYDIER
@@ -32,11 +32,6 @@ namespace ori
 			GraphicalLine& operator=(GraphicalLine&&) = default;
 			virtual ~GraphicalLine() override {}
 
-			/*! \brief This is a Serializable object */
-			virtual crn::Protocol GetClassProtocols() const noexcept override { return crn::Protocol::Serializable; }
-			/*! \brief Returns the id of the class */
-			virtual const crn::String& GetClassName() const override { static const crn::String cn(U"GraphicalLine"); return cn; }
-
 			/*! \brief Gets the leftmost point of the line */
 			crn::Point2DInt GetFront() const { return crn::Point2DInt(int(midline->GetData().front().X), int(midline->GetData().front().Y)); }
 			/*! \brief Gets the rightmost point of the line */
@@ -55,10 +50,11 @@ namespace ori
 			const std::vector<ImageSignature>& ExtractFeatures(crn::Block &b) const;
 			/*! \brief Deletes the cached signature string */
 			void ClearFeatures() { features.clear(); }
-		private:
 
-			virtual void deserialize(crn::xml::Element &el) override;
-			virtual crn::xml::Element serialize(crn::xml::Element &parent) const override;
+			void Deserialize(crn::xml::Element &el);
+			crn::xml::Element Serialize(crn::xml::Element &parent) const;
+
+		private:
 
 			crn::SLinearInterpolation midline;
 			size_t lh;
@@ -70,6 +66,10 @@ namespace ori
 
 	CRN_ALIAS_SMART_PTR(GraphicalLine)
 };
+namespace crn
+{
+	template<> struct IsSerializable<ori::GraphicalLine> : public std::true_type {};
+}
 
 #endif
 

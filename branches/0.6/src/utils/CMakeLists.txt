@@ -5,11 +5,10 @@ include_directories("${PROJECT_BINARY_DIR}/oriflamms")
 # add path to oriflamms
 include_directories("${PROJECT_SOURCE_DIR}/utils")
 # add path to dependencies
-include_directories(${LIBGTKCRNMM_INCLUDE_DIRS})
-link_directories(${LIBGTKCRNMM_LIBRARY_DIRS})
+include_directories(${GTKCRNMM2_INCLUDE_DIRS})
 
 # create signatures
 add_executable(signatures signatures.cpp)
-set_target_properties(signatures PROPERTIES COMPILE_FLAGS "${GTKCRNMM_CFLAGS_OTHER}" LINK_FLAGS "${GTKCRNMM_LDFLAGS_OTHER} -lstdc++")
-target_link_libraries(signatures ${LIBGTKCRNMM_LIBRARIES})
+set_target_properties(signatures PROPERTIES LINK_FLAGS "-lstdc++")
+target_link_libraries(signatures ${GTKCRNMM2_LIBRARIES})
 
