@@ -38,7 +38,7 @@ namespace ori
 			virtual void about() override;
 			Glib::RefPtr<Gtk::TreeStore> fill_tree(crn::Progress *prog);
 			void tree_selection_changed(bool focus);
-			void edit_overlays();
+			void edit_overlays(bool refresh);
 			void overlay_changed(crn::String overlay_id, crn::String overlay_item_id, GtkCRN::Image::MouseMode mm);
 			void on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair<crn::String, crn::String> > overlay_items_under_mouse, int x_on_image, int y_on_image);
 			void align_selection();

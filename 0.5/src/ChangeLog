@@ -1,6 +1,8 @@
 2016-04-01 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Crashed when overflowing the image's
 		boundaries.
+	* GUI (tree_selection_changed, edit_overlays): Fixed behaviour with line
+		edition and view depth.
 
 2016-03-29 Yann LEYDIER <yann@leydier.info>
 	* Document (CompureFrontiers): 3x speed-up.

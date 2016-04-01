@@ -81,7 +81,7 @@ GUI::GUI():
 	actions->get_action("show-words")->set_accel_path("<Oriflamms>/DisplayMenu/Words");
 	actions->add(Gtk::RadioAction::create(dispgroup, "show-characters", Gtk::Stock::SELECT_FONT, _("Show _characters"), _("Show characters")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
 	actions->get_action("show-characters")->set_accel_path("<Oriflamms>/DisplayMenu/Characters");
-	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::mem_fun(this,&GUI::edit_overlays));
+	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::bind(sigc::mem_fun(this, &GUI::edit_overlays), true));
 	actions->get_action("edit")->set_accel_path("<Oriflamms>/DisplayMenu/Edit");
 
 	actions->add(Gtk::Action::create("find-string", Gtk::Stock::FIND, _("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
@@ -865,8 +865,6 @@ void GUI::tree_selection_changed(bool focus)
 					img.focus_on(fx, fy);
 				}
 
-				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active() && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
-					img.set_selection_type(GtkCRN::Image::Overlay::User);
 				view_depth = ViewDepth::View;
 				break;
 			}
@@ -1021,32 +1019,61 @@ void GUI::tree_selection_changed(bool focus)
 			}
 			break;
 	}
-
+	edit_overlays(false);
 }
 
-void GUI::edit_overlays()
+void GUI::edit_overlays(bool refresh)
 {
 	auto mod = Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active();
 	GtkCRN::Image::OverlayConfig &lc(img.get_overlay_config(linesOverlay));
-	lc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wc(img.get_overlay_config(wordsOverlay));
 	wc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wchar(img.get_overlay_config(charOverlay));
 	wchar.editable = mod;
 
-	if (view_depth == ViewDepth::Column)
+	switch (view_depth)
 	{
-		if (mod)
-			img.set_selection_type(GtkCRN::Image::Overlay::Line);
-		else
-		{
+		case ViewDepth::Column:
+			// in column view, can edit lines
+			lc.editable = mod;
+			// in column view, can add lines
+			if (mod && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+				img.set_selection_type(GtkCRN::Image::Overlay::Line);
+			else
+			{
+				img.clear_selection();
+				img.set_selection_type(GtkCRN::Image::Overlay::None);
+			}
+			break;
+		case ViewDepth::Line:
+			// in line view, can edit lines
+			lc.editable = mod;
+			// in line view, cannot add lines
 			img.clear_selection();
 			img.set_selection_type(GtkCRN::Image::Overlay::None);
-		}
+			break;
+		default:
+			// in other views, cannot edit lines
+			lc.editable = false;
+			if (mod && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+			{
+				img.set_selection_type(GtkCRN::Image::Overlay::User);
+			}
+			else
+			{
+				img.clear_selection();
+				img.set_selection_type(GtkCRN::Image::Overlay::None);
+			}
 	}
 
-	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active() || Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
-		tree_selection_changed(false);
+	if (refresh &&
+			(Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active() ||
+			Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active()
+			)
+		)
+		{
+			tree_selection_changed(false);
+		}
 }
 
 void GUI::display_line(const Id &linid)
