@@ -38,6 +38,7 @@ namespace ori
 			WordValidation(crn::Prop3 val): ok(val) {}
 			crn::Prop3 ok;
 			int left_corr = 0, right_corr = 0;
+			crn::StringUTF8 imgsig;
 		};
 		std::unordered_map<Id, WordValidation> validation; // word Id
 		std::unordered_map<Id, std::vector<GraphicalLine>> medlines; // column Id
