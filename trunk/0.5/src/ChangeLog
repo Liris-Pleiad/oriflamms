@@ -1,3 +1,7 @@
+2016-04-01 Yann LEYDIER <yann@leydier.info>
+	* GraphicalLine (ExtractFeatures): Crashed when overflowing the image's
+		boundaries.
+
 2016-03-29 Yann LEYDIER <yann@leydier.info>
 	* Document (CompureFrontiers): 3x speed-up.
 
