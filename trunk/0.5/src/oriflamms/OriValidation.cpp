@@ -300,7 +300,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 						clustpath.push_back(wp);
 						clustimg.push_back(wpb);
 						clusttip.push_back(tippb);
-						clustsig.push_back(""/*oriword.GetImageSignature()*/); // TODO
+						clustsig.push_back(view.GetWordImageSignature(wp));
 					}
 					else
 					{
@@ -421,6 +421,7 @@ void Validation::on_close()
 					view.SetValid(w, true);
 			}
 			needsave = true;
+			doc.PropagateValidation();
 		}
 	}
 	okwords.hide_tooltip();
@@ -443,6 +444,7 @@ void Validation::conclude_word()
 	auto work = std::unordered_map<Id, std::vector<Id>>{};
 	for (const auto &w : validcontent)
 		work[w.word_id.view].push_back(w.word_id.word);
+	auto need_propagation = false;
 
 	if (okwords.IsModified())
 	{
@@ -454,6 +456,7 @@ void Validation::conclude_word()
 				view.SetValid(w, true);
 		}
 		needsave = true;
+		need_propagation = true;
 	}
 	else
 	{
@@ -492,12 +495,15 @@ void Validation::conclude_word()
 						for (const auto &w : v.second)
 							view.SetValid(w, true);
 					}
+					needsave = true;
+					need_propagation = true;
 				} // if response = yes
 			} // if needed to ask for validation
 		} // not in batch mode (= ask every time)
 	} // no modification was made
 
-	doc.PropagateValidation();
+	if (need_propagation)
+		doc.PropagateValidation();
 
 	okwords.clear();
 	kowords.clear();

@@ -1,8 +1,18 @@
 2016-04-01 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Crashed when overflowing the image's
-		boundaries.
+			boundaries.
 	* GUI (tree_selection_changed, edit_overlays): Fixed behaviour with line
-		edition and view depth.
+			edition and view depth.
+	* View (SetWordSignatureImage, GetWordSignatureImage,
+			ClearSignaturesAlignement), View_Impl_WordValidation(imgsig): Added.
+	* AlignRange: Now clears the character alignment when changing a word's
+			bounding box.
+	* Document (PropagateValidation): Bugfix (was crashing when a line 
+			contained less than 3 words).
+	* Document (conclude_word): Do not perform validation propagation when
+			unneeded.
+	* Document (on_close): Perform validation propagation when needed.
+	* Validation (read_word): Reactivated clustering.
 
 2016-03-29 Yann LEYDIER <yann@leydier.info>
 	* Document (CompureFrontiers): 3x speed-up.
@@ -10,7 +20,7 @@
 2016-03-25 Yann LEYDIER <yann@leydier.info>
 	* View Impl (cstr): Fixed @replacementPattern format.
 	* View AlignCharacters: Now tightly crops the image signature into the
-		word's bounding box.
+			word's bounding box.
 	* Document (cstr): Now creates word transcriptions from characters.
 	* Document (readTextWElements): Does not read transcriptions anymore.
 
@@ -22,9 +32,9 @@
 	* AlignConfig (NOKChars): Removed.
 	* AlignConfig (NAlWords, NAlChars): Added.
 	* Document (AlignRange): Can now align only words that are not already
-		aligned.
+			aligned.
 	* Document (AlignCharacters): Can now align only characters that are 
-		not already aligned.
+			not already aligned.
 
 2016-03-10 Yann LEYDIER <yann@leydier.info>
 	* GUI (overlay_changed): Now allows to correct character alignment.

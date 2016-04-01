@@ -1223,15 +1223,15 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 
 		const auto &line = current_view.GetLine(linid);
 		if (!line.GetWords().empty())
-		{
+		{ // not supernumerary line
 			const auto &z = current_view.GetZone(current_view.GetWord(line.GetWords().front()).GetZone());
 			if (z.GetPosition().IsValid())
-			{
-				// realign
+			{ // the first word is aligned
+				// realign the whole line
 				GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 				size_t i = pw.add_progress_bar("");
 				pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-				pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::AllWords|AlignConfig::CharsAllWords, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
+				pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::NOKWords|AlignConfig::CharsAllWords|AlignConfig::NAlChars, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
 				//project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected(); // TODO
 			}
 		}
