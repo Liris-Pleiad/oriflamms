@@ -48,6 +48,7 @@ namespace ori
 			void save_project();
 			void on_close();
 			void change_font();
+			void set_font();
 			void stats();
 			void display_words(const Id &linid);
 			void display_line(const Id &linid);

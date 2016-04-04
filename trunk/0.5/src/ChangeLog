@@ -1,3 +1,11 @@
+2016-04-04 Yann LEYDIER <yann@leydier.info>
+	* Config (GetFont, SetFont): Added.
+	* GUI (change_font): Now saving the font.
+	* Validation (cstr), CharacterDialog (cstr), GlyphSelection (cstr),
+	ValidationPanel(refresh), GUI (find_string): 
+			Now using user selected font.
+	* GUI (set_font): Added (global tooltip font and image overlays).
+
 2016-04-01 Yann LEYDIER <yann@leydier.info>
 	* GraphicalLine (ExtractFeatures): Crashed when overflowing the image's
 			boundaries.
