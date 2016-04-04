@@ -8,6 +8,7 @@
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
 #include <CRNAI/CRNIterativeClustering.h>
+#include <OriConfig.h>
 #include <CRNi18n.h>
 #include <fstream>
 #include <iostream>
@@ -53,6 +54,7 @@ Validation::Validation(Gtk::Window &parent, Document &docu, bool batch_valid, bo
 	{
 		tvc->set_sort_column(columns.name);
 		tvc->add_attribute(cr->property_weight(), columns.weight);
+		cr->property_font() = Glib::ustring(Config::GetFont().CStr());
 	}
 	tvc = tv.get_column(1);
 	if (tvc)

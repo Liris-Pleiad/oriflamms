@@ -34,11 +34,14 @@ namespace ori
 			static crn::Path GetStaticDataDir();
 			static void SetStaticDataDir(const crn::Path &dir);
 			static crn::Path GetUserDirectory();
+			static void SetFont(const crn::StringUTF8 &dir);
+			static crn::StringUTF8 GetFont();
 
 			static Config& GetInstance();
 		private:
 			static const crn::String localeDirKey;
 			static const crn::String staticDataDirKey;
+			static const crn::String fontKey;
 			Config();
 			crn::ConfigurationFile conf;
 			struct Init
