@@ -481,6 +481,7 @@ void View::Impl::load()
 		auto res = validation.emplace(el.GetAttribute<Id>("id", false), crn::Prop3{el.GetAttribute<int>("ok", false)});
 		res.first->second.left_corr = el.GetAttribute<int>("left", true);
 		res.first->second.right_corr = el.GetAttribute<int>("right", true);
+		res.first->second.imgsig = el.GetAttribute<crn::StringUTF8>("imgsig", true);
 	}
 	// read medlines
 	var = root.GetFirstChildElement("medlines");
@@ -541,6 +542,7 @@ void View::Impl::save()
 		el.SetAttribute("ok", p.second.ok.GetValue());
 		el.SetAttribute("left", p.second.left_corr);
 		el.SetAttribute("right", p.second.right_corr);
+		el.SetAttribute("imgsig", p.second.imgsig);
 	}
 	// save medlines
 	var = root.PushBackElement("medlines");
@@ -852,6 +854,7 @@ void View::SetValid(const Id &word_id, const crn::Prop3 &val)
 }
 
 /*!
+ * \throws	crn::ExceptionNotFound	invalid id
  * \param[in]	word_id	the id of the word
  * \return the alignable characters in word
  */
@@ -864,6 +867,38 @@ crn::String View::GetAlignableText(const Id &word_id) const
 		str += GetCharacter(cid).GetText();
 	}
 	return str;
+}
+
+/*! Sets a word's image signature after alignment
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+void View::SetWordImageSignature(const Id &word_id, const crn::StringUTF8 &s)
+{
+	const auto it = pimpl->validation.find(word_id);
+	if (it == pimpl->validation.end())
+		throw crn::ExceptionNotFound{"View::SetWordImageSignature(): "_s + _("Invalid word id: ") + word_id};
+	it->second.imgsig = s;
+}
+
+/*! Gets a word's image signature after alignment
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+const crn::StringUTF8& View::GetWordImageSignature(const Id &word_id) const
+{
+	const auto it = pimpl->validation.find(word_id);
+	if (it == pimpl->validation.end())
+		throw crn::ExceptionNotFound{"View::GetWordImageSignature(): "_s + _("Invalid word id: ") + word_id};
+	return it->second.imgsig;
+}
+
+/*! Clears alignment for characters in a word
+ * \throws	crn::ExceptionNotFound	invalid id
+ */
+void View::ClearCharactersAlignment(const Id &word_id)
+{
+	const auto &word = GetWord(word_id);
+	for (const auto &cid : word.GetCharacters())
+		GetZone(GetCharacter(cid).GetZone()).Clear();
 }
 
 /*!
@@ -946,35 +981,35 @@ return it->second;
 */
 void View::SetPosition(const Id &id, const crn::Rect &r, bool compute_contour)
 {
-auto zid = id;
-auto wit = pimpl->struc.words.find(id);
-if (wit != pimpl->struc.words.end())
-{
-	zid = wit->second.GetZone();
-}
-else
-{
-	auto cit = pimpl->struc.characters.find(id);
-	if (cit != pimpl->struc.characters.end())
+	auto zid = id;
+	auto wit = pimpl->struc.words.find(id);
+	if (wit != pimpl->struc.words.end())
 	{
-		zid = cit->second.GetZone();
+		zid = wit->second.GetZone();
 	}
-}
-auto zit = pimpl->zones.find(zid);
-if (zit != pimpl->zones.end())
-{
-	zit->second.SetPosition(r);
-	if (compute_contour)
-		ComputeContour(zid);
-}
-else
-	throw crn::ExceptionNotFound("View::SetPosition(): "_s + _("Invalid zone id: ") + id);
+	else
+	{
+		auto cit = pimpl->struc.characters.find(id);
+		if (cit != pimpl->struc.characters.end())
+		{
+			zid = cit->second.GetZone();
+		}
+	}
+	auto zit = pimpl->zones.find(zid);
+	if (zit != pimpl->zones.end())
+	{
+		zit->second.SetPosition(r);
+		if (compute_contour)
+			ComputeContour(zid);
+	}
+	else
+		throw crn::ExceptionNotFound("View::SetPosition(): "_s + _("Invalid zone id: ") + id);
 }
 
 /*! Sets the contour of an element
-* \throws	crn::ExceptionNotFound	invalid id
-* \param[in]	id	the id of the element
-* \param[in]	c	the contour
+ * \throws	crn::ExceptionNotFound	invalid id
+ * \param[in]	id	the id of the element
+ * \param[in]	c	the contour
  * \param[in]	set_position	shall the bounding box be automatically set?
  */
 void View::SetContour(const Id &id, const std::vector<crn::Point2DInt> &c, bool set_position)
@@ -1049,15 +1084,15 @@ struct get_neighbors
 
 namespace crn
 {
-bool operator<(const crn::Point2DInt &p1, const crn::Point2DInt &p2)
-{
-	if (p1.X < p2.X)
-		return true;
-	else if (p1.X == p2.X)
-		return p1.Y < p2.Y;
-	else
-		return false;
-}
+	bool operator<(const crn::Point2DInt &p1, const crn::Point2DInt &p2)
+	{
+		if (p1.X < p2.X)
+			return true;
+		else if (p1.X == p2.X)
+			return p1.Y < p2.Y;
+		else
+			return false;
+	}
 }
 std::vector<crn::Point2DInt> View::ComputeFrontier(size_t x, size_t y1, size_t y2) const
 {
@@ -1546,11 +1581,14 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 			continue; // XXX Is this necessary???
 
 		auto &wzone = GetZone(word.GetZone());
-		//word.SetImageSignature(align[bbn].second); // TODO
+		SetWordImageSignature(wid, align[bbn].second);
 		if (wzone.GetPosition() != align[bbn].first)
+		{ // BBox changed
+			ClearCharactersAlignment(wid);
 			SetValid(wid, crn::Prop3::Unknown);
-		if (align[bbn].first.IsValid())
-			wzone.SetPosition(align[bbn].first);
+			if (align[bbn].first.IsValid())
+				wzone.SetPosition(align[bbn].first);
+		}
 		bbox |= align[bbn].first;
 		ResetCorrections(wid); // reset left/right corrections
 		ComputeContour(word.GetZone());
@@ -1967,17 +2005,17 @@ Document::Document(const crn::Path &dirpath, crn::Progress *prog):
 			}
 			auto idlist = iel.GetFirstChildText().Split(" ");
 			/*
-			auto mel = el.GetFirstChildElement("SquareMatrixDouble");
-			if (!mel)
-			{
-				report += "char_dm.xml";
-				report += ": ";
-				report += _("missing distance matrix.");
-				report += "\n";
-				continue;
-			}
-			chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), std::make_pair(std::move(idlist), crn::SquareMatrixDouble{mel}));
-			*/
+				 auto mel = el.GetFirstChildElement("SquareMatrixDouble");
+				 if (!mel)
+				 {
+				 report += "char_dm.xml";
+				 report += ": ";
+				 report += _("missing distance matrix.");
+				 report += "\n";
+				 continue;
+				 }
+				 chars_dm.emplace(el.GetAttribute<crn::StringUTF8>("charname", false), std::make_pair(std::move(idlist), crn::SquareMatrixDouble{mel}));
+				 */
 			const auto num = el.GetAttribute<int>("num", false);
 			std::ifstream matfile;
 			matfile.open((base / ORIDIR / "dm"_p + num + ".dat"_p).CStr(), std::ios::in|std::ios::binary);
@@ -2316,6 +2354,8 @@ void Document::PropagateValidation(crn::Progress *prog)
 		auto v = GetView(vid);
 		for (const auto &lp : v.pimpl->struc.lines)
 		{
+			if (lp.second.GetWords().size() < 3)
+				continue;
 			for (size_t w = 1; w < lp.second.GetWords().size() - 1; ++w)
 			{
 				auto &precid = lp.second.GetWords()[w - 1];

@@ -8,6 +8,7 @@
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
 #include <CRNAI/CRNIterativeClustering.h>
+#include <OriConfig.h>
 #include <CRNi18n.h>
 #include <fstream>
 #include <iostream>
@@ -29,7 +30,6 @@ const crn::StringUTF8 ValidationPanel::label_revalidated("zzz0");
 ValidationPanel::ValidationPanel(Document &docu, const crn::StringUTF8 &name, bool active_m):
 	title(name),
 	nelem(0),
-	Gtk::Frame(name.CStr()),
 	dispw(0),
 	disph(0),
 	marking(false),
@@ -218,11 +218,17 @@ bool ValidationPanel::on_scroll(GdkEventScroll *ev)
 void ValidationPanel::refresh()
 {
 	// update the label
-	crn::StringUTF8 lab(title);
+	crn::StringUTF8 lab = "<span font_desc=\"" + Config::GetFont() + "\">" + title + "</span>";
 	lab += " (";
 	lab += nelem;
 	lab += ")";
-	set_label(lab.CStr());
+	auto *labw = get_label_widget();
+	auto *llab = dynamic_cast<Gtk::Label*>(labw);
+	if (llab)
+		llab->set_markup(lab.CStr());
+	else
+		set_label(lab.CStr());
+	
 
 	if (/*(positions.size() != elements.size()) ||*/ (dispw <= 0) || (disph <= 0) || locked)
 		return;

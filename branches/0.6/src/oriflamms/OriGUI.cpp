@@ -43,7 +43,7 @@ GUI::GUI():
 {
 	try
 	{
-		crn::Path iconfile(ori::Config::GetStaticDataDir() + crn::Path::Separator() + "icon.png");
+		crn::Path iconfile(Config::GetStaticDataDir() + crn::Path::Separator() + "icon.png");
 		set_icon(GdkCRN::PixbufFromFile(iconfile));
 	}
 	catch (...) { }
@@ -81,7 +81,7 @@ GUI::GUI():
 	actions->get_action("show-words")->set_accel_path("<Oriflamms>/DisplayMenu/Words");
 	actions->add(Gtk::RadioAction::create(dispgroup, "show-characters", Gtk::Stock::SELECT_FONT, _("Show _characters"), _("Show characters")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
 	actions->get_action("show-characters")->set_accel_path("<Oriflamms>/DisplayMenu/Characters");
-	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::mem_fun(this,&GUI::edit_overlays));
+	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::bind(sigc::mem_fun(this, &GUI::edit_overlays), true));
 	actions->get_action("edit")->set_accel_path("<Oriflamms>/DisplayMenu/Edit");
 
 	actions->add(Gtk::Action::create("find-string", Gtk::Stock::FIND, _("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
@@ -288,7 +288,6 @@ GUI::GUI():
 	wokc.can_jut_out = false;
 	wokc.show_labels = true;
 	wokc.absolute_text_size = false;
-	wokc.font_family = "Palemonas MUFI";
 	GtkCRN::Image::OverlayConfig &wkoc(img.get_overlay_config(wordsOverlayKo));
 	wkoc.color1 = Gdk::Color("#330000");
 	wkoc.color2 = Gdk::Color("#FFCCCC");
@@ -298,7 +297,6 @@ GUI::GUI():
 	wkoc.can_jut_out = false;
 	wkoc.show_labels = true;
 	wkoc.absolute_text_size = false;
-	wkoc.font_family = "Palemonas MUFI";
 	GtkCRN::Image::OverlayConfig &wunc(img.get_overlay_config(wordsOverlayUn));
 	wunc.color1 = Gdk::Color("#333300");
 	wunc.color2 = Gdk::Color("#FFFFCC");
@@ -308,7 +306,6 @@ GUI::GUI():
 	wunc.can_jut_out = false;
 	wunc.show_labels = true;
 	wunc.absolute_text_size = false;
-	wunc.font_family = "Palemonas MUFI";
 	GtkCRN::Image::OverlayConfig &wchar(img.get_overlay_config(charOverlay));
 	wchar.color1 = Gdk::Color("#DDEEDD");
 	wchar.color2 = Gdk::Color("#DD00DD");
@@ -320,6 +317,8 @@ GUI::GUI():
 
 	signal_delete_event().connect(sigc::bind_return(sigc::hide<0>(sigc::mem_fun(this, &GUI::on_close)), false));
 	setup_window();
+
+	set_font();
 }
 
 void GUI::about()
@@ -865,8 +864,6 @@ void GUI::tree_selection_changed(bool focus)
 					img.focus_on(fx, fy);
 				}
 
-				if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active() && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
-					img.set_selection_type(GtkCRN::Image::Overlay::User);
 				view_depth = ViewDepth::View;
 				break;
 			}
@@ -1021,32 +1018,61 @@ void GUI::tree_selection_changed(bool focus)
 			}
 			break;
 	}
-
+	edit_overlays(false);
 }
 
-void GUI::edit_overlays()
+void GUI::edit_overlays(bool refresh)
 {
 	auto mod = Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("edit"))->get_active();
 	GtkCRN::Image::OverlayConfig &lc(img.get_overlay_config(linesOverlay));
-	lc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wc(img.get_overlay_config(wordsOverlay));
 	wc.editable = mod;
 	GtkCRN::Image::OverlayConfig &wchar(img.get_overlay_config(charOverlay));
 	wchar.editable = mod;
 
-	if (view_depth == ViewDepth::Column)
+	switch (view_depth)
 	{
-		if (mod)
-			img.set_selection_type(GtkCRN::Image::Overlay::Line);
-		else
-		{
+		case ViewDepth::Column:
+			// in column view, can edit lines
+			lc.editable = mod;
+			// in column view, can add lines
+			if (mod && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+				img.set_selection_type(GtkCRN::Image::Overlay::Line);
+			else
+			{
+				img.clear_selection();
+				img.set_selection_type(GtkCRN::Image::Overlay::None);
+			}
+			break;
+		case ViewDepth::Line:
+			// in line view, can edit lines
+			lc.editable = mod;
+			// in line view, cannot add lines
 			img.clear_selection();
 			img.set_selection_type(GtkCRN::Image::Overlay::None);
-		}
+			break;
+		default:
+			// in other views, cannot edit lines
+			lc.editable = false;
+			if (mod && Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-lines"))->get_active())
+			{
+				img.set_selection_type(GtkCRN::Image::Overlay::User);
+			}
+			else
+			{
+				img.clear_selection();
+				img.set_selection_type(GtkCRN::Image::Overlay::None);
+			}
 	}
 
-	if (Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active() || Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active())
-		tree_selection_changed(false);
+	if (refresh &&
+			(Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-words"))->get_active() ||
+			Glib::RefPtr<Gtk::ToggleAction>::cast_dynamic(actions->get_action("show-characters"))->get_active()
+			)
+		)
+		{
+			tree_selection_changed(false);
+		}
 }
 
 void GUI::display_line(const Id &linid)
@@ -1113,7 +1139,7 @@ void GUI::display_characters(const Id &linid)
 void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft, const crn::Option<int> &newright)
 {
 	// compute id
-	auto itemid = crn::String{wordid};
+	const auto itemid = crn::String{wordid};
 	// clean old overlay items
 	try { img.remove_overlay_item(wordsOverlay, itemid); } catch (...) { }
 	try { img.remove_overlay_item(wordsOverlayUn, itemid); } catch (...) { }
@@ -1124,7 +1150,7 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 	if (word.GetZone().IsEmpty())
 		return;
 	auto &zone = current_view.GetZone(word.GetZone());
-	if (!zone.GetPosition().IsValid())
+	if (!zone.GetPosition().IsValid()) // this should never happen!
 		return;
 	if (newleft)
 	{
@@ -1196,15 +1222,15 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 
 		const auto &line = current_view.GetLine(linid);
 		if (!line.GetWords().empty())
-		{
+		{ // not supernumerary line
 			const auto &z = current_view.GetZone(current_view.GetWord(line.GetWords().front()).GetZone());
 			if (z.GetPosition().IsValid())
-			{
-				// realign
+			{ // the first word is aligned
+				// realign the whole line
 				GtkCRN::ProgressWindow pw(_("Aligning…"), this, true);
 				size_t i = pw.add_progress_bar("");
 				pw.get_crn_progress(i)->SetType(crn::Progress::Type::PERCENT);
-				pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::AllWords|AlignConfig::CharsAllWords, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
+				pw.run(sigc::bind(sigc::mem_fun(current_view, &View::AlignLine), AlignConfig::NOKWords|AlignConfig::CharsAllWords|AlignConfig::NAlChars, linid, pw.get_crn_progress(i))); // TODO XXX what if the line is not associated to a line in the XML?
 				//project->GetStructure().GetViews()[current_view_id].GetColumns()[colid].GetLines()[linid].SetCorrected(); // TODO
 			}
 		}
@@ -1222,7 +1248,8 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 
 		const auto &item = img.get_overlay_item(overlay_id, overlay_item_id);
 		const auto &rect = static_cast<const GtkCRN::Image::Rectangle&>(item);
-		auto nleft = rect.rect.GetLeft() ,nright = rect.rect.GetRight();
+		auto nleft = rect.rect.GetLeft();
+		auto nright = rect.rect.GetRight();
 
 		if (nright - nleft < minwordwidth)
 			nright = nleft + minwordwidth;
@@ -1517,7 +1544,8 @@ void GUI::change_font()
 	Gtk::FontSelectionDialog dial;
 	dial.set_transient_for(*this);
 	dial.set_preview_text(_("The quick bꝛown fox jumpſ over the lazy dog."));
-	dial.set_font_name(get_settings()->property_gtk_font_name());
+	if (Config::GetFont().IsNotEmpty())
+		dial.set_font_name(Config::GetFont().CStr());
 	if (dial.run() == Gtk::RESPONSE_OK)
 	{
 		Pango::FontDescription fd(dial.get_font_name());
@@ -1530,8 +1558,30 @@ void GUI::change_font()
 		wunc.font_family = ff;
 		img.force_redraw();
 
-		get_settings()->property_gtk_font_name() = dial.get_font_name();
+		Config::SetFont(dial.get_font_name().c_str());
+		set_font();
 	}
+}
+
+void GUI::set_font()
+{
+	const auto fontname = Config::GetFont();
+	// tooltips
+	auto sty = Glib::ustring("style \"customfont\" { font_name = \"");
+	sty += fontname.CStr();
+	sty += "\" }\nwidget \"gtk-tooltip*\" style \"customfont\"";
+	Gtk::RC::parse_string(sty);
+
+	// overlays
+	const auto fontfam = Pango::FontDescription(Glib::ustring(fontname.CStr())).get_family();
+	std::cout << "X" << fontfam << "X" << std::endl;
+	GtkCRN::Image::OverlayConfig &wokc(img.get_overlay_config(wordsOverlayOk));
+	wokc.font_family = fontfam;
+	GtkCRN::Image::OverlayConfig &wkoc(img.get_overlay_config(wordsOverlayKo));
+	wkoc.font_family = fontfam;
+	GtkCRN::Image::OverlayConfig &wunc(img.get_overlay_config(wordsOverlayUn));
+	wunc.font_family = fontfam;
+	img.force_redraw();
 }
 
 void GUI::stats()
@@ -1779,6 +1829,7 @@ void GUI::find_string()
 	dialog.maximize();
 	dialog.add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CLOSE);
 	Gtk::Entry* entry = Gtk::manage(new Gtk::Entry);
+	entry->modify_font(Pango::FontDescription(Glib::ustring(Config::GetFont().CStr())));
 	entry->show();
 	Gtk::HBox* hb = Gtk::manage(new Gtk::HBox);
 	hb->show();

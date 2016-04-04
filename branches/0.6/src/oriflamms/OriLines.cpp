@@ -1198,8 +1198,8 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 	// create subblock
 	const auto bx = GetFront().X;
 	const auto ex = GetBack().X;
-	const auto by = Min(GetFront().Y, GetBack().Y) - int(lh/2);
-	const auto ey = Max(GetFront().Y, GetBack().Y) + int(lh/2);
+	const auto by = Cap(Min(GetFront().Y, GetBack().Y) - int(lh/2), 0, b.GetAbsoluteBBox().GetBottom());
+	const auto ey = Cap(Max(GetFront().Y, GetBack().Y) + int(lh/2), 0, b.GetAbsoluteBBox().GetBottom());
 	auto lb = SBlock{};
 	try
 	{
@@ -1708,13 +1708,14 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 
 	// spread bounding boxes
 	sig.front().bbox.SetLeft(bx);
+	sig.front().bbox &= b.GetAbsoluteBBox();
 	for (size_t tmp = 1; tmp < sig.size(); ++tmp)
 	{
 		int x1 = sig[tmp - 1].bbox.GetRight();
 		int x2 = sig[tmp].bbox.GetLeft();
 		int y1 = At((x1 + x2) / 2);
-		int y2 = y1 + int(lh / 2);
-		y1 -= int(lh / 2);
+		int y2 = Cap(y1 + int(lh / 2), 0,  b.GetAbsoluteBBox().GetBottom());
+		y1 = Cap(y1 - int(lh / 2), 0, b.GetAbsoluteBBox().GetBottom());
 		int lsum = 0;
 		int cutx = x1;
 		for (int x = x1; x <= x2; ++x)
@@ -1733,6 +1734,8 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 		else
 			sig[tmp - 1].bbox.SetRight(cutx);
 		sig[tmp].bbox.SetLeft(cutx);
+		// make sure the box does not overflow
+		sig[tmp].bbox &= b.GetAbsoluteBBox();
 	}
 	sig.back().bbox.SetRight(ex);
 

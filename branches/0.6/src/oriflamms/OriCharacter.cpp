@@ -14,6 +14,7 @@
 #include "genetic.hpp"
 #include <unordered_set>
 #include <CRNAI/CRN2Means.h>
+#include <OriConfig.h>
 #include <CRNi18n.h>
 
 using namespace ori;
@@ -46,6 +47,9 @@ CharacterDialog::CharacterDialog(Document &docu, Gtk::Window &parent):
 	tv.set_model(store);
 	tv.append_column(_("Character"), columns.value);
 	tv.append_column(_("Count"), columns.count);
+	auto *cr = dynamic_cast<Gtk::CellRendererText*>(tv.get_column_cell_renderer(0));
+	if (cr)
+		cr->property_font() = Glib::ustring(Config::GetFont().CStr());
 	sw->add(tv);
 
 	for (const auto &c : characters)
@@ -1011,6 +1015,10 @@ GlyphSelection::GlyphSelection(Document &docu):
 	get_column(0)->set_sort_column(columns.global);
 	get_column(1)->set_sort_column(columns.id);
 	get_column(2)->set_sort_column(columns.automatic);
+
+	auto *cr = dynamic_cast<Gtk::CellRendererText*>(get_column_cell_renderer(1));
+	if (cr)
+		cr->property_font() = Glib::ustring(Config::GetFont().CStr());
 }
 
 Id GlyphSelection::get_selected_id()

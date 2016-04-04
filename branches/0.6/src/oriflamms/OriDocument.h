@@ -263,6 +263,12 @@ namespace ori
 			void SetValid(const Id &word_id, const crn::Prop3 &val);
 			/*! \brief Returns the alignable characters in word */
 			crn::String GetAlignableText(const Id &word_id) const;
+			/*! \brief Sets a word's image signature after alignment */
+			void SetWordImageSignature(const Id &word_id, const crn::StringUTF8 &s);
+			/*! \brief Gets a word's image signature after alignment */
+			const crn::StringUTF8& GetWordImageSignature(const Id &word_id) const;
+			/*! \brief Clears alignment for characters in a word */
+			void ClearCharactersAlignment(const Id &word_id);
 
 			const std::unordered_map<Id, Character>& GetCharacters() const;
 			const Character& GetCharacter(const Id &char_id) const;

@@ -14,6 +14,7 @@ using namespace ori;
 
 const crn::String Config::localeDirKey(U"LocalePath");
 const crn::String Config::staticDataDirKey(U"StaticDataPath");
+const crn::String Config::fontKey(U"Font");
 
 Config::Init::Init()
 {
@@ -52,42 +53,59 @@ crn::Path Config::GetLocaleDir()
 {
 	try
 	{
-		return GetInstance().conf.GetPath(GetInstance().localeDirKey);
+		return GetInstance().conf.GetPath(localeDirKey);
 	}
 	catch (...)
 	{
 		crn::Path p(ORIFLAMMS_LOCALE_FULL_PATH);
-		GetInstance().conf.SetData(GetInstance().localeDirKey, p);
+		GetInstance().conf.SetData(localeDirKey, p);
 		return p;
 	}
 }
 
 void Config::SetLocaleDir(const crn::Path &dir)
 {
-	GetInstance().conf.SetData(GetInstance().localeDirKey, dir);
+	GetInstance().conf.SetData(localeDirKey, dir);
 }
 
 crn::Path Config::GetStaticDataDir()
 {
 	try
 	{
-		return GetInstance().conf.GetPath(GetInstance().staticDataDirKey);
+		return GetInstance().conf.GetPath(staticDataDirKey);
 	}
 	catch (...)
 	{
 		crn::Path p(ORIFLAMMS_DATA_FULL_PATH);
-		GetInstance().conf.SetData(GetInstance().staticDataDirKey, p);
+		GetInstance().conf.SetData(staticDataDirKey, p);
 		return p;
 	}
 }
 
 void Config::SetStaticDataDir(const crn::Path &dir)
 {
-	GetInstance().conf.SetData(GetInstance().staticDataDirKey, dir);
+	GetInstance().conf.SetData(staticDataDirKey, dir);
 }
 
 crn::Path Config::GetUserDirectory()
 {
 	return GetInstance().conf.GetUserDirectory();
+}
+
+void Config::SetFont(const crn::StringUTF8 &font)
+{
+	GetInstance().conf.SetData(fontKey, font);
+}
+
+crn::StringUTF8 Config::GetFont()
+{
+	try
+	{
+		return GetInstance().conf.GetStringUTF8(fontKey);
+	}
+	catch (...)
+	{
+		return "";
+	}
 }
 
