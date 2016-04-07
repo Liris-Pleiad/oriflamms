@@ -9,6 +9,9 @@
 #include <GtkCRNMain.h>
 #include <CRNi18n.h>
 
+#include <GtkCRNImage.h>
+#include <iostream>
+
 int main(int argc, char *argv[])
 {
 	GtkCRN::Main kit(argc, argv);

@@ -1193,7 +1193,7 @@ void GUI::display_update_word(const Id &wordid, const crn::Option<int> &newleft,
 
 void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, GtkCRN::Image::MouseMode mm)
 {
-	if (overlay_id == GtkCRN::Image::selection_overlay)
+	if (overlay_id == GtkCRN::Image::selection_overlay())
 	{
 		// can add line?
 		actions->get_action("add-line")->set_sensitive(img.has_selection());

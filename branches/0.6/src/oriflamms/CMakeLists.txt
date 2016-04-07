@@ -22,7 +22,9 @@ source_group("Misc" FILES ${ORIFLAMMS_MISC})
 
 # create Titus
 add_executable(oriflamms ${ORIFLAMMS_SOURCES} ${ORIFLAMMS_HEADERS})
-set_target_properties(oriflamms PROPERTIES LINK_FLAGS "-lstdc++")
+if(NOT MSVC)
+	set_target_properties(oriflamms PROPERTIES LINK_FLAGS "-lstdc++")
+endif()
 # add dependencies
 target_link_libraries(oriflamms ${GTKCRNMM2_LIBRARIES})
 

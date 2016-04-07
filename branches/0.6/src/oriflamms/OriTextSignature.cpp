@@ -56,4 +56,3 @@ std::vector<TextSignature> TextSignatureDB::Sign(const crn::String &str)
 		sig.emplace_back(false, f[tmp]);
 	return sig;
 }
-

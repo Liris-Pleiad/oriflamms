@@ -50,9 +50,6 @@ endif(WIN32)
 set(LIBRARY_INSTALL_PATH "lib")
 set(ARCHIVE_INSTALL_PATH "lib")
 
-list(APPEND CMAKE_MODULE_PATH "/var/tmp/testcrn/share/cmake/")
-set(LIBCRN_HINTS "/var/tmp/testcrn")
-find_package(GTKCRNMM2 REQUIRED)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 ###############################################################################
@@ -66,10 +63,24 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -DPRINTOPTIM -Wnon-virtual-dtor -Woverloaded-virtual -g3 -O0 -fno-default-inline -fno-inline -fno-elide-constructors")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
+if (MSVC)
+	set(CMAKE_FIND_ROOT_PATH "${CMAKE_SOURCE_DIR}/libcrn")
+	set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/libcrn")	
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/libcrn/share/cmake/")
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /D_MBCS")
+
+	set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS)
+	set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS _SCL_SECURE_NO_WARNINGS)
+
+	#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /OPT:NOREF /OPT:NOICF /INCREMENTAL")
+endif()
+
+find_package(GTKCRNMM2 REQUIRED)
+
 ###############################################################################
 # Build
 ###############################################################################
-
 # put all binaries in the same directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out")
