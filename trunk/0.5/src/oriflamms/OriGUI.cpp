@@ -1574,7 +1574,6 @@ void GUI::set_font()
 
 	// overlays
 	const auto fontfam = Pango::FontDescription(Glib::ustring(fontname.CStr())).get_family();
-	std::cout << "X" << fontfam << "X" << std::endl;
 	GtkCRN::Image::OverlayConfig &wokc(img.get_overlay_config(wordsOverlayOk));
 	wokc.font_family = fontfam;
 	GtkCRN::Image::OverlayConfig &wkoc(img.get_overlay_config(wordsOverlayKo));
