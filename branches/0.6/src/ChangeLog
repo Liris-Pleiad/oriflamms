@@ -1,3 +1,6 @@
+2016-04-08 Yann LEYDIER <yann@leydier.info>
+	* CharacterTree: Added a HPaned around the tree.
+
 2016-04-04 Yann LEYDIER <yann@leydier.info>
 	* Config (GetFont, SetFont): Added.
 	* GUI (change_font): Now saving the font.
