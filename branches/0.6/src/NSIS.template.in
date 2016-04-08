@@ -637,8 +637,7 @@ Section "-Core installation"
 
 	SetOutPath "$INSTDIR\"
 	!define CRN_PROJECT_FOLDER "$PROJECTS_FOLDER\oriflamms"
-	!include "$%MINGWW64PATH%\redist\install_libcrn3_deps.nsi"
-	!include "$%LIBCRN_3_0_SDK%\redist\install_libcrn3.nsi"
+	!include "@CPACK_NSIS_SOURCE_DIR@\installcrn.nsi"
 	
 	SetOutPath "$INSTDIR\"
 	; configuration file
@@ -844,8 +843,7 @@ Section "Uninstall"
 	Delete "$SMPROGRAMS\$STARTMENU_FOLDER\oriflamms.lnk"
 
 	Delete "$INSTDIR\oriflamms.xml"
-	!include "$%LIBCRN_3_0_SDK%\redist\uninstall_libcrn3.nsi"
-	!include "$%MINGWW64PATH%\redist\uninstall_libcrn3_deps.nsi"
+	!include "@CPACK_NSIS_SOURCE_DIR@\uninstallcrn.nsi"
 
   ReadRegStr $START_MENU SHCTX \
    "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_DIRECTORY@" "StartMenu"

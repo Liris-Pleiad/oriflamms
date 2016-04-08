@@ -282,12 +282,15 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 	hbox->pack_start(clear_clusters, false, true, 4);
 	clear_clusters.signal_clicked().connect(sigc::mem_fun(this, &CharacterTree::clear_clustering));
 
-	hbox = Gtk::manage(new Gtk::HBox);
-	get_vbox()->pack_start(*hbox, true, true, 4);
+	//hbox = Gtk::manage(new Gtk::HBox);
+	//get_vbox()->pack_start(*hbox, true, true, 4);
+	auto *hpan0 = Gtk::manage(new Gtk::HPaned);
+	get_vbox()->pack_start(*hpan0, true, true, 4);
 
 	// left panel
 	auto *sw = Gtk::manage(new Gtk::ScrolledWindow);
-	hbox->pack_start(*sw, false, true, 4);
+	//hbox->pack_start(*sw, false, true, 4);
+	hpan0->add1(*sw);
 	sw->set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC);
 
 	store = Gtk::TreeStore::create(columns);
@@ -298,7 +301,8 @@ CharacterTree::CharacterTree(const crn::String &c, Document &docu, Gtk::Window &
 
 	// right panel
 	auto *hpan = Gtk::manage(new Gtk::HPaned);
-	hbox->pack_start(*hpan, true, true, 4);
+	//hbox->pack_start(*hpan, true, true, 4);
+	hpan0->add2(*hpan);
 	auto *vbox = Gtk::manage(new Gtk::VBox);
 	hpan->add1(*vbox);
 	auto *hbox2 = Gtk::manage(new Gtk::HBox);
