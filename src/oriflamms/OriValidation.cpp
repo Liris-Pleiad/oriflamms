@@ -1,4 +1,4 @@
-/* Copyright 2013-2015 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes
+/* Copyright 2013-2016 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes, ENS-Lyon
  *
  * file: OriValidation.h
  * \author Yann LEYDIER
@@ -320,7 +320,7 @@ void Validation::read_word(const Glib::ustring &wname, crn::Progress *prog)
 		crn::IterativeClustering<size_t> clust;
 		for (size_t i = 0; i < clustsig.size(); ++i)
 			for (size_t j = i; j < clustsig.size(); ++j)
-				if (clustsig[i].Distance(clustsig[j]) < 2)
+				if (crn::Distance(clustsig[i], clustsig[j]) < 2)
 					clust.Associate(i, j);
 
 		std::vector<std::set<size_t>> cl = clust.GetClusters();

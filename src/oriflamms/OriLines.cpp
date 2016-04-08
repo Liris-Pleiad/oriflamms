@@ -5,6 +5,7 @@
  */
 
 #include <OriLines.h>
+#include <CRNProtocols.h>
 #include <CRNMath/CRNLinearInterpolation.h>
 #include <CRNImage/CRNColorModel.h>
 #include <CRNMath/CRNMatrixComplex.h>
@@ -1797,7 +1798,7 @@ const std::vector<ImageSignature>& GraphicalLine::ExtractFeatures(Block &b) cons
 	return features;
 }
 
-void GraphicalLine::deserialize(xml::Element &el)
+void GraphicalLine::Deserialize(xml::Element &el)
 {
 	xml::Element lel(el.GetFirstChildElement("LinearInterpolation"));
 	SLinearInterpolation lin(std::static_pointer_cast<LinearInterpolation>(SObject(DataFactory::CreateData(lel)))); // might throw
@@ -1822,9 +1823,9 @@ void GraphicalLine::deserialize(xml::Element &el)
 	}
 }
 
-xml::Element GraphicalLine::serialize(xml::Element &parent) const
+xml::Element GraphicalLine::Serialize(xml::Element &parent) const
 {
-	xml::Element el(parent.PushBackElement(GetClassName().CStr()));
+	xml::Element el(parent.PushBackElement("GraphicalLine"));
 	midline->Serialize(el);
 	el.SetAttribute("lh", int(lh));
 	if (!features.empty())
@@ -1847,5 +1848,6 @@ void GraphicalLine::SetMidline(const std::vector<Point2DInt> & line)
 
 CRN_BEGIN_CLASS_CONSTRUCTOR(GraphicalLine)
 	CRN_DATA_FACTORY_REGISTER(U"GraphicalLine", GraphicalLine)
+	crn::Serializer::Register<GraphicalLine>();
 CRN_END_CLASS_CONSTRUCTOR(GraphicalLine)
 

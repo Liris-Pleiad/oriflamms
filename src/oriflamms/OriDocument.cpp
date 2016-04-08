@@ -1098,7 +1098,7 @@ std::vector<crn::Point2DInt> View::ComputeFrontier(size_t x, size_t y1, size_t y
 {
 	try
 	{
-		return SimplifyCurve(crn::AStarC(
+		return SimplifyCurve(crn::AStar(
 					crn::Point2DInt(int(x), int(y1)),
 					crn::Point2DInt(int(x), int(y2)),
 					stepcost(getWeight(), int(x)),
@@ -2500,6 +2500,7 @@ struct statelem
  */
 void Document::ExportStats(const crn::Path &fname)
 {
+#if 0
 	if (crn::IO::Access(fname, crn::IO::EXISTS))
 		crn::IO::Rm(fname);
 
@@ -3098,6 +3099,7 @@ void Document::ExportStats(const crn::Path &fname)
 	const auto dstr = doc.AsString();
 	ods.AddFile("content.xml", dstr.CStr(), dstr.Size());
 	ods.Save();
+#endif
 }
 
 /*!

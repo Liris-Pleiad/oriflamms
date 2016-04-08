@@ -7,13 +7,9 @@ cmake_minimum_required (VERSION 2.8)
 #set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Only Debug and Release" FORCE) # must be before project()
 project(oriflamms)
 set(ORIFLAMMS_PACKAGE_VERSION_MAJOR "0")
-set(ORIFLAMMS_PACKAGE_VERSION_MINOR "5")
-set(ORIFLAMMS_PACKAGE_VERSION_PATCH "15")
+set(ORIFLAMMS_PACKAGE_VERSION_MINOR "6")
+set(ORIFLAMMS_PACKAGE_VERSION_PATCH "0")
 set(ORIFLAMMS_PACKAGE_VERSION "${ORIFLAMMS_PACKAGE_VERSION_MAJOR}.${ORIFLAMMS_PACKAGE_VERSION_MINOR}.${ORIFLAMMS_PACKAGE_VERSION_PATCH}")
-
-if(MSVC)
-	message(FATAL_ERROR "Visual Studio 2013 does not completely support C++2011.")
-endif(MSVC)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)
@@ -29,9 +25,6 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 ###############################################################################
 # Override default modules with the ones in the source dir
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-# Use pkg-config on Linux
-include(ReadPkgConfig)
-#include(FindPkgConfig)
 
 ###############################################################################
 # Options
@@ -57,12 +50,11 @@ endif(WIN32)
 set(LIBRARY_INSTALL_PATH "lib")
 set(ARCHIVE_INSTALL_PATH "lib")
 
+
 if(CMAKE_COMPILER_IS_GNUCXX)
 ###############################################################################
 # g++ specifics
 ###############################################################################
-
-	read_pkg_config("libgtkcrnmm >= 3.0" LIBGTKCRNMM)
 
 	# compiler and linker options
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Winit-self -Wreturn-type -Wconversion -Wno-error=literal-suffix -Wno-literal-suffix")
@@ -71,17 +63,24 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -DPRINTOPTIM -Wnon-virtual-dtor -Woverloaded-virtual -g3 -O0 -fno-default-inline -fno-inline -fno-elide-constructors")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
+if (MSVC)
+	set(CMAKE_FIND_ROOT_PATH "${CMAKE_SOURCE_DIR}/libcrn")
+	set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/libcrn")	
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/libcrn/share/cmake/")
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /D_MBCS")
+
+	set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS)
+	set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS _SCL_SECURE_NO_WARNINGS)
+
+	#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /OPT:NOREF /OPT:NOICF /INCREMENTAL")
+endif()
+
+find_package(GTKCRNMM2 REQUIRED)
+
 ###############################################################################
 # Build
 ###############################################################################
-
-# shared or static libs
-if(BUILD_SHARED_LIBRARIES)
-	set(library_link_mode SHARED)
-else(BUILD_SHARED_LIBRARIES)
-	set(library_link_mode STATIC)
-endif(BUILD_SHARED_LIBRARIES)
-
 # put all binaries in the same directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out")

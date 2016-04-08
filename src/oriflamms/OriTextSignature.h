@@ -11,11 +11,10 @@
 #include <CRNString.h>
 #include <CRNIO/CRNPath.h>
 #include <unordered_map>
+#include <OriFeatures.h> // MSVC cannot link if we forward declare class TextSignature
 
 namespace ori
 {
-	class TextSignature;
-
 	class TextSignatureDB
 	{
 		public:
