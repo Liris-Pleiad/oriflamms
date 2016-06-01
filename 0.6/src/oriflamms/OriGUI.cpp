@@ -119,6 +119,8 @@ GUI::GUI():
 	actions->add(Gtk::RadioAction::create(g, "validation-unit", _("_Unit validation"), "Unit validation"));
 	actions->add(Gtk::RadioAction::create(g, "validation-batch", _("_Batch validation"), "Batch validation"));
 	actions->add(Gtk::Action::create("change-font", Gtk::Stock::SELECT_FONT, _("Change _font"), _("Change font")), sigc::mem_fun(this, &GUI::change_font));
+	actions->add(Gtk::ToggleAction::create("coalescent-word-boundaries", _("_Coalescent word boundaries"), _("Coalescent word boundaries")));
+	Glib::RefPtr<Gtk::ToggleAction>::cast_static(actions->get_action("coalescent-word-boundaries"))->set_active();
 
 	// Line menu
 	actions->add(Gtk::Action::create("add-point-to-line", Gtk::Stock::ADD, _("_Add point"), _("Add point")));
@@ -176,6 +178,7 @@ GUI::GUI():
 		"			<menuitem action='chars-classif'/>"
 		"		</menu>"
 		"		<menu action='option-menu'>"
+		"			<menuitem action='coalescent-word-boundaries'/>"
 		"			<menuitem action='validation-batch'/>"
 		"			<menuitem action='validation-unit'/>"
 		"			<menuitem action='change-font'/>"
@@ -1254,35 +1257,37 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 		if (nright - nleft < minwordwidth)
 			nright = nleft + minwordwidth;
 
-		const auto &path = doc->GetPosition(id);
-		const auto &line = current_view.GetLine(path.line).GetWords();
-		auto it = std::find(line.begin(), line.end(), id);
-		// need to update previous word?
-		if (it != line.begin())
-		{
-			const auto &pp = *(it - 1);
-			const auto &pzone = current_view.GetZone(current_view.GetWord(pp).GetZone());
-			if (pzone.GetPosition().IsValid())
+		if (Glib::RefPtr<Gtk::ToggleAction>::cast_static(actions->get_action("coalescent-word-boundaries"))->get_active())
+		{ // coalescent word boundaries -> modify previous and next word
+			const auto &path = doc->GetPosition(id);
+			const auto &line = current_view.GetLine(path.line).GetWords();
+			auto it = std::find(line.begin(), line.end(), id);
+			// need to update previous word?
+			if (it != line.begin())
 			{
-				if (nleft < pzone.GetPosition().GetLeft() + minwordwidth)
-					nleft = pzone.GetPosition().GetLeft() + minwordwidth;
+				const auto &pp = *(it - 1);
+				const auto &pzone = current_view.GetZone(current_view.GetWord(pp).GetZone());
+				if (pzone.GetPosition().IsValid())
+				{
+					if (nleft < pzone.GetPosition().GetLeft() + minwordwidth)
+						nleft = pzone.GetPosition().GetLeft() + minwordwidth;
+				}
+				display_update_word(pp, crn::Option<int>(), nleft - 1);
 			}
-			display_update_word(pp, crn::Option<int>(), nleft - 1);
-		}
-		// need to update next word?
-		++it;
-		if (it != line.end())
-		{
-			const auto &np = *it;
-			const auto &nzone = current_view.GetZone(current_view.GetWord(np).GetZone());
-			if (nzone.GetPosition().IsValid())
+			// need to update next word?
+			++it;
+			if (it != line.end())
 			{
-				if (nright > nzone.GetPosition().GetRight() - minwordwidth)
-					nright = nzone.GetPosition().GetRight() - minwordwidth;
+				const auto &np = *it;
+				const auto &nzone = current_view.GetZone(current_view.GetWord(np).GetZone());
+				if (nzone.GetPosition().IsValid())
+				{
+					if (nright > nzone.GetPosition().GetRight() - minwordwidth)
+						nright = nzone.GetPosition().GetRight() - minwordwidth;
+				}
+				display_update_word(np, nright + 1, crn::Option<int>());
 			}
-			display_update_word(np, nright + 1, crn::Option<int>());
 		}
-
 		// update bbox
 		display_update_word(id, nleft, nright);
 
@@ -1574,12 +1579,20 @@ void GUI::set_font()
 
 	// overlays
 	const auto fontfam = Pango::FontDescription(Glib::ustring(fontname.CStr())).get_family();
+	auto fontsize = Pango::FontDescription(Glib::ustring(fontname.CStr())).get_size();
+	const auto absfont = Pango::FontDescription(Glib::ustring(fontname.CStr())).get_size_is_absolute();
+	fontsize *= 2; // if not scaled, the size is too small
+	if (!absfont)
+		fontsize /= Pango::SCALE;
 	GtkCRN::Image::OverlayConfig &wokc(img.get_overlay_config(wordsOverlayOk));
 	wokc.font_family = fontfam;
+	wokc.text_size = (unsigned int)fontsize;
 	GtkCRN::Image::OverlayConfig &wkoc(img.get_overlay_config(wordsOverlayKo));
 	wkoc.font_family = fontfam;
+	wkoc.text_size = (unsigned int)fontsize;
 	GtkCRN::Image::OverlayConfig &wunc(img.get_overlay_config(wordsOverlayUn));
 	wunc.font_family = fontfam;
+	wunc.text_size = (unsigned int)fontsize;
 	img.force_redraw();
 }
 

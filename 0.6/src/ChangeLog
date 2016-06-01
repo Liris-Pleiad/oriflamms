@@ -1,3 +1,10 @@
+2016-06-01 Yann LEYDIER <yann@leydier.info>
+	* GUI (overlay_changed): Now using an option for coalescent word boundaries.
+	* View (AddGraphicalLine): Now estimates the line's height if there was no
+		 existing lines.
+	* Document (ExportStats): Reenabled.
+	* GUI (set_font): Now also sets the font in main panel image's overlays.
+
 2016-04-08 Yann LEYDIER <yann@leydier.info>
 	* CharacterTree: Added a HPaned around the tree.
 
