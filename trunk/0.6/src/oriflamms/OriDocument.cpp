@@ -667,11 +667,15 @@ void View::AddGraphicalLine(const std::vector<crn::Point2DInt> &pts, const Id &c
 	auto lh = std::vector<size_t>{};
 	for (const auto &l : col)
 		lh.push_back(l.GetLineHeight());
-	auto h = size_t(10); // XXX stupid default value
+	auto h = size_t(0);
 	if (!lh.empty())
 	{
 		std::sort(lh.begin(), lh.end());
 		h = lh[lh.size() / 2];
+	}
+	else
+	{ // compute
+		h = crn::EstimateLeading(*GetBlock().GetGray());
 	}
 	// add line
 	col.emplace_back(std::make_shared<crn::LinearInterpolation>(pts.begin(), pts.end()), h);
@@ -2500,7 +2504,6 @@ struct statelem
  */
 void Document::ExportStats(const crn::Path &fname)
 {
-#if 0
 	if (crn::IO::Access(fname, crn::IO::EXISTS))
 		crn::IO::Rm(fname);
 
@@ -3099,7 +3102,6 @@ void Document::ExportStats(const crn::Path &fname)
 	const auto dstr = doc.AsString();
 	ods.AddFile("content.xml", dstr.CStr(), dstr.Size());
 	ods.Save();
-#endif
 }
 
 /*!
