@@ -647,6 +647,7 @@ Section "-Core installation"
 	FileWrite $0 "	<Map protocols=$\"1078460416$\" name=$\"$\">$\r$\n"
 	FileWrite $0 "		<Path key=$\"LocalePath$\">$INSTDIR\share\locale</Path>$\r$\n"
 	FileWrite $0 "		<Path key=$\"StaticDataPath$\">$INSTDIR\share</Path>$\r$\n"
+	FileWrite $0 "		<StringUTF8 key=$\"Font$\">Arial 12</StringUTF8>$\r$\n"
 	FileWrite $0 "	</Map>$\r$\n"	
 	FileWrite $0 "</ComplexObject>$\r$\n"	
 	FileClose $0

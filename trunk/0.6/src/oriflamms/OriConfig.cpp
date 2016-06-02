@@ -46,7 +46,8 @@ Config& Config::GetInstance()
 
 bool Config::Save()
 {
-	return GetInstance().conf.Save().IsNotEmpty();
+	const auto fname = GetInstance().conf.Save();
+	return fname.IsNotEmpty();
 }
 
 crn::Path Config::GetLocaleDir()
@@ -66,6 +67,7 @@ crn::Path Config::GetLocaleDir()
 void Config::SetLocaleDir(const crn::Path &dir)
 {
 	GetInstance().conf.SetData(localeDirKey, dir);
+	Save();
 }
 
 crn::Path Config::GetStaticDataDir()
@@ -85,6 +87,7 @@ crn::Path Config::GetStaticDataDir()
 void Config::SetStaticDataDir(const crn::Path &dir)
 {
 	GetInstance().conf.SetData(staticDataDirKey, dir);
+	Save();
 }
 
 crn::Path Config::GetUserDirectory()
@@ -95,6 +98,7 @@ crn::Path Config::GetUserDirectory()
 void Config::SetFont(const crn::StringUTF8 &font)
 {
 	GetInstance().conf.SetData(fontKey, font);
+	Save();
 }
 
 crn::StringUTF8 Config::GetFont()
