@@ -1,6 +1,21 @@
-/* Copyright 2013-2016 INSA-Lyon, IRHT, ZHAO Xiaojuan, Université Paris Descartes, ENS-Lyon
+/*! Copyright 2013-2016 A2IA, CNRS, École Nationale des Chartes, ENS Lyon, INSA Lyon, Université Paris Descartes, Université de Poitiers
  *
- * file: OriGUI.h
+ * This file is part of Oriflamms.
+ *
+ * Oriflamms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Oriflamms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Oriflamms.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * \file OriGUI.h
  * \author Yann LEYDIER
  */
 
@@ -338,8 +353,30 @@ void GUI::about()
 	dial.set_program_name("Oriflamms");
 	dial.set_version(ORIFLAMMS_PACKAGE_VERSION);
 	dial.set_comments(_("Text alignment between TEI xml and images"));
-	dial.set_copyright("© LIRIS / INSA Lyon & IRHT & LIPADE / Université Paris Descartes & ICAR / ENS Lyon 2013-2016");
-	dial.set_website("http://oriflamms.hypotheses.org/");
+	dial.set_copyright("© 2013-2016 A2IA, CNRS, École Nationale des Chartes, ENS Lyon, INSA Lyon, Université Paris Descartes, Université de Poitiers");
+	dial.set_website("http://github.com/Liris-Pleiad/oriflamms");
+#include "license.hpp"
+	const char* authors[] = { 
+		"Théodore BLUCHE - theodore.bluche@a2ia.com", 
+		"Irene CECCHERINI - irene.ceccherini@irht.cnrs.fr",
+		"Florence CLOPPET - florence.cloppet@mi.parisdescartes.fr", 
+		"Vincent DEBIAIS - vincent.debiais@univ-poitiers.fr",
+		"Matthieu Decord - matthieu.decorde@ens-lyon.fr",
+		"Véronique EGLIN - veronique.eglin@insa-lyon.fr", 
+		"Estelle INGRAND VARENNE - estelle.ingrand.varenne@univ-poitiers.fr", 
+		"Christopher KERMORVANT - vincent.debiais@univ-poitiers.fr", 
+		"Alexey LAVRENTEV - alexei.lavrentev@ens-lyon.fr", 
+		"Yann LEYDIER - yann@leydier.info", 
+		"Marc SMITH - msmith@enc.sorbonne.fr", 
+		"Dominique STUTZMANN - dominique.stutzmann@irht.cnrs.fr", 
+		"Cécile TREFFORT - cecile.treffort@univ-poitiers.fr", 
+		"Nicole VINCENT - nicole.vincent@mi.parisdescartes.fr", 
+		"ZHAO Xiaojuan - zxj535938506@gmail.com", 
+		nullptr };
+	dial.set_authors(authors);
+	//const char* documenters[] = { "", nullptr };
+	//dial.set_documenters(documenters);
+	dial.set_translator_credits("Yann LEYDIER");
 	try
 	{
 		dial.set_logo(GdkCRN::PixbufFromFile(ori::Config::GetStaticDataDir() / "icon.png"));
@@ -422,119 +459,6 @@ void GUI::load_project()
 		{
 			GtkCRN::App::show_exception(ex, false);
 		}
-
-		/* exportation des caractères
-		for (size_t v = 0; v < project->GetNbViews(); ++v)
-		{
-			Glib::RefPtr<Gdk::Pixbuf> pb = Gdk::Pixbuf::create_from_file(project->GetDoc()->GetFilenames()[v].CStr());
-			View &page(project->GetStructure().GetViews()[v]);
-			for (size_t c = 0; c < page.GetColumns().size(); ++c)
-			{
-				Column &col(page.GetColumns()[c]);
-				for (size_t l = 0; l < col.GetLines().size(); ++l)
-				{
-					Line &line(col.GetLines()[l]);
-					for (size_t w = 0; w < line.GetWords().size(); ++w)
-					{
-						Word &oriword(line.GetWords()[w]);
-						crn::String text(oriword.GetText().CStr());
-						for (auto pos : crn::Range(text))
-						{
-							if (oriword.GetCharacterFrontiers().empty())
-								continue;
-							crn::Rect bbox(oriword.GetBBox());
-							if (!bbox.IsValid() || (bbox.GetHeight() <= 1))
-								continue;
-
-							// create small image (not using subpixbuf since it keeps a reference to the original image)
-							std::vector<crn::Point2DInt> fronfrontier(oriword.GetCharacterFront(pos));
-							std::vector<crn::Point2DInt> backfrontier(oriword.GetCharacterBack(pos));
-
-							int max_x = backfrontier[0].X;
-							int min_x = fronfrontier[0].X;
-
-							int min_y = fronfrontier[0].Y;
-
-							for (size_t i = 0; i < backfrontier.size(); ++i)
-							{
-								if(backfrontier[i].X > max_x)
-									max_x = backfrontier[i].X;
-							}
-							for (size_t i = 0; i < fronfrontier.size(); ++i)
-							{
-								if(fronfrontier[i].X < min_x)
-									min_x = fronfrontier[i].X;
-							}
-							if(max_x - min_x <= 1)
-								continue;
-							if ((min_x < 0) || (max_x >= pb->get_width()) || (bbox.GetTop() < 0) || (bbox.GetBottom() >= pb->get_height()))
-								continue;
-							Glib::RefPtr<Gdk::Pixbuf> wpb(Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, max_x - min_x, bbox.GetHeight()));
-
-							pb->copy_area(min_x, bbox.GetTop(), max_x - min_x, bbox.GetHeight(), wpb, 0, 0);
-
-							if(!wpb->get_has_alpha())
-								wpb = wpb->add_alpha(true, 255, 255, 255);
-							guint8* pixs = wpb->get_pixels();
-							int rowstrides = wpb->get_rowstride();
-							int channels = wpb->get_n_channels();
-
-							for (size_t j = 0; j < wpb->get_height(); ++j)
-							{
-								int x = 0;
-								for (size_t i = 0; i < fronfrontier.size() - 1; ++i)
-								{
-									double x1 = double(fronfrontier[i].X - min_x);
-									double y1 = double(fronfrontier[i].Y - min_y);
-									double x2 = double(fronfrontier[i + 1].X - min_x);
-									double y2 = double(fronfrontier[i + 1].Y - min_y);
-
-									if (double(j) == y2)
-										x = int(x2);
-									else if (double(j) == y1)
-										x = int(x1);
-									else if ((double(j) < y2) && (double(j) > y1))
-										x = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
-								}
-								for (int k = 0; k <= crn::Min(x, wpb->get_width() - 1); ++k)
-									pixs[k * channels + j * rowstrides + 3] = 0; // RGBA
-
-								int xx = 0;
-								for (size_t i = 0; i < backfrontier.size() - 1; ++i)
-								{
-									double x1 = double(backfrontier[i].X - oriword.GetBBox().GetLeft());
-									double y1 = double(backfrontier[i].Y - oriword.GetBBox().GetTop());
-									double x2 = double(backfrontier[i + 1].X - oriword.GetBBox().GetLeft());
-									double y2 = double(backfrontier[i + 1].Y - oriword.GetBBox().GetTop());
-									if (double(j) == y2)
-										xx = int(x2);
-
-									if (double(j) == y1)
-										xx = int(x1);
-
-									if ((double(j) < y2) && (double(j) > y1))
-										xx = int(x1 + (x2 - x1) * ((double(j) - y1)/(y2 - y1)));
-
-								}
-								for (int k = crn::Max(xx, 0); k < wpb->get_width(); ++k)
-									pixs[k * channels + j * rowstrides + 3] = 0; // RGBA
-							}
-							try
-							{
-								crn::Path outpath = (U"chars/"_s + text[pos]).CStr();
-								if (!crn::IO::Access(outpath, crn::IO::EXISTS))
-									crn::IO::Mkdir(outpath);
-								outpath /= int(v) + " "_p + int(c) + " "_p + int(l) + " "_p + int(w) + ".png";
-								wpb->save(outpath.CStr(), "png");
-							}
-							catch (...) {}
-						} // found text
-
-					} // for each word
-				} // for each line
-			} // for each column
-		} // for each view
- */
 	}
 }
 
