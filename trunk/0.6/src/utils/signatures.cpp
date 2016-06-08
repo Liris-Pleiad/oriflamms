@@ -108,6 +108,7 @@ int main(void)
 	sig[U''] = ""; // short virgula <-- to small, always cut :(
 	sig[U'¶'] = "l"; // para
 	sig[U'ꝯ'] = ",)"; // con
+	sig[U'⁊'] = "l"; // et
 
 	crn::xml::Document doc;
 	doc.PushBackComment("oriflamms signature table");
