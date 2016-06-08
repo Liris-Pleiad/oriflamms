@@ -1,6 +1,21 @@
-/* Copyright 2015-2016 Université Paris Descartes, ENS-Lyon
+/*! Copyright 2013-2016 A2IA, CNRS, École Nationale des Chartes, ENS Lyon, INSA Lyon, Université Paris Descartes, Université de Poitiers
  *
- * file: OriCharacter.cpp
+ * This file is part of Oriflamms.
+ *
+ * Oriflamms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Oriflamms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Oriflamms.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * \file OriCharacter.cpp
  * \author Yann LEYDIER
  */
 
@@ -11,7 +26,7 @@
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
 #include <GtkCRNApp.h>
-#include "genetic.hpp"
+#include <CRNAI/CRNGenetic.hpp>
 #include <unordered_set>
 #include <CRNAI/CRN2Means.h>
 #include <OriConfig.h>
@@ -677,11 +692,11 @@ static std::multimap<double, std::vector<size_t>> run_genetic(const crn::SquareM
 			gene = ran(rng);
 
 	// optimize the clusters!
-	auto bestclustering = Genetic(population.begin(), population.end(),
+	auto bestclustering = crn::Genetic(population.begin(), population.end(),
 			[](const std::vector<size_t> &idv1, const std::vector<size_t> &idv2, std::default_random_engine &rng)
 			{
 				auto ran = std::uniform_real_distribution<double>{0, 1};
-				auto children = CrossOver{}(idv1, idv2, rng);
+				auto children = crn::CrossOver{}(idv1, idv2, rng);
 				if (ran(rng) < 0.1)
 				{ // mutate
 					children.first[size_t(ran(rng) * double(children.first.size() - 1))] ^= 1;
@@ -786,7 +801,8 @@ static std::multimap<double, std::vector<size_t>> run_genetic(const crn::SquareM
 				return dmin / dmax;
 				*/
 			},
-		GenerationCounter{1000},
+		crn::GenerationCounter{1000},
+		crn::GenerationStrategy::KEEP_BEST_PARENT,
 		rng);
 	return bestclustering;
 }

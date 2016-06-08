@@ -1,5 +1,7 @@
 2016-06-08 Yann LEYDIER <yann@leydier.info>
 	* Document (ExportSpacings): Added.
+	* all files: Added © message and license.
+	* GUI (about): Fixed © message and added authors list.
 
 2016-06-07 Yann LEYDIER <yann@leydier.info>
 	* GUI (cstr, setup_window): Modified menu and toolbar layouts.
