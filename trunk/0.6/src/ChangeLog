@@ -1,3 +1,11 @@
+2016-06-08 Yann LEYDIER <yann@leydier.info>
+	* Document (ExportSpacings): Added.
+
+2016-06-07 Yann LEYDIER <yann@leydier.info>
+	* GUI (cstr, setup_window): Modified menu and toolbar layouts.
+	* GUI (selection_changed): Now displays a popup to add a new line.
+	* GUI (export_spaces): Added.
+
 2016-06-01 Yann LEYDIER <yann@leydier.info>
 	* GUI (overlay_changed): Now using an option for coalescent word boundaries.
 	* View (AddGraphicalLine): Now estimates the line's height if there was no

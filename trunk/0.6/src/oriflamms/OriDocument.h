@@ -405,6 +405,9 @@ namespace ori
 			/*! \brief Erases the distance matrix for a character */
 			void EraseDistanceMatrix(const crn::String &character);
 
+			/*! \brief Saves word and character spacings to an XML file */
+			void ExportSpacings(const crn::Path &filename, crn::Progress *prog = nullptr);
+
 			struct ViewStructure
 			{
 				std::unordered_map<Id, Page> pages;

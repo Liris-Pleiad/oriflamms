@@ -58,6 +58,7 @@ namespace ori
 			void clear_sig();
 			void show_chars();
 			void go_to();
+			void export_spaces();
 
 			void propagate_validation();
 			void find_string();
