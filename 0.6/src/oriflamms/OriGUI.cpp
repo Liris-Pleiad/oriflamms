@@ -19,6 +19,7 @@
 #include <OriCharacter.h>
 #include <OriTEIDisplay.h>
 #include <gtkmm/accelmap.h>
+#include <CRNImage/CRNImageGray.h>
 #include <iostream>
 
 using namespace ori;
@@ -68,20 +69,24 @@ GUI::GUI():
 	// File menu
 	actions->add(Gtk::Action::create("load-project", Gtk::Stock::OPEN, _("_Open project"), _("Open project")), sigc::mem_fun(this, &GUI::load_project));
 	actions->add(Gtk::Action::create("save-project", Gtk::Stock::SAVE, _("_Save project"), _("Save project")), sigc::mem_fun(this, &GUI::save_project));
+	actions->add(Gtk::Action::create("spaces", Gtk::StockID("gtk-crn-eye"), _("Compute _spaces"), _("Compute spaces")), sigc::mem_fun(this, &GUI::export_spaces));
+
+	// Edit menu
+	actions->add(Gtk::Action::create("edit-menu", _("_Edit"), _("Edit")));
 
 	// Display menu
 	actions->add(Gtk::Action::create("display-menu", _("_Display"), _("Display")));
 
 	Gtk::RadioAction::Group dispgroup;
-	actions->add(Gtk::RadioAction::create(dispgroup, "show-nothing", Gtk::StockID("gtk-crn-inkpen"), _("Show _image"), _("Show image")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
+	actions->add(Gtk::RadioAction::create(dispgroup, "show-nothing", Gtk::StockID("ori-I"), _("Show _image"), _("Show image")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
 	actions->get_action("show-nothing")->set_accel_path("<Oriflamms>/DisplayMenu/Clear");
-	actions->add(Gtk::RadioAction::create(dispgroup, "show-lines", Gtk::StockID("gtk-crn-inkpen"), _("Show _lines"), _("Show lines")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
+	actions->add(Gtk::RadioAction::create(dispgroup, "show-lines", Gtk::StockID("ori-L"), _("Show _lines"), _("Show lines")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
 	actions->get_action("show-lines")->set_accel_path("<Oriflamms>/DisplayMenu/Lines");
-	actions->add(Gtk::RadioAction::create(dispgroup, "show-words", Gtk::Stock::SPELL_CHECK, _("Show _words"), _("Show words")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
+	actions->add(Gtk::RadioAction::create(dispgroup, "show-words", Gtk::StockID("ori-W"), _("Show _words"), _("Show words")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
 	actions->get_action("show-words")->set_accel_path("<Oriflamms>/DisplayMenu/Words");
-	actions->add(Gtk::RadioAction::create(dispgroup, "show-characters", Gtk::Stock::SELECT_FONT, _("Show _characters"), _("Show characters")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
+	actions->add(Gtk::RadioAction::create(dispgroup, "show-characters", Gtk::StockID("ori-C"), _("Show _characters"), _("Show characters")), sigc::bind(sigc::mem_fun(this,&GUI::tree_selection_changed), false));
 	actions->get_action("show-characters")->set_accel_path("<Oriflamms>/DisplayMenu/Characters");
-	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit"), _("Edit")), sigc::bind(sigc::mem_fun(this, &GUI::edit_overlays), true));
+	actions->add(Gtk::ToggleAction::create("edit", Gtk::Stock::EDIT, _("_Edit alignment"), _("Edit alignment")), sigc::bind(sigc::mem_fun(this, &GUI::edit_overlays), true));
 	actions->get_action("edit")->set_accel_path("<Oriflamms>/DisplayMenu/Edit");
 
 	actions->add(Gtk::Action::create("find-string", Gtk::Stock::FIND, _("_Find string"), _("Find string")), sigc::mem_fun(this,&GUI::find_string));
@@ -99,17 +104,13 @@ GUI::GUI():
 	actions->add(Gtk::Action::create("chars-classif",Gtk::Stock::SELECT_FONT,_("_Characters"), _("Characters")), sigc::mem_fun(this,&GUI::show_chars));
 
 	// Alignment menu
-	actions->add(Gtk::Action::create("align-menu", _("_Alignment"), _("Alignment")));
-
 	actions->add(Gtk::Action::create("align-clear-sig", Gtk::Stock::CLEAR, _("_Clear image signatures"), _("Clear image signatures")), sigc::mem_fun(this, &GUI::clear_sig));
 	actions->add(Gtk::Action::create("align-all", Gtk::StockID("gtk-crn-two-pages"), _("Align _all"), _("Align all")), sigc::mem_fun(this, &GUI::align_all));
 	actions->add(Gtk::Action::create("align-selection", Gtk::StockID("gtk-crn-block"), _("Align _selection"), _("Align selection")), sigc::mem_fun(this, &GUI::align_selection));
 
 	// Structure menu
-	actions->add(Gtk::Action::create("structure-menu", _("_Structure"), _("Structure")));
 	actions->add(Gtk::Action::create("show-tei", Gtk::Stock::INDENT, _("Show _TEI structure"), _("Show TEI structure")), sigc::mem_fun(this, &GUI::show_tei));
 	actions->add(Gtk::Action::create("add-line", Gtk::Stock::INDENT, _("Add _line"), _("Add line")), sigc::mem_fun(this, &GUI::add_line));
-	actions->get_action("add-line")->set_sensitive(false);
 	actions->add(Gtk::Action::create("rem-lines", Gtk::Stock::CLEAR, _("Delete _median lines"), _("Delete median lines")), sigc::mem_fun(this, &GUI::rem_lines));
 	actions->get_action("rem-lines")->set_sensitive(false);
 
@@ -141,7 +142,18 @@ GUI::GUI():
 		"			<menuitem action='load-project'/>"
 		"			<menuitem action='save-project'/>"
 		"			<separator/>"
+		"			<menuitem action='valid-stats'/>"
+		"			<menuitem action='spaces'/>"
+		"			<separator/>"
+		"			<menuitem action='show-tei'/>"
+		"			<separator/>"
 		"			<menuitem action='app-quit'/>"
+		"		</menu>"
+		"		<menu action='edit-menu'>"
+		"			<menuitem action='align-all'/>"
+		"			<menuitem action='align-selection'/>"
+		"			<menuitem action='rem-lines'/>"
+		"			<menuitem action='align-clear-sig'/>"
 		"		</menu>"
 		"		<menu action='display-menu'>"
 		"			<menuitem action='image-zoom-in'/>"
@@ -157,30 +169,21 @@ GUI::GUI():
 		"			<menuitem action='find-string'/>"
 		"			<menuitem action='go-to'/>"
 		"		</menu>"
-		"		<menu action='structure-menu'>"
-		"			<menuitem action='show-tei'/>"
-		"			<separator/>"
-		"			<menuitem action='edit'/>"
-		"			<menuitem action='add-line'/>"
-		"			<menuitem action='rem-lines'/>"
-		"		</menu>"
-		"		<menu action='align-menu'>"
-		"			<menuitem action='align-clear-sig'/>"
-		"			<menuitem action='align-all'/>"
-		"			<menuitem action='align-selection'/>"
-		"		</menu>"
 		"		<menu action='valid-menu'>"
+		"			<menuitem action='edit'/>"
+		"			<separator/>"
 		"			<menuitem action='valid-words'/>"
+		"			<menuitem action='chars-classif'/>"
 		"			<separator/>"
 		"			<menuitem action='valid-propagate'/>"
-		"			<menuitem action='valid-stats'/>"
 		"			<separator/>"
-		"			<menuitem action='chars-classif'/>"
 		"		</menu>"
 		"		<menu action='option-menu'>"
 		"			<menuitem action='coalescent-word-boundaries'/>"
+		"			<separator/>"
 		"			<menuitem action='validation-batch'/>"
 		"			<menuitem action='validation-unit'/>"
+		"			<separator/>"
 		"			<menuitem action='change-font'/>"
 		"		</menu>"
 		"		<menu action='app-help-menu'>"
@@ -194,6 +197,10 @@ GUI::GUI():
 		"		<toolitem action='image-zoom-fit'/>"
 		"		<separator/>"
 		"		<toolitem action='edit'/>"
+		"		<toolitem action='show-nothing'/>"
+		"		<toolitem action='show-lines'/>"
+		"		<toolitem action='show-words'/>"
+		"		<toolitem action='show-characters'/>"
 		"	</toolbar>"
 		"	<popup name='ToolBarMenu'>"
 		"		<menuitem action='show-nothing'/>"
@@ -210,6 +217,9 @@ GUI::GUI():
 		"	<popup name='SuperLinePopup'>"
 		"		<menuitem action='remove-superline'/>"
 		"	</popup>"
+		"	<popup name='NewLinePopup'>"
+		"		<menuitem action='add-line'/>"
+		"	</popup>"
 		"</ui>";
 
 	ui_manager->add_ui_from_string(ui_info);
@@ -219,10 +229,6 @@ GUI::GUI():
 
 	vbox->pack_start(*ui_manager->get_widget("/MenuBar"), false, true, 0);
 	vbox->pack_start(*ui_manager->get_widget("/ToolBar"), false, true, 0);
-	auto *toolmenu = Gtk::manage(new Gtk::MenuToolButton);
-	toolmenu->set_menu(*dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/ToolBarMenu")));
-	toolmenu->show();
-	dynamic_cast<Gtk::Toolbar*>(ui_manager->get_widget("/ToolBar"))->append(*toolmenu);
 
 	Gtk::HPaned *hb = Gtk::manage(new Gtk::HPaned);
 	hb->show();
@@ -534,11 +540,13 @@ void GUI::load_project()
 
 void GUI::setup_window()
 {
-	actions->get_action("align-menu")->set_sensitive(doc != nullptr);
-	actions->get_action("valid-menu")->set_sensitive(doc != nullptr);
+	actions->get_action("edit-menu")->set_sensitive(doc != nullptr);
 	actions->get_action("display-menu")->set_sensitive(doc != nullptr);
-	actions->get_action("structure-menu")->set_sensitive(doc != nullptr);
+	actions->get_action("valid-menu")->set_sensitive(doc != nullptr);
 	actions->get_action("save-project")->set_sensitive(doc != nullptr);
+	actions->get_action("valid-stats")->set_sensitive(doc != nullptr);
+	actions->get_action("spaces")->set_sensitive(doc != nullptr);
+	actions->get_action("show-tei")->set_sensitive(doc != nullptr);
 
 	set_win_title();
 }
@@ -815,7 +823,6 @@ void GUI::tree_selection_changed(bool focus)
 	}
 	img.set_selection_type(GtkCRN::Image::Overlay::None);
 	img.clear_selection();
-	actions->get_action("add-line")->set_sensitive(false);
 	actions->get_action("rem-lines")->set_sensitive(false);
 
 	switch (level)
@@ -1199,7 +1206,14 @@ void GUI::overlay_changed(crn::String overlay_id, crn::String overlay_item_id, G
 	if (overlay_id == GtkCRN::Image::selection_overlay())
 	{
 		// can add line?
-		actions->get_action("add-line")->set_sensitive(img.has_selection());
+		try
+		{
+			img.get_selection_as_line();
+			using namespace std::chrono;
+			auto time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+			dynamic_cast<Gtk::Menu*>(ui_manager->get_widget("/NewLinePopup"))->popup(1, gtk_get_current_event_time());
+		}
+		catch (...) {}
 	}
 	else if (overlay_id == linesOverlay)
 	{
@@ -1951,6 +1965,34 @@ void GUI::go_to()
 		}
 		catch (...) { }
 		GtkCRN::App::show_message(_("Not found."), Gtk::MESSAGE_INFO);
+	}
+}
+
+void GUI::export_spaces()
+{
+	Gtk::FileChooserDialog dial(*this, _("Export statistics on spaces"), Gtk::FILE_CHOOSER_ACTION_SAVE);
+	dial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+	dial.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
+	std::vector<int> altbut;
+	altbut.push_back(Gtk::RESPONSE_ACCEPT);
+	altbut.push_back(Gtk::RESPONSE_CANCEL);
+	dial.set_alternative_button_order_from_array(altbut);
+	dial.set_default_response(Gtk::RESPONSE_ACCEPT);
+	Gtk::FileFilter ff;
+	ff.set_name(_("XML files"));
+	ff.add_pattern("*.xml");
+	ff.add_pattern("*.Xml");
+	ff.add_pattern("*.XML");
+	dial.add_filter(ff);
+	dial.set_filename("spaces.xml");
+	if (dial.run() == Gtk::RESPONSE_ACCEPT)
+	{
+		dial.hide();
+
+		GtkCRN::ProgressWindow pw(_("Computing spacings…"), this, true);
+		pw.set_terminate_on_exception(false);
+		auto i = pw.add_progress_bar("");
+		pw.run(sigc::bind(sigc::mem_fun(*doc, &Document::ExportSpacings), crn::Path{dial.get_filename().c_str()}, pw.get_crn_progress(i)));
 	}
 }
 

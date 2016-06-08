@@ -3129,6 +3129,308 @@ void Document::EraseDistanceMatrix(const crn::String &character)
 	chars_dm.erase(it);
 }
 
+struct WStream
+{
+	WStream(int bx, int by, int ex, int ey, int a):
+		b(bx, by),
+		e(ex, ey),
+		area(a)
+	{ }
+	crn::Point2DInt b, e;
+	int area;
+};
+/*! Saves word and character spacings to an XML file
+ * \throws	
+ * \param[in]	filename	the xml file to create or overwrite
+ * \param[in]	prog	a progress bar
+ */
+void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
+{
+	auto wspaces = std::unordered_map<Id, WStream>{};
+	auto cspaces = std::unordered_map<Id, WStream>{};
+	auto outx = crn::xml::Document{};
+	outx.PushBackComment("Word and characters spacing.");
+	outx.PushBackComment("There is no spacing information at the left of the first word and character of a line and at the right of the last word or character.");
+	outx.PushBackComment("Other missing spacing information are undecidable cases (e.g.: a white space crossing two character at their left).");
+	auto root = outx.PushBackElement("orispacing");
+	auto wel = root.PushBackElement("words");
+	auto cel = root.PushBackElement("characters");
+	if (prog)
+		prog->SetMaxCount(GetViews().size());
+	for (const auto &vid : GetViews())
+	{
+		const auto &v = GetView(vid);
+		auto &b = v.GetBlock();
+
+		const auto sw = crn::StrokesWidth(*b.GetGray());
+
+		const auto &lines = v.GetLines();
+		for (const auto &l : lines)
+		{
+			const auto &lzone = v.GetZone(l.second.GetZone());
+			if (!lzone.GetPosition().IsValid())
+				continue; // do not process line if it wasn't aligned
+
+			try
+			{
+				const auto &medline = v.GetGraphicalLine(l.first);
+				const auto bx = medline.GetFront().X;
+				const auto ex = medline.GetBack().X;
+				const auto lh = medline.GetLineHeight();
+				auto by = medline.At(bx);
+				auto ey = medline.At(bx);
+				for (auto x = bx + 1; x <= ex; ++x)
+				{
+					const auto y = medline.At(x);
+					if (y < by) by = y;
+					if (y > ey) ey = y;
+				}
+				by -= int(lh / 2);
+				ey += int(lh / 2);
+				// compute threshold around the medline
+				auto ig = crn::ImageGray(*b.GetGray(), crn::Rect(bx, by, ex, ey));
+				auto hist = crn::Histogram{256};
+				for (auto x = bx; x <= ex; ++x)
+				{
+					const auto y = medline.At(x);
+					hist.IncBin(ig.At(x - bx, y - by));
+					hist.IncBin(ig.At(x - bx, y - by - 1));
+					hist.IncBin(ig.At(x - bx, y - by + 1));
+				}
+				auto ibw = crn::Threshold(ig, uint8_t(hist.Fisher()));
+
+				// follow the med line and find white streams
+				auto streams = std::vector<WStream>{};
+				auto in = false;
+				auto startx = bx, starty = by, endx = bx, endy = by, area = 0;
+				for (auto x = bx; x <= ex; ++x)
+				{
+					const auto y = medline.At(x);
+					if (ibw.At(x - bx, y - by))
+					{ // found white pixel
+						if (in)
+						{ // update end of stream
+							endx = x;
+							endy = y;
+						}
+						else
+						{ // start new stream
+							in = true;
+							startx = endx = x;
+							starty = endy = y;
+							area = 0;
+						}
+						// compute area
+						auto sby = y;
+						for (; sby > y - 2 * sw; --sby)
+						{
+							const auto i = x - bx;
+							if (i < 0)
+								break;
+							const auto j = sby - by;
+							if (j < 0)
+								break;
+							if (!ibw.At(i, j))
+								break;
+						}
+						auto sey = y;
+						for (; sey < y + 2 * sw; ++sey)
+						{
+							const auto i = x - bx;
+							if (i >= ibw.GetWidth())
+								break;
+							const auto j = sey - by;
+							if (j >= ibw.GetHeight())
+								break;
+							if (!ibw.At(i, j))
+								break;
+						}
+						area += sey - sby + 1;
+					}
+					else
+					{ // found black pixel
+						if (in)
+						{ // end stream
+							if ((startx != bx) && (endx != ex)) // don't store the first and last
+								streams.emplace_back(startx, starty, endx, endy, area);
+							in = false;
+						}
+					}
+				} // follow medline
+
+				// associate streams to words and characters
+				const auto &wids = l.second.GetWords(); // in theory if the line has a bbox, all words are aligned
+				auto cids = std::vector<Id>{};
+				auto wboxes = std::vector<crn::Rect>{};
+				auto cboxes = std::vector<crn::Rect>{};
+				for (const auto &wid : wids)
+				{ // add aligned characters
+					const auto &w = v.GetWord(wid);
+					wboxes.push_back(v.GetZone(w.GetZone()).GetPosition());
+					for (const auto &id : w.GetCharacters())
+					{
+						const auto &c = v.GetCharacter(id);
+						const auto &cbox = v.GetZone(c.GetZone()).GetPosition();
+						if (cbox.IsValid())
+						{
+							cids.push_back(id);
+							cboxes.push_back(cbox);
+						}
+					}
+				}
+				// compute association matrices
+				auto wleft = crn::MatrixInt(streams.size(), wids.size(), 0);
+				auto wright = crn::MatrixInt(streams.size(), wids.size(), 0);
+				auto cleft = crn::MatrixInt(streams.size(), cids.size(), 0);
+				auto cright = crn::MatrixInt(streams.size(), cids.size(), 0);
+				for (auto snum : crn::Range(streams))
+				{
+					for (auto wnum : crn::Range(wids))
+					{
+						if ((streams[snum].b.X <= wboxes[wnum].GetLeft()) && (streams[snum].e.X >= wboxes[wnum].GetLeft()))
+							wleft[snum][wnum] = 1;
+						if ((streams[snum].b.X <= wboxes[wnum].GetRight()) && (streams[snum].e.X >= wboxes[wnum].GetRight()))
+							wright[snum][wnum] = 1;
+					}
+					for (auto cnum : crn::Range(cids))
+					{
+						if ((streams[snum].b.X <= cboxes[cnum].GetLeft()) && (streams[snum].e.X >= cboxes[cnum].GetLeft()))
+							cleft[snum][cnum] = 1;
+						if ((streams[snum].b.X <= cboxes[cnum].GetRight()) && (streams[snum].e.X >= cboxes[cnum].GetRight()))
+							cright[snum][cnum] = 1;
+					}
+				}
+				// check association correctness
+				for (auto r = size_t{0}; r < streams.size(); ++r)
+				{
+					//   -> if a stream is associated to more than one word, remove it
+					auto sl = 0, sr = 0;
+					for (auto c = size_t{0}; c < wids.size(); ++c)
+					{
+						sl += wleft[r][c];
+						sr += wright[r][c];
+						if ((sl > 1) && (sr > 1))
+							break;
+					}
+					if (sl > 1)
+						wleft.MultRow(r, 0);
+					if (sr > 1)
+						wright.MultRow(r, 0);
+					//   -> if a stream is associated to more than one character, remove it
+					sl = 0; sr = 0;
+					for (auto c = size_t{0}; c < cids.size(); ++c)
+					{
+						sl += cleft[r][c];
+						sr += cright[r][c];
+						if ((sl > 1) && (sr > 1))
+							break;
+					}
+					if (sl > 1)
+						cleft.MultRow(r, 0);
+					if (sr > 1)
+						cright.MultRow(r, 0);
+				}
+				//   -> if a word's bound is associated to more than one stream, remove it
+				for (auto c = size_t{0}; c < wids.size(); ++c)
+				{
+					auto sl = 0, sr = 0;
+					for (auto r = size_t{0}; r < streams.size(); ++r)
+					{
+						sl += wleft[r][c];
+						sr += wright[r][c];
+						if ((sl > 1) && (sr > 1))
+							break;
+					}
+					if (sl > 1)
+						wleft.MultColumn(c, 0);
+					if (sr > 1)
+						wright.MultColumn(c, 0);
+				}
+				//   -> if a character's bound is associated to more than one stream, remove it
+				for (auto c = size_t{0}; c < cids.size(); ++c)
+				{
+					auto sl = 0, sr = 0;
+					for (auto r = size_t{0}; r < streams.size(); ++r)
+					{
+						sl += cleft[r][c];
+						sr += cright[r][c];
+						if ((sl > 1) && (sr > 1))
+							break;
+					}
+					if (sl > 1)
+						cleft.MultColumn(c, 0);
+					if (sr > 1)
+						cright.MultColumn(c, 0);
+				}
+				// save words to XML
+				for (auto c = size_t{0}; c < wids.size(); ++c)
+				{
+					auto rl = wleft.ArgmaxInColumn(c);
+					auto rr = wright.ArgmaxInColumn(c);
+					if (wleft[rl][c] || wright[rr][c])
+					{
+						auto el = wel.PushBackElement("w");
+						el.SetAttribute("id", wids[c]);
+						if (wleft[rl][c])
+						{
+							auto sel = el.PushBackElement("left");
+							sel.SetAttribute("lx", streams[rl].b.X);
+							sel.SetAttribute("ly", streams[rl].b.Y);
+							sel.SetAttribute("rx", streams[rl].e.X);
+							sel.SetAttribute("ry", streams[rl].e.Y);
+							sel.SetAttribute("area", streams[rl].area);
+						}
+						if (wright[rr][c])
+						{
+							auto sel = el.PushBackElement("right");
+							sel.SetAttribute("lx", streams[rr].b.X);
+							sel.SetAttribute("ly", streams[rr].b.Y);
+							sel.SetAttribute("rx", streams[rr].e.X);
+							sel.SetAttribute("ry", streams[rr].e.Y);
+							sel.SetAttribute("area", streams[rr].area);
+						}
+					}
+				}
+				// save characters to XML
+				for (auto c = size_t{0}; c < cids.size(); ++c)
+				{
+					auto rl = cleft.ArgmaxInColumn(c);
+					auto rr = cright.ArgmaxInColumn(c);
+					if (cleft[rl][c] || cright[rr][c])
+					{
+						auto el = cel.PushBackElement("c");
+						el.SetAttribute("id", cids[c]);
+						if (cleft[rl][c])
+						{
+							auto sel = el.PushBackElement("left");
+							sel.SetAttribute("lx", streams[rl].b.X);
+							sel.SetAttribute("ly", streams[rl].b.Y);
+							sel.SetAttribute("rx", streams[rl].e.X);
+							sel.SetAttribute("ry", streams[rl].e.Y);
+							sel.SetAttribute("area", streams[rl].area);
+						}
+						if (cright[rr][c])
+						{
+							auto sel = el.PushBackElement("right");
+							sel.SetAttribute("lx", streams[rr].b.X);
+							sel.SetAttribute("ly", streams[rr].b.Y);
+							sel.SetAttribute("rx", streams[rr].e.X);
+							sel.SetAttribute("ry", streams[rr].e.Y);
+							sel.SetAttribute("area", streams[rr].area);
+						}
+					}
+				}
+
+			}
+			catch (crn::Exception&) {} // this should not happen
+		}
+		if (prog)
+			prog->Advance();
+	}
+	// save
+	outx.Save(filename);
+}
+
 static crn::StringUTF8 allTextInElement(crn::xml::Element &el)
 {
 	auto txt = ""_s;
