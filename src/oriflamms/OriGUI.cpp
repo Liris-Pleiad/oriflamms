@@ -361,7 +361,7 @@ void GUI::about()
 		"Irene CECCHERINI - irene.ceccherini@irht.cnrs.fr",
 		"Florence CLOPPET - florence.cloppet@mi.parisdescartes.fr", 
 		"Vincent DEBIAIS - vincent.debiais@univ-poitiers.fr",
-		"Matthieu Decord - matthieu.decorde@ens-lyon.fr",
+		"Matthieu DECORDE - matthieu.decorde@ens-lyon.fr",
 		"Véronique EGLIN - veronique.eglin@insa-lyon.fr", 
 		"Estelle INGRAND VARENNE - estelle.ingrand.varenne@univ-poitiers.fr", 
 		"Christopher KERMORVANT - vincent.debiais@univ-poitiers.fr", 
