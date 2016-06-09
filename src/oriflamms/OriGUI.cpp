@@ -84,7 +84,7 @@ GUI::GUI():
 	// File menu
 	actions->add(Gtk::Action::create("load-project", Gtk::Stock::OPEN, _("_Open project"), _("Open project")), sigc::mem_fun(this, &GUI::load_project));
 	actions->add(Gtk::Action::create("save-project", Gtk::Stock::SAVE, _("_Save project"), _("Save project")), sigc::mem_fun(this, &GUI::save_project));
-	actions->add(Gtk::Action::create("spaces", Gtk::StockID("gtk-crn-eye"), _("Compute _spaces"), _("Compute spaces")), sigc::mem_fun(this, &GUI::export_spaces));
+	actions->add(Gtk::Action::create("spaces", Gtk::StockID("gtk-crn-eye"), _("Compute _spacings"), _("Compute spacings")), sigc::mem_fun(this, &GUI::export_spaces));
 
 	// Edit menu
 	actions->add(Gtk::Action::create("edit-menu", _("_Edit"), _("Edit")));
@@ -1894,7 +1894,7 @@ void GUI::go_to()
 
 void GUI::export_spaces()
 {
-	Gtk::FileChooserDialog dial(*this, _("Export statistics on spaces"), Gtk::FILE_CHOOSER_ACTION_SAVE);
+	Gtk::FileChooserDialog dial(*this, _("Export statistics on spacings"), Gtk::FILE_CHOOSER_ACTION_SAVE);
 	dial.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
 	dial.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_ACCEPT);
 	std::vector<int> altbut;
@@ -1908,7 +1908,7 @@ void GUI::export_spaces()
 	ff.add_pattern("*.Xml");
 	ff.add_pattern("*.XML");
 	dial.add_filter(ff);
-	dial.set_filename("spaces.xml");
+	dial.set_filename("spacings.xml");
 	if (dial.run() == Gtk::RESPONSE_ACCEPT)
 	{
 		dial.hide();

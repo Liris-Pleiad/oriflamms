@@ -1,4 +1,3 @@
-../oriflamms/genetic.hpp
 ../oriflamms/OriFeatures.cpp
 ../oriflamms/OriCharacter.h
 ../oriflamms/OriGUI.cpp
@@ -9,7 +8,9 @@
 ../oriflamms/OriValidationPanel.h
 ../oriflamms/OriDocument.cpp
 ../oriflamms/OriTextSignature.cpp
+../oriflamms/license.hpp
 ../oriflamms/OriFeatures.h
+../oriflamms/genetic (copy).hpp
 ../oriflamms/OriValidationPanel.cpp
 ../oriflamms/OriDocument.h
 ../oriflamms/OriLines.h
