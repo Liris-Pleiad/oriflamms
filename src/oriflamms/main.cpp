@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	{
 		try
 		{
-			Glib::RefPtr<Gdk::Pixbuf> pb = GdkCRN::PixbufFromFile(ori::Config::GetStaticDataDir() / iconlist[tmp].file);
+			Glib::RefPtr<Gdk::Pixbuf> pb = Gdk::Pixbuf::create_from_file((ori::Config::GetStaticDataDir() / iconlist[tmp].file).CStr());
 			if (pb)
 			{
 				icons.push_back(Gtk::IconSet(pb));

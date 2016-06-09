@@ -544,7 +544,7 @@ FunctionEnd
   !insertmacro MUI_PAGE_LICENSE "@CPACK_RESOURCE_FILE_LICENSE@"
   Page custom InstallOptionsPage
   !insertmacro MUI_PAGE_DIRECTORY
-	Page custom AskForProjectDir GotProjectDir 
+	;Page custom AskForProjectDir GotProjectDir 
   
   ;Start Menu Folder Page Configuration
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "SHCTX" 
@@ -909,13 +909,13 @@ Section "Uninstall"
   StrCpy $MUI_TEMP "$START_MENU"
   Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
 @CPACK_NSIS_DELETE_ICONS_EXTRA@
-  
+
   ;Delete empty start menu parent diretories
   StrCpy $MUI_TEMP "$SMPROGRAMS\$MUI_TEMP"
  
   secondStartMenuDeleteLoop:
     ClearErrors
-    RMDir $MUI_TEMP
+    RMDir /r $MUI_TEMP
     GetFullPathName $MUI_TEMP "$MUI_TEMP\.."
     
     IfErrors secondStartMenuDeleteLoopDone
