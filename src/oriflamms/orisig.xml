@@ -16,7 +16,7 @@
     <ent char="67" sig="(&apos;"/>
     <ent char="68" sig="l)"/>
     <ent char="69" sig="l&apos;"/>
-    <ent char="70" sig=""/>
+    <ent char="70" sig="l&apos;"/>
     <ent char="71" sig="(l"/>
     <ent char="72" sig="ll"/>
     <ent char="73" sig="l"/>
@@ -33,7 +33,7 @@
     <ent char="84" sig="l&apos;"/>
     <ent char="85" sig="ll"/>
     <ent char="86" sig="ll"/>
-    <ent char="88" sig=""/>
+    <ent char="88" sig="l"/>
     <ent char="89" sig=",l&apos;"/>
     <ent char="90" sig=",&apos;"/>
     <ent char="97" sig=",l"/>
@@ -91,14 +91,17 @@
     <ent char="868" sig=""/>
     <ent char="7653" sig=""/>
     <ent char="7823" sig="ll"/>
+    <ent char="7836" sig="l&apos;"/>
     <ent char="8266" sig="l"/>
     <ent char="42833" sig="l)"/>
     <ent char="42835" sig=",l)"/>
+    <ent char="42841" sig="(l"/>
     <ent char="42843" sig=")"/>
     <ent char="42845" sig="),"/>
     <ent char="42863" sig=",)"/>
     <ent char="42864" sig=""/>
     <ent char="58981" sig="l)"/>
+    <ent char="59571" sig="(l)"/>
     <ent char="61784" sig=",&apos;"/>
     <ent char="61793" sig=","/>
     <ent char="61868" sig="."/>

@@ -50,7 +50,7 @@ int main(void)
 	sig[U'È'] = "l'";
 	sig[U'Ê'] = "l'";
 	sig[U'Ë'] = "l'";
-	sig[U'F'] = ""; // TODO NOT FOUND
+	sig[U'F'] = "l'"; // l'
 	sig[U'G'] = "(l"; // ll  ll  ll  l'
 	sig[U'H'] = "ll";
 	sig[U'I'] = "l"; // 'l  ,l  ,l  l  ,l  l  l  l
@@ -72,7 +72,7 @@ int main(void)
 	sig[U'Û'] = "ll";
 	sig[U'Ü'] = "ll";
 	sig[U'V'] = "ll";
-	sig[U'X'] = ""; // TODO NOT FOUND
+	sig[U'X'] = "l"; // TODO NOT FOUND
 	sig[U'Y'] = ",l'"; // NOT FOUND  ,l'  ,ll  ,l'  (3 occurrences)
 	sig[U'Z'] = ",'"; // TODO NOT FOUND
 	sig[U'a'] = ",l";
@@ -131,6 +131,9 @@ int main(void)
 	sig[U'ꝯ'] = ",)"; // con
 	sig[U'⁊'] = "l"; // et
 
+	sig[U''] = "(l)"; // q+r rot
+	sig[U'ꝙ'] = "(l"; //
+	sig[U'ẜ'] = "l'"; // f barré
 	crn::xml::Document doc;
 	doc.PushBackComment("oriflamms signature table");
 	crn::xml::Element root(doc.PushBackElement("orisig"));

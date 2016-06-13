@@ -1654,7 +1654,7 @@ void View::AlignWordCharacters(AlignConfig conf, const Id &line_id, const Id &wo
 		auto csig = TextSignatureDB::Sign(ctxt);
 		if (csig.empty())
 		{
-			CRNWarning(cid + U" (" + ctxt + U") at line " + line_id + U": " + _("empty signature."));
+			CRNWarning(cid + U" (" + ctxt + U") @ line " + line_id + U": " + _("empty signature."));
 			csig.emplace_back(true, 'l');
 		}
 		std::move(csig.begin(), csig.end(), std::back_inserter(wsig));
