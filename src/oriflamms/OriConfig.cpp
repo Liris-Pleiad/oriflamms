@@ -36,17 +36,18 @@ Config::Init::Init()
 Config::Init Config::init;
 
 Config::Config():
-	conf("oriflamms")
+	appconf("oriflamms"),
+	userconf("oriflamms", "user", crn::ConfigurationType::USER)
 {
-	if (conf.Load().IsEmpty())
+	if (appconf.Load().IsEmpty())
 	{
-		conf.SetData(localeDirKey, crn::Path(ORIFLAMMS_LOCALE_FULL_PATH));
-		conf.SetData(staticDataDirKey, crn::Path(ORIFLAMMS_DATA_FULL_PATH));
-		conf.Save();
+		appconf.SetData(localeDirKey, crn::Path(ORIFLAMMS_LOCALE_FULL_PATH));
+		appconf.SetData(staticDataDirKey, crn::Path(ORIFLAMMS_DATA_FULL_PATH));
+		appconf.Save();
 	}
 
 	char *loc = setlocale(LC_ALL, "");
-	loc = bindtextdomain(GETTEXT_PACKAGE, conf.GetPath(localeDirKey).CStr());
+	loc = bindtextdomain(GETTEXT_PACKAGE, appconf.GetPath(localeDirKey).CStr());
 	loc = bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
 	loc = textdomain(GETTEXT_PACKAGE);
 }
@@ -59,27 +60,28 @@ Config& Config::GetInstance()
 
 bool Config::Save()
 {
-	const auto fname = GetInstance().conf.Save();
-	return fname.IsNotEmpty();
+	const auto appfname = GetInstance().appconf.Save();
+	const auto userfname = GetInstance().userconf.Save();
+	return appfname.IsNotEmpty() && userfname.IsNotEmpty();
 }
 
 crn::Path Config::GetLocaleDir()
 {
 	try
 	{
-		return GetInstance().conf.GetPath(localeDirKey);
+		return GetInstance().appconf.GetPath(localeDirKey);
 	}
 	catch (...)
 	{
 		crn::Path p(ORIFLAMMS_LOCALE_FULL_PATH);
-		GetInstance().conf.SetData(localeDirKey, p);
+		GetInstance().appconf.SetData(localeDirKey, p);
 		return p;
 	}
 }
 
 void Config::SetLocaleDir(const crn::Path &dir)
 {
-	GetInstance().conf.SetData(localeDirKey, dir);
+	GetInstance().appconf.SetData(localeDirKey, dir);
 	Save();
 }
 
@@ -87,30 +89,30 @@ crn::Path Config::GetStaticDataDir()
 {
 	try
 	{
-		return GetInstance().conf.GetPath(staticDataDirKey);
+		return GetInstance().appconf.GetPath(staticDataDirKey);
 	}
 	catch (...)
 	{
 		crn::Path p(ORIFLAMMS_DATA_FULL_PATH);
-		GetInstance().conf.SetData(staticDataDirKey, p);
+		GetInstance().appconf.SetData(staticDataDirKey, p);
 		return p;
 	}
 }
 
 void Config::SetStaticDataDir(const crn::Path &dir)
 {
-	GetInstance().conf.SetData(staticDataDirKey, dir);
+	GetInstance().appconf.SetData(staticDataDirKey, dir);
 	Save();
 }
 
 crn::Path Config::GetUserDirectory()
 {
-	return GetInstance().conf.GetUserDirectory();
+	return GetInstance().appconf.GetUserDirectory();
 }
 
 void Config::SetFont(const crn::StringUTF8 &font)
 {
-	GetInstance().conf.SetData(fontKey, font);
+	GetInstance().userconf.SetData(fontKey, font);
 	Save();
 }
 
@@ -118,7 +120,7 @@ crn::StringUTF8 Config::GetFont()
 {
 	try
 	{
-		return GetInstance().conf.GetStringUTF8(fontKey);
+		return GetInstance().userconf.GetStringUTF8(fontKey);
 	}
 	catch (...)
 	{

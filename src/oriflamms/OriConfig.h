@@ -56,7 +56,8 @@ namespace ori
 			static const crn::String staticDataDirKey;
 			static const crn::String fontKey;
 			Config();
-			crn::ConfigurationFile conf;
+			crn::ConfigurationFile appconf;
+			crn::ConfigurationFile userconf;
 			struct Init
 			{
 				Init();

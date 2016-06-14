@@ -1,5 +1,6 @@
 2016-06-14 Yann LEYDIER <yann@leydier.info>
 	* Document (readTextWElements): Fixed bad attribute value.
+	* Configuration (userconf): Added.
 
 2016-06-13 Yann LEYDIER <yann@leydier.info>
 	* View (AlignWordCharacters): Better error message when a character has no
