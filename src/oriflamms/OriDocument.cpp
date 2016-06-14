@@ -3520,9 +3520,9 @@ void Document::readTextWElements(crn::xml::Element &el, ElementPosition &pos, st
 					if (corresp[0] != '#')
 						throw crn::ExceptionNotFound(name + "-w: "_s + _("line @type=\"rejet\" with malformed @corresp."));
 					corresp.Crop(1);
-					if (sel.GetAttribute<crn::StringUTF8>("rend", true) == "center")
+					if (sel.GetAttribute<crn::StringUTF8>("rend", true) == "align(center)")
 						lpos = 'c';
-					else
+					else // should be "align(right)"
 						lpos = 'r';
 					if (view_struct[pos.view].lines.find(corresp) == view_struct[pos.view].lines.end())
 					{
