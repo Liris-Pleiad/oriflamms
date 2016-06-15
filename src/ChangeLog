@@ -1,3 +1,6 @@
+2016-06-15 Yann LEYDIER <yann@leydier.info>
+	* detectColumns(): Bugfix.
+
 2016-06-14 Yann LEYDIER <yann@leydier.info>
 	* Document (readTextWElements): Fixed bad attribute value.
 	* Configuration (userconf): Added.

@@ -50,14 +50,14 @@ struct EMask
 	EMask(size_t w, size_t h):mask(w, h, crn::pixel::BWBlack) {}
 	size_t X(size_t x, size_t y) const
 	{
-		auto dist = 0;
+		auto dist = size_t{0};
 		while (mask.At((x + dist < mask.GetWidth()) ? x + dist : mask.GetWidth() - 1, y) && mask.At((x > dist) ? x - dist : 0, y))
 		{
 			dist += 1;
 		}
 		if (!mask.At((x > dist) ? x - dist : 0, y))
-			return x - dist;
-		else return x + dist;
+			return (x > dist) ? x - dist : 0;
+		else return (x + dist < mask.GetWidth()) ? x + dist : mask.GetWidth() - 1;
 	}
 	size_t X(size_t x, size_t y, int dir) const
 	{
@@ -84,7 +84,7 @@ struct EMask
 		return size_t(nx);
 	}
 	inline void Set(size_t x, size_t y) { mask.At(x, y) = crn::pixel::BWWhite; }
-	inline bool Get(size_t x, size_t y) { return mask.At(x, y); }
+	inline bool Get(size_t x, size_t y) const { return mask.At(x, y); }
 	crn::ImageBW mask;
 };
 
@@ -184,8 +184,6 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 			mask.Set(x, y);
 			pts.emplace_back(x, y);
 
-			//if (cnt == 8 && loop == 102)
-				//std::cout << "pfffffffffffffffffff" << std::endl;
 			// update energy
 			for (const auto pt : pts)
 			{
@@ -206,7 +204,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 					if (y == 0)
 						dy = ig.At(mask.X(x, 1), 1) - ig.At(mask.X(x, 0), 0);
 					else if (y == h - 1)
-						dy = ig.At(mask.X(x, h), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
+						dy = ig.At(mask.X(x, h - 1), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
 					else
 						dy = ig.At(mask.X(x, y + 1), y + 1) - ig.At(mask.X(x, y - 1), y - 1);
 					//energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
@@ -228,7 +226,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 					if (y == 0)
 						dy = ig.At(mask.X(x, 1), 1) - ig.At(mask.X(x, 0), 0);
 					else if (y == h - 1)
-						dy = ig.At(mask.X(x, h), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
+						dy = ig.At(mask.X(x, h - 1), h - 1) - ig.At(mask.X(x, h - 2), h - 2);
 					else
 						dy = ig.At(mask.X(x, y + 1), y + 1) - ig.At(mask.X(x, y - 1), y - 1);
 					//energy.At(x, y) = crn::Abs(dx) + crn::Abs(dy);
