@@ -37,10 +37,11 @@
 #include <math.h>
 #include <OriViewImpl.h>
 #include <CRNIO/CRNIO.h>
+#include <chrono>
 #include <CRNi18n.h>
 
 #include <iostream>
-#include <CRNUtils/CRNTimer.h>
+//#include <CRNUtils/CRNTimer.h>
 
 using namespace crn;
 using namespace literals;
@@ -54,6 +55,8 @@ struct EMask
 		while (mask.At((x + dist < mask.GetWidth()) ? x + dist : mask.GetWidth() - 1, y) && mask.At((x > dist) ? x - dist : 0, y))
 		{
 			dist += 1;
+			if ((dist >= x) && (x + dist >= mask.GetWidth()))
+				break;
 		}
 		if (!mask.At((x > dist) ? x - dist : 0, y))
 			return (x > dist) ? x - dist : 0;
@@ -126,6 +129,7 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 	auto mask = EMask{w, h};
 	auto vp = Histogram(w);
 	auto nloop = size_t(150);
+	const auto starttime = std::chrono::system_clock::now();
 	for (auto loop = 0; loop < nloop; ++loop)
 	{
 		for (auto cnt = 0; cnt < w / (50 * sw); ++cnt)
@@ -233,7 +237,9 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 					energy.At(x, y) = crn::Abs(dy);
 				}
 			}
-
+			const auto elapsed = std::chrono::system_clock::now() - starttime;
+			if (std::chrono::duration_cast<std::chrono::minutes>(elapsed).count() > 2)
+				break; // 2 minutes should be enough
 		}
 		auto proj = crn::VerticalProjection(mask.mask);
 		auto start = size_t(0);
@@ -249,6 +255,9 @@ static std::vector<Rect> detectColumns(const ImageGray &oig, size_t ncols)
 				start = tmp;
 			}
 		}
+		const auto elapsed = std::chrono::system_clock::now() - starttime;
+		if (std::chrono::duration_cast<std::chrono::minutes>(elapsed).count() > 2)
+			break; // 2 minutes should be enough
 	}
 
 	// check number of modes for each Y in the histogram
@@ -697,8 +706,8 @@ void View::detectLines()
 			}
 		if (stop)
 			continue;
-		if (igr->IsSignificant(x, y) && ((AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::LEFT) < 32) ||
-					(AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::RIGHT) < 32)))
+		if (igr->IsSignificant(x, y) && ((AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::LEFT()) < 32) ||
+					(AngularDistance(igr->At(x, y).theta, Angle<ByteAngle>::RIGHT()) < 32)))
 			cropbw->At(x, y) = pixel::BWBlack;
 	}
 
@@ -837,54 +846,57 @@ void View::detectLines()
 				}
 
 		auto lines = std::vector<SLinearInterpolation>{};
-		for (const auto &l : protolines)
-			lines.push_back(std::make_shared<LinearInterpolation>(l.begin(), l.end()));
-
-		// compute thresholds
-		auto thresholds = std::vector<int>{};
-		for (const SLinearInterpolation &l : lines)
+		if (!protolines.empty())
 		{
-			auto diff = std::vector<int>{};
-			for (auto x = int(l->GetData().front().X); x <= int(l->GetData().back().X); ++x)
+			for (const auto &l : protolines)
+				lines.push_back(std::make_shared<LinearInterpolation>(l.begin(), l.end()));
+
+			// compute thresholds
+			auto thresholds = std::vector<int>{};
+			for (const SLinearInterpolation &l : lines)
 			{
-				auto ty = (*l)[x];
-				//diff.push_back(lumdiff(*b.GetGray(), x, ty, 0, int(3*sw), enmask));
-				diff.push_back(maxgrad(*igr, x, ty, 0, int(3*sw), enmask));
-				//diff.push_back(mingrad(*igr, x, ty, 0, int(3*sw), enmask));
+				auto diff = std::vector<int>{};
+				for (auto x = int(l->GetData().front().X); x <= int(l->GetData().back().X); ++x)
+				{
+					auto ty = (*l)[x];
+					//diff.push_back(lumdiff(*b.GetGray(), x, ty, 0, int(3*sw), enmask));
+					diff.push_back(maxgrad(*igr, x, ty, 0, int(3 * sw), enmask));
+					//diff.push_back(mingrad(*igr, x, ty, 0, int(3*sw), enmask));
+				}
+				auto mM = TwoMeans(diff.begin(), diff.end());
+				//thresholds.push_back((mM.first + mM.second) / 4); // XXX whhhhhhhhhhhhhhhhhhy /4 ???
+				//thresholds.push_back(std::accumulate(diff.begin(), diff.end(), 0) / int(diff.size()));
+				thresholds.push_back(Min(mM.first, mM.second));
 			}
-			auto mM = TwoMeans(diff.begin(), diff.end());
-			//thresholds.push_back((mM.first + mM.second) / 4); // XXX whhhhhhhhhhhhhhhhhhy /4 ???
-			//thresholds.push_back(std::accumulate(diff.begin(), diff.end(), 0) / int(diff.size()));
-			thresholds.push_back(Min(mM.first, mM.second));
+			//auto thr = TwoMeans(thresholds.begin(), thresholds.end()).first;
+			auto thr = std::accumulate(thresholds.begin(), thresholds.end(), 0) / int(thresholds.size());
+
+			// cut lines
+			auto filteredlines = std::vector<SLinearInterpolation>{};
+			for (auto tmp = size_t(0); tmp < lines.size(); ++tmp)
+			{
+				auto left = int(tz.GetLeft() * xdiv);
+				if (tmpz == 0) left = 0; // grow first zone to beginning
+				else left = int(left + thumbzones[tmpz - 1].GetRight() * xdiv) / 2; // grow to half the distance to previous zone
+				auto right = int(tz.GetRight() * xdiv);
+				if (tmpz == thumbzones.size() - 1) right = b.GetAbsoluteBBox().GetRight(); // grow last zone to end
+				else right = int(right + thumbzones[tmpz + 1].GetLeft() * xdiv) / 2; // grow to half the distance to next zone
+
+				auto fl = cut_line(*lines[tmp], b, sw, thr, enmask, Rect{ left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv) });
+				//auto fl = cut_line(*lines[tmp], b, sw, thresholds[tmp], enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
+				if (fl)
+					filteredlines.push_back(fl);
+
+				/* DISPLAY
+				for (int x = int(lines[tmp]->GetData().front().X); x < int(lines[tmp]->GetData().back().X); ++x)
+					b.GetRGB()->At(x, (*lines[tmp])[x]) = {0, 0, 255};
+				if (fl)
+					for (int x = int(fl->GetData().front().X); x < int(fl->GetData().back().X); ++x)
+						b.GetRGB()->At(x, (*fl)[x]) = {0, 200, 0};
+						*/
+			}
+			lines.swap(filteredlines);
 		}
-		//auto thr = TwoMeans(thresholds.begin(), thresholds.end()).first;
-		auto thr = std::accumulate(thresholds.begin(), thresholds.end(), 0) / int(thresholds.size());
-
-		// cut lines
-		auto filteredlines = std::vector<SLinearInterpolation>{};
-		for (auto tmp = size_t(0); tmp < lines.size(); ++tmp)
-		{
-			auto left = int(tz.GetLeft() * xdiv);
-			if (tmpz == 0) left = 0; // grow first zone to beginning
-			else left = int(left + thumbzones[tmpz - 1].GetRight() * xdiv) / 2; // grow to half the distance to previous zone
-			auto right = int(tz.GetRight() * xdiv);
-			if (tmpz == thumbzones.size() - 1) right = b.GetAbsoluteBBox().GetRight(); // grow last zone to end
-			else right = int(right + thumbzones[tmpz + 1].GetLeft() * xdiv) / 2; // grow to half the distance to next zone
-
-			auto fl = cut_line(*lines[tmp], b, sw, thr, enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
-			//auto fl = cut_line(*lines[tmp], b, sw, thresholds[tmp], enmask, Rect{left, int(tz.GetTop() * ydiv), right, int(tz.GetBottom() * ydiv)});
-			if (fl)
-				filteredlines.push_back(fl);
-
-			/* DISPLAY
-			for (int x = int(lines[tmp]->GetData().front().X); x < int(lines[tmp]->GetData().back().X); ++x)
-				b.GetRGB()->At(x, (*lines[tmp])[x]) = {0, 0, 255};
-			if (fl)
-				for (int x = int(fl->GetData().front().X); x < int(fl->GetData().back().X); ++x)
-					b.GetRGB()->At(x, (*fl)[x]) = {0, 200, 0};
-					*/
-		}
-		lines.swap(filteredlines);
 
 		/////////////////////////////////////////////////////////////
 		// Remove supernumerary lines
@@ -909,6 +921,8 @@ void View::detectLines()
 				for (auto x = bx; x <= ex; ++x)
 				{
 					const auto y = (*lines[l1])[x];
+					if (!igr->GetBBox().Contains(x, y))
+						continue;
 					//for (auto y = crn::Max(0, yref - int(lspace1 / 2)); y < crn::Min(int(b.GetGray()->GetHeight()), yref + int(lspace1 / 2)); ++y)
 					//sig[x - bx].real(sig[x - bx].real() + 255 - b.GetGray()->At(x, y));
 					if (igr->IsSignificant(x, y))
@@ -928,6 +942,8 @@ void View::detectLines()
 					for (auto x = bx; x <= ex; ++x)
 					{
 						const auto y = (*lines[l2])[x];
+						if (!igr->GetBBox().Contains(x, y))
+							continue;
 						//for (auto y = crn::Max(0, yref - int(lspace1 / 2)); y < crn::Min(int(b.GetGray()->GetHeight()), yref + int(lspace1 / 2)); ++y)
 						//sig2[x - bx].real(sig2[x - bx].real() + 255 - b.GetGray()->At(x, y));
 						if (igr->IsSignificant(x, y))

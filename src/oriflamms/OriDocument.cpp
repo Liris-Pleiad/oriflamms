@@ -308,7 +308,7 @@ View::Impl::Impl(const Id &surfid, Document::ViewStructure &s, const crn::Path &
 	else
 	{ // create file
 		for (const auto &p : struc.words)
-			validation.emplace(p.first, crn::Prop3::Unknown);
+			validation.emplace(p.first, crn::Prop3::Unknown());
 		for (const auto &p : struc.columns)
 		{
 			medlines.emplace(p.first, std::vector<GraphicalLine>{}); // create empty line
@@ -1455,7 +1455,7 @@ void View::AlignLine(AlignConfig conf, const Id &line_id, crn::Progress *prog)
 			const auto &firstwid = line.GetWords()[r.front()];
 			if ((r.size() == 1) && GetZone(GetWord(firstwid).GetZone()).GetPosition().IsValid())
 			{ // a single word between validated words
-				SetValid(firstwid, crn::Prop3::True);
+				SetValid(firstwid, crn::Prop3::True());
 			}
 			else
 			{
@@ -1604,7 +1604,7 @@ void View::AlignRange(AlignConfig conf, const Id &line_id, size_t first_word, si
 		if (wzone.GetPosition() != align[bbn].first)
 		{ // BBox changed
 			ClearCharactersAlignment(wid);
-			SetValid(wid, crn::Prop3::Unknown);
+			SetValid(wid, crn::Prop3::Unknown());
 			if (align[bbn].first.IsValid())
 				wzone.SetPosition(align[bbn].first);
 		}
@@ -2379,11 +2379,13 @@ void Document::PropagateValidation(crn::Progress *prog)
 		{
 			if (lp.second.GetWords().size() < 3)
 				continue;
+
 			for (size_t w = 1; w < lp.second.GetWords().size() - 1; ++w)
 			{
-				auto &precid = lp.second.GetWords()[w - 1];
-				auto &currid = lp.second.GetWords()[w];
-				auto &nextid = lp.second.GetWords()[w + 1];
+				const auto &precid = lp.second.GetWords()[w - 1];
+				const auto &currid = lp.second.GetWords()[w];
+				const auto &nextid = lp.second.GetWords()[w + 1];
+				
 				if (v.IsValid(precid).IsTrue() && v.IsValid(currid).IsUnknown() && v.IsValid(nextid).IsTrue())
 				{
 					// 1 ? 1 -> 1 1 1
@@ -2404,6 +2406,7 @@ void Document::PropagateValidation(crn::Progress *prog)
 		if (prog)
 			prog->Advance();
 	} // views
+
 }
 
 /*! \return	the list of characters sorted firstly by Unicode value and then by view id */
@@ -3192,6 +3195,36 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 
 			try
 			{
+				//const auto &wids = l.second.GetWords(); // in theory if the line has a bbox, all words are aligned
+				auto wids = std::vector<Id>{};
+				auto cids = std::vector<Id>{};
+				auto wboxes = std::vector<crn::Rect>{};
+				auto cboxes = std::vector<crn::Rect>{};
+				for (const auto &wid : l.second.GetWords())
+				{ // add validated words and aligned characters
+					if (v.IsValid(wid).IsTrue())
+					{
+						wids.push_back(wid);
+						const auto &w = v.GetWord(wid);
+						wboxes.push_back(v.GetZone(w.GetZone()).GetPosition());
+						for (const auto &id : w.GetCharacters())
+						{
+							const auto &c = v.GetCharacter(id);
+							const auto &cbox = v.GetZone(c.GetZone()).GetPosition();
+							if (cbox.IsValid())
+							{
+								cids.push_back(id);
+								cboxes.push_back(cbox);
+							}
+						}
+					}
+				}
+				if (wids.empty())
+				{
+					root.PushBackComment(_("Line") + " "_s + l.first + ": "_s + _("no validated word found."));
+					continue;
+				}
+				
 				const auto &medline = v.GetGraphicalLine(l.first);
 				const auto bx = medline.GetFront().X;
 				const auto ex = medline.GetBack().X;
@@ -3217,7 +3250,7 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 					hist.IncBin(ig.At(x - bx, y - by + 1));
 				}
 				auto ibw = crn::Threshold(ig, uint8_t(hist.Fisher()));
-
+				
 				// follow the med line and find white streams
 				auto streams = std::vector<WStream>{};
 				auto in = false;
@@ -3276,37 +3309,19 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 						}
 					}
 				} // follow medline
-
-				// associate streams to words and characters
-				//const auto &wids = l.second.GetWords(); // in theory if the line has a bbox, all words are aligned
-				auto wids = std::vector<Id>{};
-				auto cids = std::vector<Id>{};
-				auto wboxes = std::vector<crn::Rect>{};
-				auto cboxes = std::vector<crn::Rect>{};
-				for (const auto &wid : l.second.GetWords())
-				{ // add validated words and aligned characters
-					if (v.IsValid(wid).IsTrue())
-					{
-						wids.push_back(wid);
-						const auto &w = v.GetWord(wid);
-						wboxes.push_back(v.GetZone(w.GetZone()).GetPosition());
-						for (const auto &id : w.GetCharacters())
-						{
-							const auto &c = v.GetCharacter(id);
-							const auto &cbox = v.GetZone(c.GetZone()).GetPosition();
-							if (cbox.IsValid())
-							{
-								cids.push_back(id);
-								cboxes.push_back(cbox);
-							}
-						}
-					}
+				if (streams.empty())
+				{
+					root.PushBackComment(_("Line") + " "_s + l.first + ": "_s + _("no white space found."));
+					continue;
 				}
+
+				
+				// associate streams to words and characters
 				// compute association matrices
 				auto wleft = crn::MatrixInt(streams.size(), wids.size(), 0);
 				auto wright = crn::MatrixInt(streams.size(), wids.size(), 0);
-				auto cleft = crn::MatrixInt(streams.size(), cids.size(), 0);
-				auto cright = crn::MatrixInt(streams.size(), cids.size(), 0);
+				auto cleft = crn::MatrixInt(streams.size(), cids.empty() ? 1 : cids.size(), 0);
+				auto cright = crn::MatrixInt(streams.size(), cids.empty() ? 1 : cids.size(), 0);
 				for (auto snum : crn::Range(streams))
 				{
 					for (auto wnum : crn::Range(wids))
@@ -3324,6 +3339,7 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 							cright[snum][cnum] = 1;
 					}
 				}
+				
 				// check association correctness
 				for (auto r = size_t{0}; r < streams.size(); ++r)
 				{
@@ -3337,9 +3353,13 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 							break;
 					}
 					if (sl > 1)
+					{
 						wleft.MultRow(r, 0);
+					}
 					if (sr > 1)
+					{
 						wright.MultRow(r, 0);
+					}
 					//   -> if a stream is associated to more than one character, remove it
 					sl = 0; sr = 0;
 					for (auto c = size_t{0}; c < cids.size(); ++c)
@@ -3350,9 +3370,13 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 							break;
 					}
 					if (sl > 1)
+					{
 						cleft.MultRow(r, 0);
+					}
 					if (sr > 1)
+					{
 						cright.MultRow(r, 0);
+					}
 				}
 				//   -> if a word's bound is associated to more than one stream, remove it
 				for (auto c = size_t{0}; c < wids.size(); ++c)
@@ -3366,9 +3390,13 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 							break;
 					}
 					if (sl > 1)
+					{
 						wleft.MultColumn(c, 0);
+					}
 					if (sr > 1)
+					{
 						wright.MultColumn(c, 0);
+					}
 				}
 				//   -> if a character's bound is associated to more than one stream, remove it
 				for (auto c = size_t{0}; c < cids.size(); ++c)
@@ -3382,9 +3410,13 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 							break;
 					}
 					if (sl > 1)
+					{
 						cleft.MultColumn(c, 0);
+					}
 					if (sr > 1)
+					{
 						cright.MultColumn(c, 0);
+					}
 				}
 				// save words to XML
 				for (auto c = size_t{0}; c < wids.size(); ++c)
@@ -3446,7 +3478,7 @@ void Document::ExportSpacings(const crn::Path &filename, crn::Progress *prog)
 				}
 
 			}
-			catch (crn::Exception&) {} // this should not happen
+			catch (crn::Exception &) {	} // this should not happen
 		}
 		if (prog)
 			prog->Advance();

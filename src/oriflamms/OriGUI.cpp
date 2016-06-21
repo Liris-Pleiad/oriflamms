@@ -1324,7 +1324,7 @@ void GUI::on_rmb_clicked(guint mouse_button, guint32 time, std::vector<std::pair
 				if (val.IsTrue())
 					current_view.SetValid(id, false);
 				else if (val.IsFalse())
-					current_view.SetValid(id, crn::Prop3::Unknown);
+					current_view.SetValid(id, crn::Prop3::Unknown());
 				else
 					current_view.SetValid(id, true);
 				display_update_word(id);

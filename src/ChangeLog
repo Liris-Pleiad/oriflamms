@@ -1,5 +1,15 @@
+2016-06-20 Yann LEYDIER <yann@leydier.info>
+	* Config (cstr): Bugfix.
+	* Document (ExportSpacings): Bugfix.
+
+2016-06-17 Yann LEYDIER <yann@leydier.info>
+	* EMask (X): Bugfix.
+
 2016-06-15 Yann LEYDIER <yann@leydier.info>
 	* detectColumns(): Bugfix.
+
+2016-06-20 Yann LEYDIER <yann@leydier.info>
+	* detectLines: Bugfix.
 
 2016-06-14 Yann LEYDIER <yann@leydier.info>
 	* Document (readTextWElements): Fixed bad attribute value.

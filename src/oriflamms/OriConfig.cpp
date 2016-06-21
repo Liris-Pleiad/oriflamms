@@ -45,6 +45,7 @@ Config::Config():
 		appconf.SetData(staticDataDirKey, crn::Path(ORIFLAMMS_DATA_FULL_PATH));
 		appconf.Save();
 	}
+	userconf.Load();
 
 	char *loc = setlocale(LC_ALL, "");
 	loc = bindtextdomain(GETTEXT_PACKAGE, appconf.GetPath(localeDirKey).CStr());
@@ -124,7 +125,7 @@ crn::StringUTF8 Config::GetFont()
 	}
 	catch (...)
 	{
-		return "";
+		return "Arial 12";
 	}
 }
 
