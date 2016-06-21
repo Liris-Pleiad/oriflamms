@@ -26,7 +26,7 @@
 #include <GtkCRNProgressWindow.h>
 #include <GdkCRNPixbuf.h>
 #include <GtkCRNApp.h>
-#include <CRNAI/CRNGenetic.hpp>
+#include <CRNAI/CRNGenetic.h>
 #include <unordered_set>
 #include <CRNAI/CRN2Means.h>
 #include <OriConfig.h>
