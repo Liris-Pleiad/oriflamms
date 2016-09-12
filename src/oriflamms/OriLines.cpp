@@ -25,7 +25,7 @@
 #include <CRNImage/CRNColorModel.h>
 #include <CRNMath/CRNMatrixComplex.h>
 #include <CRNAI/CRNOutliers.h>
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <CRNMath/CRNPolynomialRegression.h>
 #include <CRNImage/CRNDifferential.h>
 #include <CRNImage/CRNImageGray.h>

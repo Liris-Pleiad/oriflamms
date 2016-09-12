@@ -21,7 +21,7 @@
 
 #include <OriTextSignature.h>
 #include <OriFeatures.h>
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <CRNi18n.h>
 
 using namespace ori;

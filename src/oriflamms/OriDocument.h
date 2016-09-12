@@ -26,7 +26,7 @@
 #include <CRNIO/CRNPath.h>
 #include <CRNGeometry/CRNRect.h>
 #include <CRNGeometry/CRNPoint2DInt.h>
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <CRNUtils/CRNProgress.h>
 #include <CRNMath/CRNSquareMatrixDouble.h>
 #include <CRNBlock.h>

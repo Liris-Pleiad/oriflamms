@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: oriflamms 0.6\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-12 10:36+0200\n"
+"POT-Creation-Date: 2016-09-12 11:55+0200\n"
 "PO-Revision-Date: 2016-06-09 09:11+0200\n"
 "Last-Translator: Yann LEYDIER <yann@leydier.info>\n"
 "Language-Team: French <>\n"
@@ -18,1124 +18,1108 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Gtranslator 2.91.6\n"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:29
-msgid "Align words"
-msgstr "Aligner les mots"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:30
-msgid "Align all words"
-msgstr "Aligner tous les mots"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:31
-msgid "Align non-validated words"
-msgstr "Aligner les mots non-validés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:32
-msgid "Align non-aligned words"
-msgstr "Aligner les mots non-alignés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:33
-msgid "Update aligned words' frontiers"
-msgstr "Mettre à jour les frontières des mots alignés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:34
-msgid "Align characters"
-msgstr "Aligner les caractères"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:35
-msgid "in all aligned words"
-msgstr "dans tous les mots alignés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:36
-msgid "in validated words"
-msgstr "dans les mots validés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:37
-msgid "in non-rejected words"
-msgstr "dans les mots non-rejetés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:38
-msgid "Align all characters"
-msgstr "Aligner tous les caractères"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:39
-msgid "Align non-aligned characters"
-msgstr "Aligner les caractères non-alignés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriAlignDialog.cpp:41
-msgid "Alignment"
-msgstr "Alignement"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:42
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:119
-msgid "Characters"
-msgstr "Caractères"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:46
-msgid "Compute"
-msgstr "Calculer"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:47
-msgid "Update"
-msgstr "Mise à jour"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:49
-msgid "Show and edit clusters"
-msgstr "Voir et modifier les classes"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:63
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidationPanel.cpp:112
-msgid "Character"
-msgstr "Caractère"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:64
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:314
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:64
-msgid "Count"
-msgstr "Compte"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:86
-msgid "Distance matrix"
-msgstr "Matrice de distance"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:97
-msgid "Clustering"
-msgstr "Classification"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:181
-msgid "Are all the occurrences of this character approximately the same size?"
-msgstr ""
-"Toutes les occurrences de ce caractère ont-elles approximativement la même "
-"taille ?"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:184
-msgid "Computing distance matrix..."
-msgstr "Calcul de la matrice de distance..."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:273
-msgid "Unlabelled"
-msgstr "Sans étiquette"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:276
-msgid "Character tree"
-msgstr "Arbre de caractères"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:280
-msgid "Put aside"
-msgstr "Mis de côté"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:281
-msgid "Delete automatic clusters"
-msgstr "Effacer les classes automatiques"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:282
-msgid "Create automatic clusters"
-msgstr "Créer des classes automatiquement"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:283
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:284
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:612
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1067
-msgid "Add glyph"
-msgstr "Ajouter un glyphe"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:285
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:286
-msgid "Cut in two"
-msgstr "Couper en deux"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:287
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:288
-msgid "Remove from class"
-msgstr "Enlever de la classe"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:313
-msgid "Cluster"
-msgstr "Classe"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:357
-msgid "Collecting data..."
-msgstr "Récupération des données..."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:624
-msgid "Add sub-class"
-msgstr "Ajouter une sous-classe"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:641
-msgid "No glyph selected."
-msgstr "Aucun glyphe sélectionné."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:868
-msgid "Subclass for "
-msgstr "Sous-classe de "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:909
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:940
-msgid "Clustering..."
-msgstr "Classification..."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:973
-msgid "Base class for automatic clustering of "
-msgstr "Classe de base pour la classification automatique de "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1031
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2794
-msgid "Global"
-msgstr "Global"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1032
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1080
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1822
-msgid "Id"
-msgstr "Id"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1033
-msgid "Auto"
-msgstr "Auto"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1034
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1083
-msgid "Description"
-msgstr "Description"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1086
-msgid "Parent"
-msgstr "Parent"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1097
-msgid "Invalid id."
-msgstr "Identifiant de invalide."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1103
-msgid "The id is already used in local database."
-msgstr "L'identifiant est déjà utilisé dans la base locale."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriCharacter.cpp:1110
-msgid "The id is already used in global database."
-msgstr "L'identifiant est déjà utilisé dans la base globale."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:116
-msgid "null rectangle."
-msgstr "rectangle vide."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:127
-msgid "the contour has less than 3 points."
-msgstr "le contour a moins de 3 points."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:182
-msgid "no facsimile element."
-msgstr "pas d'élément facsimile."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:185
-msgid "no surface element."
-msgstr "pas d'élément surface."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:188
-msgid "no graphic element."
-msgstr "pas d'élément graphic."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:199
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:265
-msgid "no text element."
-msgstr "pas d'élément text."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:202
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:268
-msgid "no body element."
-msgstr "pas d'élément body."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:205
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:271
-msgid "no ab element."
-msgstr "pas d'élément ab."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:208
-msgid "no linkGrp element for the surfaces."
-msgstr "pas d'élément linkGrp pour les surfaces."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:234
-msgid "Allograph links"
-msgstr "Liens des allographes"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:237
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1997
-msgid "Oriflamms Project, http://oriflamms.hypotheses.org"
-msgstr "Projet Oriflamms, http://oriflamms.hypotheses.org"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:240
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2000
-msgid "Created by Oriflamms."
-msgstr "Créé par Oriflamms."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:274
-msgid "no linkGrp element."
-msgstr "pas d'élément linkGrp."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:290
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:363
-msgid "invalid target base."
-msgstr "base de cible invalide."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:293
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:366
-msgid "incomplete target."
-msgstr "cible incomplète."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:334
-msgid "zone without an id."
-msgstr "zone sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:378
-msgid "target points to an unknown page: "
-msgstr "la cible pointe vers une page inconnue : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:385
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:405
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:425
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:445
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:465
-msgid "target points to an unknown zone: "
-msgstr "la cible pointe vers une zone inconnue : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:398
-msgid "target points to an unknown column: "
-msgstr "la cible pointe vers une colonne inconnue : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:418
-msgid "target points to an unknown line: "
-msgstr "la cible pointe vers une ligne inconnue : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:438
-msgid "target points to an unknown word: "
-msgstr "la cible pointe vers un mot inconnu : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:458
-msgid "target points to an unknown character: "
-msgstr "la cible pointe vers un caractère inconnu : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:489
-msgid "Not an Oriflamms data file: "
-msgstr "Pas un fichier de données Oriflamms : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:493
-msgid "No validation element in "
-msgstr "Pas d'élément validation dans "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:504
-msgid "No medlines element in "
-msgstr "Pas d'élément medlines dans "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:517
-msgid "No lineLinks element in "
-msgstr "Pas d'élément lineLinks dans "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:620
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:631
-msgid "Invalid page id: "
-msgstr "Identifiant de page invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:646
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:657
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:670
-msgid "Invalid column id: "
-msgstr "Identifiant de colonne invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:713
-msgid "index is greater than the number of lines."
-msgstr "l'index est plus grand que le nombre de lignes."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:759
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:770
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:784
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:802
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:819
-msgid "Invalid line id: "
-msgstr "Identifiant de ligne invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:787
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:805
-msgid "No graphical line associated to text line: "
-msgstr "Pas de ligne graphique associée à la ligne de texte : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:834
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:845
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:858
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:871
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:898
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:909
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1267
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1296
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1324
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1337
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1348
-msgid "Invalid word id: "
-msgstr "Identifiant de mot invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:958
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:969
-msgid "Invalid character id: "
-msgstr "Identifiant de caractère invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:980
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:991
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1025
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1063
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1141
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1159
-msgid "Invalid zone id: "
-msgstr "Identifiant de zone invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1162
-msgid "Uninitialized zone id: "
-msgstr "identifiant de zone non-initialisé : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1283
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1312
-msgid "uninitialized zone: "
-msgstr "zone non-initialisée : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1534
-msgid "the last word is located before the first."
-msgstr "le dernier mot est situé avant le premier."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1537
-msgid "out of range."
-msgstr "en dehors des limites."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1594
-msgid "Range align misfit at line "
-msgstr "Alignement entre les bornes incomplet à la ligne "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1660
-msgid "empty signature."
-msgstr "signature vide."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1887
-msgid "Cannot find main transcription filename."
-msgstr "Impossible de trouver le nom du fichier de transcription principal."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1913
-msgid "milestones are not numbered correctly: "
-msgstr "les milestones ne sont pas numérotés correctement : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1961
-msgid "file not found."
-msgstr "fichier non trouvé."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1984
-msgid "malformed file."
-msgstr "fichier mal formé."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:1994
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2006
-msgid "Allograph declaration"
-msgstr "Déclaration des allographes"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2025
-msgid "missing id list."
-msgstr "liste d'identifiants introuvable."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2305
-msgid "invalid id: "
-msgstr "identifiant invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2315
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3698
-msgid "Cannot find view with id "
-msgstr "Impossible de trouver la vue : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2428
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2436
-msgid "invalid glyph id: "
-msgstr "identifiant de glyphe invalide : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2452
-msgid "the glyph already exists: "
-msgstr "le glyphe existe déjà : "
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2796
-msgid "Document name"
-msgstr "Nom du document"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2799
-msgid "Number of pages"
-msgstr "Nombre de pages"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2805
-msgid "Validated words"
-msgstr "Mots validés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2809
-msgid "Rejected words"
-msgstr "Mots rejetés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2813
-msgid "Unchecked words"
-msgstr "Mots non-vérifiés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2817
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2855
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2885
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2914
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2943
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2976
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3009
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3038
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3067
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3100
-msgid "Total"
-msgstr "Total"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2820
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2859
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2889
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2918
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2947
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2980
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3013
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3042
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3071
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3104
-msgid "Accuracy on checked words"
-msgstr "Exactitude sur les mots vérifiés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2825
-msgid "Number of lines"
-msgstr "Nombre de lignes"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2828
-msgid "Lines containing errors"
-msgstr "Lignes contenant des erreurs"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2832
-msgid "Number of manually corrected lines"
-msgstr "Nombre de lignes corrigées manuellement"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2836
-msgid "Number of manually corrected words"
-msgstr "Nombre de mots corrigés manuellement"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2840
-msgid "Mean word correction length"
-msgstr "Longueur moyenne des corrections de mots"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2843
-msgid "Mean word correction absolute length"
-msgstr "Moyenne des valeurs absolues des corrections de mots"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2848
-msgid "Image"
-msgstr "Image"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2850
-msgid "Page id"
-msgstr "Id de la page"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2851
-msgid "Image name"
-msgstr "Nom de l'image"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2852
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2856
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2882
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2886
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2911
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2915
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2940
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2944
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2973
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2977
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3006
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3010
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3035
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3039
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3064
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3068
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3097
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3101
-msgid "Validated"
-msgstr "Validé"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2853
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2857
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2883
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2887
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2912
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2916
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2941
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2945
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2974
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2978
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3007
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3011
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3036
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3040
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3065
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3069
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3098
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3102
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:41
-msgid "Rejected"
-msgstr "Rejeté"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2854
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2858
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2884
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2888
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2913
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2917
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2942
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2946
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2975
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2979
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3008
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3012
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3037
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3041
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3066
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3070
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3099
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3103
-msgid "Unchecked"
-msgstr "Non-vérifié"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2878
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:63
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidationPanel.cpp:110
-msgid "Word"
-msgstr "Mot"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2881
-msgid "Transcription"
-msgstr "Transcription"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2907
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2910
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:65
-msgid "Length"
-msgstr "Longueur"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2936
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2939
-msgid "Initial letter"
-msgstr "Lettre initiale"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2948
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2981
-msgid "Mean manual correction"
-msgstr "Moyenne des corrections de mots"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2949
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2982
-msgid "Mean absolute manual correction"
-msgstr "Moyenne des valeurs absolues de corrections de mots"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2969
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:2972
-msgid "Final letter"
-msgstr "Lettre finale"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3002
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3005
-msgid "Preceding final letter"
-msgstr "Lettre finale précédente"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3031
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3034
-msgid "Next initial letter"
-msgstr "Lettre initiale suivante"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3060
-msgid "Preceding final + initial"
-msgstr "Lettre finale précédente + initiale"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3063
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3096
-msgid "Digram"
-msgstr "Digramme"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3093
-msgid "Final + next initial"
-msgstr "Lettre finale + initiale suivante"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3138
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3150
-msgid "character not found."
-msgstr "caractère introuvable."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3224
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3314
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:684
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1380
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1393
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1404
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1440
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidationPanel.cpp:109
-msgid "Line"
-msgstr "Ligne"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3224
-#, fuzzy
-msgid "no validated word found."
-msgstr "dans les mots validés"
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3314
-msgid "no white space found."
-msgstr ""
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3522
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3637
-msgid "milestone without an id."
-msgstr "milestone sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3530
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3644
-msgid "page without an id."
-msgstr "page sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3538
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3650
-msgid "column without an id."
-msgstr "colonne sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3546
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3656
-msgid "line without an id."
-msgstr "ligne sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3551
-msgid "line @type=\"rejet\" without @corresp."
-msgstr "ligne @type=\"rejet\" sans @corresp."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3553
-msgid "line @type=\"rejet\" with malformed @corresp."
-msgstr "ligne @type=\"rejet\" avec @corresp mal formé."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3580
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3664
-msgid "word or pc without an id."
-msgstr "mot ou pc sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3602
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3674
-msgid "seg without an id."
-msgstr "seg sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriDocument.cpp:3681
-msgid "character without an id."
-msgstr "caractère sans identifiant."
-
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:85
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:85
 msgid "_Open project"
 msgstr "_Ouvrir un projet"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:85
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:395
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:85
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:395
 msgid "Open project"
 msgstr "Ouvrir un projet"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:86
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:86
 msgid "_Save project"
 msgstr "_Sauvegarder le projet"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:86
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:86
 msgid "Save project"
 msgstr "Sauvegarder le projet"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:87
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:87
 msgid "Compute _spacings"
 msgstr "Calculer les e_spacements"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:87
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:87
 msgid "Compute spacings"
 msgstr "Calculer les espacements"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:90
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:90
 msgid "_Edit"
 msgstr "_Modifier"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:90
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:90
 msgid "Edit"
 msgstr "Modifier"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:93
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:93
 msgid "_Display"
 msgstr "_Affichage"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:93
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:93
 msgid "Display"
 msgstr "Affichage"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:96
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:96
 msgid "Show _image"
 msgstr "Afficher l'_image"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:96
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:96
 msgid "Show image"
 msgstr "Afficher l'image"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:98
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:98
 msgid "Show _lines"
 msgstr "Afficher les _lignes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:98
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:98
 msgid "Show lines"
 msgstr "Afficher les lignes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:100
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:100
 msgid "Show _words"
 msgstr "Afficher les _mots"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:100
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:100
 msgid "Show words"
 msgstr "Afficher les mots"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:102
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:102
 msgid "Show _characters"
 msgstr "Afficher les _caractères"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:102
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:102
 msgid "Show characters"
 msgstr "Afficher les caractères"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:104
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:104
 msgid "_Edit alignment"
 msgstr "_Modifier l'alignement"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:104
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:104
 msgid "Edit alignment"
 msgstr "Modifier l'alignement"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:107
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:107
 msgid "_Find string"
 msgstr "_Rechercher une chaîne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:107
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1778
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:107
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1778
 msgid "Find string"
 msgstr "Rechercher une chaîne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:108
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:108
 msgid "_Go to"
 msgstr "_Aller à"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:108
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:108
 msgid "Go to"
 msgstr "Aller à"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:112
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:112
 msgid "_Validation"
 msgstr "_Validation"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:112
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:49
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:112
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:49
 msgid "Validation"
 msgstr "Validation"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:114
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:114
 msgid "Validate _words"
 msgstr "Valider les _mots"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:114
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:114
 msgid "Validate words"
 msgstr "Valider les mots"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:116
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:116
 msgid "_Propagate validation"
 msgstr "_Propager la validation"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:116
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:116
 msgid "Propagate validation"
 msgstr "Propager la validation"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:117
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:117
 msgid "_Statistics"
 msgstr "_Statistiques"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:117
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:117
 msgid "Statistics"
 msgstr "Statistiques"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:119
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:119
 msgid "_Characters"
 msgstr "_Caractères"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:122
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:119
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:42
+msgid "Characters"
+msgstr "Caractères"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:122
 msgid "_Clear image signatures"
 msgstr "_Effacer les signatures image"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:122
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:122
 msgid "Clear image signatures"
 msgstr "Effacer les signatures image"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:123
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:123
 msgid "Align _all"
 msgstr "_Tout aligner"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:123
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:123
 msgid "Align all"
 msgstr "Tout aligner"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:124
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:124
 msgid "Align _selection"
 msgstr "Aligner la _sélection"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:124
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:124
 msgid "Align selection"
 msgstr "Aligner la sélection"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:127
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:127
 msgid "Show _TEI structure"
 msgstr "Afficher la structure _TEI"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:127
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:127
 msgid "Show TEI structure"
 msgstr "Afficher la structure TEI"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:128
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:128
 msgid "Add _line"
 msgstr "Ajouter une _ligne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:128
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:128
 msgid "Add line"
 msgstr "Ajouter une ligne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:129
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:129
 msgid "Delete _median lines"
 msgstr "Supprimer les lignes _médianes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:129
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:129
 msgid "Delete median lines"
 msgstr "Supprimer les lignes médianes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:133
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:133
 msgid "_Options"
 msgstr "_Options"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:133
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:133
 msgid "Options"
 msgstr "Options"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:135
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:135
 msgid "_Unit validation"
 msgstr "Validation à l'_unité"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:136
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:136
 msgid "_Batch validation"
 msgstr "Validation par _lot"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:137
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:137
 msgid "Change _font"
 msgstr "Changer de _police"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:137
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:137
 msgid "Change font"
 msgstr "Changer de police"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:138
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:138
 msgid "_Coalescent word boundaries"
 msgstr "Frontières des mots _coalescentes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:138
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:138
 msgid "Coalescent word boundaries"
 msgstr "Frontières des mots coalescentes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:142
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:142
 msgid "_Add point"
 msgstr "_Ajouter un point"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:142
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:142
 msgid "Add point"
 msgstr "Ajouter un point"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:143
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:143
 msgid "_Remove point"
 msgstr "_Supprimer le point"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:143
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:143
 msgid "Remove point"
 msgstr "Supprimer le point"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:144
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:147
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:144
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:147
 msgid "_Delete line"
 msgstr "_Supprimer la ligne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:144
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:147
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:144
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:147
 msgid "Delete line"
 msgstr "Supprimer la ligne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:255
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1434
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidationPanel.cpp:106
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:255
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1434
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidationPanel.cpp:106
 msgid "View"
 msgstr "Vue"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:256
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:256
 msgid "TEI"
 msgstr "TEI"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:257
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:257
 msgid "Images"
 msgstr "Images"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:355
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:355
 msgid "Text alignment between TEI xml and images"
 msgstr "Alignement de texte en fichiers XML TEI et images"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:412
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:412
 msgid "Reading files…"
 msgstr "Lecture des fichiers…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:421
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:421
 msgid ""
 "There were inconsistencies while reading the file. Do you want to correct "
 "them?"
 msgstr "Les fichiers contiennent des incohérences. Voulez-vous les corriger ?"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:431
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:431
 msgid "Tidying project up…"
 msgstr "Un peu de rangement…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:439
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:439
 msgid "Non-fatal incidents occurred:"
 msgstr "Des erreurs bénignes ont eu lieu :"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:451
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:451
 msgid "Loading…"
 msgstr "Chargement…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:452
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:653
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1376
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1436
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidationPanel.cpp:107
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:452
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:653
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1376
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1436
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidationPanel.cpp:107
 msgid "Page"
 msgstr "Page"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:509
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:509
 msgid "The line was not added because its skew is too high."
 msgstr "La ligne n'a pas été ajoutée car sa pente est trop grande."
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:531
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:552
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:568
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:624
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:671
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:674
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:531
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:552
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:568
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:624
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:671
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:674
 msgid "line(s)"
 msgstr "ligne(s)"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:542
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:542
 msgid "Are you sure you wish to delete all median lines in this column?"
 msgstr ""
 "Êtes-vous sûr de vouloir effacer toutes les lignes médianes de cette "
 "colonne ?"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:646
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:646
 msgid "page(s)"
 msgstr "page(s)"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:658
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:658
 msgid "column(s)"
 msgstr "colonne(s)"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:665
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1378
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1391
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1438
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidationPanel.cpp:108
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:665
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1378
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1391
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1438
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidationPanel.cpp:108
 msgid "Column"
 msgstr "Colonne"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:689
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:684
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1380
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1393
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1404
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1440
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3224
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3314
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidationPanel.cpp:109
+msgid "Line"
+msgstr "Ligne"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:689
 msgid "word(s)"
 msgstr "mot(s)"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1171
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1368
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1433
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1171
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1368
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1433
 msgid "Aligning…"
 msgstr "Alignement…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1489
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1489
 msgid "The quick bꝛown fox jumpſ over the lazy dog."
 msgstr "Le vif goupil bꝛun ſaute par deſſus le chien roſſard."
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1539
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1539
 msgid "Export statistics to…"
 msgstr "Exporter les statistiques vers…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1548
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1548
 msgid "ODS files"
 msgstr "Fichiers ODS"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1566
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1566
 msgid "Are you sure you wish to flush the images' signatures?"
 msgstr "Êtes-vous sûr de vouloir effacer les signatures des images ?"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1570
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1570
 msgid "Flushing signatures…"
 msgstr "Effacement des signatures…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1579
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1579
 msgid "Propagating validation…"
 msgstr "Propagation de la validation…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1793
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1793
 msgid "Found"
 msgstr "Trouvé"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1812
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1812
 msgid "Go to id"
 msgstr "Chercher identifiant"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1891
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1822
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1032
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1080
+msgid "Id"
+msgstr "Id"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1891
 msgid "Not found."
 msgstr "Non trouvé."
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1897
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1897
 msgid "Export statistics on spacings"
 msgstr "Exporter les statistiques des espacements"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1906
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1906
 msgid "XML files"
 msgstr "Fichiers XML"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriGUI.cpp:1916
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriGUI.cpp:1916
 msgid "Computing spacings…"
 msgstr "Calcul des espacements…"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriTEIDisplay.cpp:42
-msgid "Node selection"
-msgstr "Sélection des nœuds"
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:46
+msgid "Compute"
+msgstr "Calculer"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriTEIDisplay.cpp:57
-msgid "Parsed"
-msgstr "Lu"
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:47
+msgid "Update"
+msgstr "Mise à jour"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriTEIDisplay.cpp:58
-msgid "Element name"
-msgstr "Nom de l'élément"
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:49
+msgid "Show and edit clusters"
+msgstr "Voir et modifier les classes"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriTEIDisplay.cpp:59
-msgid "Contains text"
-msgstr "Contient du texte"
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:63
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidationPanel.cpp:112
+msgid "Character"
+msgstr "Caractère"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:40
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:64
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:314
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:64
+msgid "Count"
+msgstr "Compte"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:86
+msgid "Distance matrix"
+msgstr "Matrice de distance"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:97
+msgid "Clustering"
+msgstr "Classification"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:181
+msgid "Are all the occurrences of this character approximately the same size?"
+msgstr ""
+"Toutes les occurrences de ce caractère ont-elles approximativement la même "
+"taille ?"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:184
+msgid "Computing distance matrix..."
+msgstr "Calcul de la matrice de distance..."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:273
+msgid "Unlabelled"
+msgstr "Sans étiquette"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:276
+msgid "Character tree"
+msgstr "Arbre de caractères"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:280
+msgid "Put aside"
+msgstr "Mis de côté"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:281
+msgid "Delete automatic clusters"
+msgstr "Effacer les classes automatiques"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:282
+msgid "Create automatic clusters"
+msgstr "Créer des classes automatiquement"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:283
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:284
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:612
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1067
+msgid "Add glyph"
+msgstr "Ajouter un glyphe"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:285
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:286
+msgid "Cut in two"
+msgstr "Couper en deux"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:287
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:288
+msgid "Remove from class"
+msgstr "Enlever de la classe"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:313
+msgid "Cluster"
+msgstr "Classe"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:357
+msgid "Collecting data..."
+msgstr "Récupération des données..."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:624
+msgid "Add sub-class"
+msgstr "Ajouter une sous-classe"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:641
+msgid "No glyph selected."
+msgstr "Aucun glyphe sélectionné."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:868
+msgid "Subclass for "
+msgstr "Sous-classe de "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:909
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:940
+msgid "Clustering..."
+msgstr "Classification..."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:973
+msgid "Base class for automatic clustering of "
+msgstr "Classe de base pour la classification automatique de "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1031
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2794
+msgid "Global"
+msgstr "Global"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1033
+msgid "Auto"
+msgstr "Auto"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1034
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1083
+msgid "Description"
+msgstr "Description"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1086
+msgid "Parent"
+msgstr "Parent"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1097
+msgid "Invalid id."
+msgstr "Identifiant de invalide."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1103
+msgid "The id is already used in local database."
+msgstr "L'identifiant est déjà utilisé dans la base locale."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriCharacter.cpp:1110
+msgid "The id is already used in global database."
+msgstr "L'identifiant est déjà utilisé dans la base globale."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:116
+msgid "null rectangle."
+msgstr "rectangle vide."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:127
+msgid "the contour has less than 3 points."
+msgstr "le contour a moins de 3 points."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:182
+msgid "no facsimile element."
+msgstr "pas d'élément facsimile."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:185
+msgid "no surface element."
+msgstr "pas d'élément surface."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:188
+msgid "no graphic element."
+msgstr "pas d'élément graphic."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:199
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:265
+msgid "no text element."
+msgstr "pas d'élément text."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:202
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:268
+msgid "no body element."
+msgstr "pas d'élément body."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:205
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:271
+msgid "no ab element."
+msgstr "pas d'élément ab."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:208
+msgid "no linkGrp element for the surfaces."
+msgstr "pas d'élément linkGrp pour les surfaces."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:234
+msgid "Allograph links"
+msgstr "Liens des allographes"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:237
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1997
+msgid "Oriflamms Project, http://oriflamms.hypotheses.org"
+msgstr "Projet Oriflamms, http://oriflamms.hypotheses.org"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:240
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2000
+msgid "Created by Oriflamms."
+msgstr "Créé par Oriflamms."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:274
+msgid "no linkGrp element."
+msgstr "pas d'élément linkGrp."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:290
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:363
+msgid "invalid target base."
+msgstr "base de cible invalide."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:293
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:366
+msgid "incomplete target."
+msgstr "cible incomplète."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:334
+msgid "zone without an id."
+msgstr "zone sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:378
+msgid "target points to an unknown page: "
+msgstr "la cible pointe vers une page inconnue : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:385
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:405
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:425
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:445
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:465
+msgid "target points to an unknown zone: "
+msgstr "la cible pointe vers une zone inconnue : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:398
+msgid "target points to an unknown column: "
+msgstr "la cible pointe vers une colonne inconnue : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:418
+msgid "target points to an unknown line: "
+msgstr "la cible pointe vers une ligne inconnue : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:438
+msgid "target points to an unknown word: "
+msgstr "la cible pointe vers un mot inconnu : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:458
+msgid "target points to an unknown character: "
+msgstr "la cible pointe vers un caractère inconnu : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:489
+msgid "Not an Oriflamms data file: "
+msgstr "Pas un fichier de données Oriflamms : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:493
+msgid "No validation element in "
+msgstr "Pas d'élément validation dans "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:504
+msgid "No medlines element in "
+msgstr "Pas d'élément medlines dans "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:517
+msgid "No lineLinks element in "
+msgstr "Pas d'élément lineLinks dans "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:620
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:631
+msgid "Invalid page id: "
+msgstr "Identifiant de page invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:646
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:657
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:670
+msgid "Invalid column id: "
+msgstr "Identifiant de colonne invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:713
+msgid "index is greater than the number of lines."
+msgstr "l'index est plus grand que le nombre de lignes."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:759
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:770
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:784
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:802
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:819
+msgid "Invalid line id: "
+msgstr "Identifiant de ligne invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:787
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:805
+msgid "No graphical line associated to text line: "
+msgstr "Pas de ligne graphique associée à la ligne de texte : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:834
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:845
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:858
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:871
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:898
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:909
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1267
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1296
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1324
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1337
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1348
+msgid "Invalid word id: "
+msgstr "Identifiant de mot invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:958
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:969
+msgid "Invalid character id: "
+msgstr "Identifiant de caractère invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:980
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:991
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1025
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1063
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1141
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1159
+msgid "Invalid zone id: "
+msgstr "Identifiant de zone invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1162
+msgid "Uninitialized zone id: "
+msgstr "identifiant de zone non-initialisé : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1283
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1312
+msgid "uninitialized zone: "
+msgstr "zone non-initialisée : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1534
+msgid "the last word is located before the first."
+msgstr "le dernier mot est situé avant le premier."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1537
+msgid "out of range."
+msgstr "en dehors des limites."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1594
+msgid "Range align misfit at line "
+msgstr "Alignement entre les bornes incomplet à la ligne "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1660
+msgid "empty signature."
+msgstr "signature vide."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1887
+msgid "Cannot find main transcription filename."
+msgstr "Impossible de trouver le nom du fichier de transcription principal."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1913
+msgid "milestones are not numbered correctly: "
+msgstr "les milestones ne sont pas numérotés correctement : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1961
+msgid "file not found."
+msgstr "fichier non trouvé."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1984
+msgid "malformed file."
+msgstr "fichier mal formé."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:1994
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2006
+msgid "Allograph declaration"
+msgstr "Déclaration des allographes"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2025
+msgid "missing id list."
+msgstr "liste d'identifiants introuvable."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2305
+msgid "invalid id: "
+msgstr "identifiant invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2315
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3698
+msgid "Cannot find view with id "
+msgstr "Impossible de trouver la vue : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2428
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2436
+msgid "invalid glyph id: "
+msgstr "identifiant de glyphe invalide : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2452
+msgid "the glyph already exists: "
+msgstr "le glyphe existe déjà : "
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2796
+msgid "Document name"
+msgstr "Nom du document"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2799
+msgid "Number of pages"
+msgstr "Nombre de pages"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2805
+msgid "Validated words"
+msgstr "Mots validés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2809
+msgid "Rejected words"
+msgstr "Mots rejetés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2813
+msgid "Unchecked words"
+msgstr "Mots non-vérifiés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2817
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2855
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2885
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2914
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2943
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2976
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3009
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3038
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3067
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3100
+msgid "Total"
+msgstr "Total"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2820
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2859
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2889
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2918
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2947
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2980
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3013
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3042
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3071
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3104
+msgid "Accuracy on checked words"
+msgstr "Exactitude sur les mots vérifiés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2825
+msgid "Number of lines"
+msgstr "Nombre de lignes"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2828
+msgid "Lines containing errors"
+msgstr "Lignes contenant des erreurs"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2832
+msgid "Number of manually corrected lines"
+msgstr "Nombre de lignes corrigées manuellement"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2836
+msgid "Number of manually corrected words"
+msgstr "Nombre de mots corrigés manuellement"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2840
+msgid "Mean word correction length"
+msgstr "Longueur moyenne des corrections de mots"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2843
+msgid "Mean word correction absolute length"
+msgstr "Moyenne des valeurs absolues des corrections de mots"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2848
+msgid "Image"
+msgstr "Image"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2850
+msgid "Page id"
+msgstr "Id de la page"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2851
+msgid "Image name"
+msgstr "Nom de l'image"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2852
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2856
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2882
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2886
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2911
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2915
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2940
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2944
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2973
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2977
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3006
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3010
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3035
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3039
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3064
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3068
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3097
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3101
+msgid "Validated"
+msgstr "Validé"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2853
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2857
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2883
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2887
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2912
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2916
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2941
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2945
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2974
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2978
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3007
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3011
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3036
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3040
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3065
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3069
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3098
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3102
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:41
+msgid "Rejected"
+msgstr "Rejeté"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2854
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2858
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2884
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2888
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2913
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2917
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2942
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2946
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2975
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2979
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3008
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3012
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3037
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3041
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3066
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3070
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3099
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3103
+msgid "Unchecked"
+msgstr "Non-vérifié"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2878
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidationPanel.cpp:110
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:63
+msgid "Word"
+msgstr "Mot"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2881
+msgid "Transcription"
+msgstr "Transcription"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2907
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2910
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:65
+msgid "Length"
+msgstr "Longueur"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2936
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2939
+msgid "Initial letter"
+msgstr "Lettre initiale"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2948
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2981
+msgid "Mean manual correction"
+msgstr "Moyenne des corrections de mots"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2949
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2982
+msgid "Mean absolute manual correction"
+msgstr "Moyenne des valeurs absolues de corrections de mots"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2969
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:2972
+msgid "Final letter"
+msgstr "Lettre finale"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3002
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3005
+msgid "Preceding final letter"
+msgstr "Lettre finale précédente"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3031
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3034
+msgid "Next initial letter"
+msgstr "Lettre initiale suivante"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3060
+msgid "Preceding final + initial"
+msgstr "Lettre finale précédente + initiale"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3063
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3096
+msgid "Digram"
+msgstr "Digramme"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3093
+msgid "Final + next initial"
+msgstr "Lettre finale + initiale suivante"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3138
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3150
+msgid "character not found."
+msgstr "caractère introuvable."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3224
+#, fuzzy
+msgid "no validated word found."
+msgstr "dans les mots validés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3314
+msgid "no white space found."
+msgstr ""
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3522
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3637
+msgid "milestone without an id."
+msgstr "milestone sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3530
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3644
+msgid "page without an id."
+msgstr "page sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3538
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3650
+msgid "column without an id."
+msgstr "colonne sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3546
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3656
+msgid "line without an id."
+msgstr "ligne sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3551
+msgid "line @type=\"rejet\" without @corresp."
+msgstr "ligne @type=\"rejet\" sans @corresp."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3553
+msgid "line @type=\"rejet\" with malformed @corresp."
+msgstr "ligne @type=\"rejet\" avec @corresp mal formé."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3580
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3664
+msgid "word or pc without an id."
+msgstr "mot ou pc sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3602
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3674
+msgid "seg without an id."
+msgstr "seg sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriDocument.cpp:3681
+msgid "character without an id."
+msgstr "caractère sans identifiant."
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:29
+msgid "Align words"
+msgstr "Aligner les mots"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:30
+msgid "Align all words"
+msgstr "Aligner tous les mots"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:31
+msgid "Align non-validated words"
+msgstr "Aligner les mots non-validés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:32
+msgid "Align non-aligned words"
+msgstr "Aligner les mots non-alignés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:33
+msgid "Update aligned words' frontiers"
+msgstr "Mettre à jour les frontières des mots alignés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:34
+msgid "Align characters"
+msgstr "Aligner les caractères"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:35
+msgid "in all aligned words"
+msgstr "dans tous les mots alignés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:36
+msgid "in validated words"
+msgstr "dans les mots validés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:37
+msgid "in non-rejected words"
+msgstr "dans les mots non-rejetés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:38
+msgid "Align all characters"
+msgstr "Aligner tous les caractères"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:39
+msgid "Align non-aligned characters"
+msgstr "Aligner les caractères non-alignés"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriAlignDialog.cpp:41
+msgid "Alignment"
+msgstr "Alignement"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:40
 msgid "Accepted"
 msgstr "Accepté"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:111
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:111
 msgid "Gathering the words"
 msgstr "Rassemblement des mots"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:161
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:161
 msgid "Loading words"
 msgstr "Chargement des mots"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:427
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:427
 msgid ""
 "You visited some words without performing any modification.\n"
 "Do you wish to validate them?"
@@ -1143,7 +1127,7 @@ msgstr ""
 "Vous avez visité certains mots sans apporter de modifications.\n"
 "Voulez-vous les valider ?"
 
-#: E:/LIRIS/Projets/Oriflamms/oriflamms/src/oriflamms/OriValidation.cpp:505
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriValidation.cpp:505
 msgid ""
 "No modification was performed on this word.\n"
 "Do you wish to validate current state?"
@@ -1151,3 +1135,18 @@ msgstr ""
 "Aucune modification n'a été apportée à ce mot.\n"
 "Voulez-vous le valider en l'état ?"
 
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriTEIDisplay.cpp:42
+msgid "Node selection"
+msgstr "Sélection des nœuds"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriTEIDisplay.cpp:57
+msgid "Parsed"
+msgstr "Lu"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriTEIDisplay.cpp:58
+msgid "Element name"
+msgstr "Nom de l'élément"
+
+#: /home/yleydier/prg/oriflamms/src/oriflamms/OriTEIDisplay.cpp:59
+msgid "Contains text"
+msgstr "Contient du texte"

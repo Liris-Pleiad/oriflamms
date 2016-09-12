@@ -20,7 +20,7 @@
  */
 
 #include <CRNString.h>
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <map>
 
 int main(void)

@@ -20,7 +20,7 @@
  */
 
 #include <OriFeatures.h>
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <CRNi18n.h>
 #include <iostream>
 

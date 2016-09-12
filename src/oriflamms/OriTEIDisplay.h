@@ -21,7 +21,7 @@
 
 #ifndef TEIIMPORTER_H
 #define TEIIMPORTER_H
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <set>
 #include <gtkmm.h>
 

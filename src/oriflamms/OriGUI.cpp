@@ -26,7 +26,7 @@
 #include <GdkCRNPixbuf.h>
 #include <OriConfig.h>
 #include <OriLines.h>
-#include <CRNUtils/CRNXml.h>
+#include <CRNXml/CRNXml.h>
 #include <CRNIO/CRNIO.h>
 #include <CRNi18n.h>
 #include <OriTEIDisplay.h>
