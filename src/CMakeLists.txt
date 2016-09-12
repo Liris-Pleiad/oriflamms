@@ -198,6 +198,7 @@ endif(DOXYGEN_FOUND)
 ###############################################################################
 # Packages
 ###############################################################################
+set(CPACK_MONOLITHIC_INSTALL 1)
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
 include(InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_FILE_NAME "oriflamms-${ORIFLAMMS_PACKAGE_VERSION_MAJOR}.${ORIFLAMMS_PACKAGE_VERSION_MINOR}.${ORIFLAMMS_PACKAGE_VERSION_PATCH}${ORIFLAMMS_PACK_NAME}")
@@ -217,7 +218,6 @@ if(WIN32)
     "http://github.com/Liris-Pleiad/oriflamms" "Oriflamms Web Site")
 	set(CPACK_NSIS_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 	set(CPACK_NSIS_COMPONENT_INSTALL OFF)
-	set(CPACK_MONOLITHIC_INSTALL 1)
 	set(CPACK_BINARY_TBZ2 OFF)
 	set(CPACK_BINARY_ZIP ON)
 endif(WIN32)
