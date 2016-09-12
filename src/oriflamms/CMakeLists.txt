@@ -20,11 +20,8 @@ file(GLOB_RECURSE ORIFLAMMS_MISC "*.in")
 list(APPEND ORIFLAMMS_MISC "CMakeLists.txt")
 source_group("Misc" FILES ${ORIFLAMMS_MISC})
 
-# create Titus
+# create Oriflamms
 add_executable(oriflamms ${ORIFLAMMS_SOURCES} ${ORIFLAMMS_HEADERS})
-if(NOT MSVC)
-	set_target_properties(oriflamms PROPERTIES LINK_FLAGS "-lstdc++")
-endif()
 # add dependencies
 target_link_libraries(oriflamms ${GTKCRNMM2_LIBRARIES})
 
@@ -38,6 +35,7 @@ install(FILES "C.png" DESTINATION ${ORIFLAMMS_DATA_PATH})
 #install(FILES "oriflamms64.png" DESTINATION ${ORIFLAMMS_DATA_PATH})
 if(WIN32)
 	install(FILES "oriflamms.ico" DESTINATION ${RUNTIME_INSTALL_PATH})
+	InstallLibgtkcrnmm2()	
 endif(WIN32)
 
 install(FILES "orisig.xml" DESTINATION ${ORIFLAMMS_DATA_PATH})
@@ -49,3 +47,4 @@ if(UNIX)
 		)
 	install(FILES "${PROJECT_BINARY_DIR}/oriflamms/Oriflamms.desktop" DESTINATION share/applications)
 endif(UNIX)
+

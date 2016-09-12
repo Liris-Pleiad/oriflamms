@@ -35,27 +35,48 @@ int main(void)
 	sig[U'.'] = ".";
 	sig[U':'] = "."; // prints as a .
 	sig[U';'] = "."; // ????
+#ifdef _MSC_VER
+	sig[L''] = "."; // ????
+	sig[L'÷'] = ".'"; // ????
+#else
 	sig[U''] = "."; // ????
 	sig[U'÷'] = ".'"; // ????
+#endif
 	sig[U'('] = "("; // ????
 	sig[U')'] = ")"; // ????
 
 	sig[U'A'] = ",l";
 	sig[U'B'] = "ll";
 	sig[U'C'] = "('"; // ll  l,'  'l,  ,l'  ll  ,'  l'  l  ,'  l,'  l',  ll  l'  'l  l'  ll'  l'  'l  l  ll  l'
+#ifdef _MSC_VER
+	sig[L'Ç'] = "('";
+#else
 	sig[U'Ç'] = "('";
+#endif
 	sig[U'D'] = "l)"; // l'  ,',  ll  ,','  ,','  l,  ,l'  l'  ,','  ,''  ll  ll  ,'l  l'  ,',  ,',  ,','  ll  ,'',  ,'l  ll  ll
 	sig[U'E'] = "l'"; // ','  l'  ll  l'  ','  l',  'l  l'  l'  ll  ,'  ll  'l  l',  l'
+#ifdef _MSC_VER
+	sig[L'É'] = "l'";
+	sig[L'È'] = "l'";
+	sig[L'Ê'] = "l'";
+	sig[L'Ë'] = "l'";
+#else
 	sig[U'É'] = "l'";
 	sig[U'È'] = "l'";
 	sig[U'Ê'] = "l'";
 	sig[U'Ë'] = "l'";
+#endif
 	sig[U'F'] = "l'"; // l'
 	sig[U'G'] = "(l"; // ll  ll  ll  l'
 	sig[U'H'] = "ll";
 	sig[U'I'] = "l"; // 'l  ,l  ,l  l  ,l  l  l  l
+#ifdef _MSC_VER
+	sig[L'Î'] = "l";
+	sig[L'Ï'] = "l";
+#else
 	sig[U'Î'] = "l";
 	sig[U'Ï'] = "l";
+#endif
 	sig[U'J'] = "l"; // same as I
 	sig[U'K'] = "ll"; // ll  l',  ll  
 	sig[U'L'] = "l";
@@ -68,9 +89,15 @@ int main(void)
 	sig[U'S'] = "()"; // ,''l   '',  ,''l  ,''l  ',','  ',',l  '',,  l',  l'  ,','l  ,ll  l','l  l','  ,','l  ','',  ,',','
 	sig[U'T'] = "l'"; // l',  l'  'l  l'  ll  l',  l'
 	sig[U'U'] = "ll"; // ',ll  ll  ll  ll
+#ifdef _MSC_VER
+	sig[L'Ù'] = "ll";
+	sig[L'Û'] = "ll";
+	sig[L'Ü'] = "ll";
+#else
 	sig[U'Ù'] = "ll";
 	sig[U'Û'] = "ll";
 	sig[U'Ü'] = "ll";
+#endif
 	sig[U'V'] = "ll";
 	sig[U'X'] = "l"; // TODO NOT FOUND
 	sig[U'Y'] = ",l'"; // NOT FOUND  ,l'  ,ll  ,l'  (3 occurrences)
@@ -78,19 +105,35 @@ int main(void)
 	sig[U'a'] = ",l";
 	sig[U'b'] = "l)"; // l,  ll  ll  ll  ll
 	sig[U'c'] = "('";
+#ifdef _MSC_VER
+	sig[L'ç'] = "('";
+#else
 	sig[U'ç'] = "('";
+#endif
 	sig[U'd'] = "(,";
 	sig[U'e'] = "('";
+#ifdef _MSC_VER
+	sig[L'é'] = "('";
+	sig[L'è'] = "('";
+	sig[L'ê'] = "('";
+	sig[L'ë'] = "('";
+#else
 	sig[U'é'] = "('";
 	sig[U'è'] = "('";
 	sig[U'ê'] = "('";
 	sig[U'ë'] = "('";
+#endif
 	sig[U'f'] = "l'";
 	sig[U'g'] = "(l";
 	sig[U'h'] = "ll";
 	sig[U'i'] = "l";
+#ifdef _MSC_VER
+	sig[L'î'] = "l";
+	sig[L'ï'] = "l";
+#else
 	sig[U'î'] = "l";
 	sig[U'ï'] = "l";
+#endif
 	sig[U'j'] = ",l"; // only one occurrence
 	sig[U'k'] = "l'"; // only one occurrence
 	sig[U'l'] = "l";
@@ -98,28 +141,61 @@ int main(void)
 	sig[U'n'] = "ll";
 	sig[U'o'] = "()";
 	sig[U'p'] = "l)";
+#ifdef _MSC_VER
+	sig[L''] = "l)";
+	sig[L'ꝑ'] = "l)";
+	sig[L'ꝓ'] = ",l)";
+#else
 	sig[U''] = "l)";
 	sig[U'ꝑ'] = "l)";
 	sig[U'ꝓ'] = ",l)";
+#endif
 	sig[U'q'] = "(l";
 	sig[U'r'] = "l'";
 	sig[U's'] = "l"; // ll  l,  'l,  <-- using long s' signature
 	sig[U't'] = "(";
 	sig[U'u'] = "ll";
+#ifdef _MSC_VER
+	sig[L'ù'] = "ll";
+	sig[L'û'] = "ll";
+	sig[L'ü'] = "ll";
+#else
 	sig[U'ù'] = "ll";
 	sig[U'û'] = "ll";
 	sig[U'ü'] = "ll";
+#endif
 	sig[U'v'] = "ll";
 	sig[U'x'] = "l'";
 	sig[U'y'] = "ll'";
 	sig[U'z'] = ")";
+#ifdef _MSC_VER
+	sig[L'í'] = "l";
+	sig[L'ſ'] = "l"; // s long
+	sig[L'ʼ'] = ""; // nothing
+#else
 	sig[U'í'] = "l";
 	sig[U'ſ'] = "l"; // s long
 	sig[U'ʼ'] = ""; // nothing
+#endif
 	sig[L'̅'] = ""; // bar
 	sig[L'ͣ'] = ""; // a sup <-- nothing
 	sig[L'ͤ'] = ""; // e sup <-- nothing
 	sig[L'ᷥ'] = ""; // s long sup <-- nothing
+#ifdef _MSC_VER
+	sig[L'ẏ'] = "ll";
+	sig[L'ꝛ'] = ")"; // small r rotunda
+	sig[L'ꝝ'] = "),"; // ???
+	sig[L'ꝰ'] = ""; // modified letter us <-- nothing
+	sig[L''] = ",'"; // et barré
+	sig[L''] = ","; // punctus elevatus
+	sig[L''] = ""; // short virgula <-- to small, always cut :(
+	sig[L'¶'] = "l"; // para
+	sig[L'ꝯ'] = ",)"; // con
+	sig[L'⁊'] = "l"; // et
+	sig[L''] = "(l)"; // q+r rot
+	sig[L'ꝙ'] = "(l"; //
+	sig[L'ẜ'] = "l'"; // f barré
+#else
 	sig[U'ẏ'] = "ll";
 	sig[U'ꝛ'] = ")"; // small r rotunda
 	sig[U'ꝝ'] = "),"; // ???
@@ -130,10 +206,10 @@ int main(void)
 	sig[U'¶'] = "l"; // para
 	sig[U'ꝯ'] = ",)"; // con
 	sig[U'⁊'] = "l"; // et
-
 	sig[U''] = "(l)"; // q+r rot
 	sig[U'ꝙ'] = "(l"; //
 	sig[U'ẜ'] = "l'"; // f barré
+#endif
 	crn::xml::Document doc;
 	doc.PushBackComment("oriflamms signature table");
 	crn::xml::Element root(doc.PushBackElement("orisig"));
